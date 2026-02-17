@@ -1,25 +1,25 @@
-package com.github.k1mb1.vkr_backend.domain.grades;
+package com.github.k1mb1.vkr_backend.domain.student_attendances;
 
-
-import com.github.k1mb1.vkr_backend.domain.grades.requests.UpdateGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.grades.requests.CreateGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.grades.responses.GradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.CreateStudentAttendanceRequest;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpdateStudentAttendanceRequest;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceResponse;
 import org.mapstruct.*;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = SPRING)
-public interface GradeMapper {
+public interface StudentAttendanceMapper {
+
     @Mapping(source = "lesson.id", target = "lessonId")
     @Mapping(source = "student.id", target = "studentId")
-    GradeResponse toResponse(GradeEntity entity);
+    StudentAttendanceResponse toResponse(StudentAttendanceEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lesson", ignore = true)
     @Mapping(target = "student", ignore = true)
-    GradeEntity toEntity(CreateGradeRequest request);
+    StudentAttendanceEntity toEntity(CreateStudentAttendanceRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -27,5 +27,5 @@ public interface GradeMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lesson", ignore = true)
     @Mapping(target = "student", ignore = true)
-    void update(@MappingTarget GradeEntity entity, UpdateGradeRequest request);
+    void update(@MappingTarget StudentAttendanceEntity entity, UpdateStudentAttendanceRequest request);
 }

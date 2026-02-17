@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.domain.attendances;
+package com.github.k1mb1.vkr_backend.domain.student_attendances;
 
 import com.github.k1mb1.vkr_backend.domain.AuditableBase;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class AttendanceEntity extends AuditableBase {
+public class StudentAttendanceEntity extends AuditableBase {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)
     LessonEntity lesson;

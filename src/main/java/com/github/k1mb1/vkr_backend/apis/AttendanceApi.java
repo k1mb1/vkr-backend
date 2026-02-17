@@ -1,9 +1,9 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.attendances.AttendanceFilter;
-import com.github.k1mb1.vkr_backend.domain.attendances.requests.CreateAttendanceRequest;
-import com.github.k1mb1.vkr_backend.domain.attendances.requests.UpdateAttendanceRequest;
-import com.github.k1mb1.vkr_backend.domain.attendances.responses.AttendanceResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.StudentAttendanceFilter;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.CreateStudentAttendanceRequest;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpdateStudentAttendanceRequest;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,22 +25,22 @@ public interface AttendanceApi {
 
     @Operation(summary = "List all attendances")
     @GetMapping
-    ResponseEntity<Page<AttendanceResponse>> findAll(
-            @ParameterObject @ModelAttribute AttendanceFilter filter,
+    ResponseEntity<Page<StudentAttendanceResponse>> findAll(
+            @ParameterObject @ModelAttribute StudentAttendanceFilter filter,
             @ParameterObject Pageable pageable
     );
 
     @Operation(summary = "Get attendance by id")
     @GetMapping("/{id}")
-    ResponseEntity<AttendanceResponse> findById(@PathVariable UUID id);
+    ResponseEntity<StudentAttendanceResponse> findById(@PathVariable UUID id);
 
     @Operation(summary = "Create attendance")
     @PostMapping
-    ResponseEntity<AttendanceResponse> create(@RequestBody @Valid CreateAttendanceRequest request);
+    ResponseEntity<StudentAttendanceResponse> create(@RequestBody @Valid CreateStudentAttendanceRequest request);
 
     @Operation(summary = "Update attendance")
     @PatchMapping("/{id}")
-    ResponseEntity<AttendanceResponse> update(@PathVariable UUID id, @RequestBody @Valid UpdateAttendanceRequest request);
+    ResponseEntity<StudentAttendanceResponse> update(@PathVariable UUID id, @RequestBody @Valid UpdateStudentAttendanceRequest request);
 
     @Operation(summary = "Delete attendance")
     @DeleteMapping("/{id}")

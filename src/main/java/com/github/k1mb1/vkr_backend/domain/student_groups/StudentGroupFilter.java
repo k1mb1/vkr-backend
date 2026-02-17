@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.student_groups;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
-public record GroupFilter(String nameLike) {
+public record StudentGroupFilter(String nameLike) {
 
     public Specification<StudentGroupEntity> toSpecification() {
         return nameLikeSpec();

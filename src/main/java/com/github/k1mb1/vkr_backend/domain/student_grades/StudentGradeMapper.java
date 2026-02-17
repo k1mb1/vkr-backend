@@ -1,25 +1,25 @@
-package com.github.k1mb1.vkr_backend.domain.attendances;
+package com.github.k1mb1.vkr_backend.domain.student_grades;
 
-import com.github.k1mb1.vkr_backend.domain.attendances.requests.CreateAttendanceRequest;
-import com.github.k1mb1.vkr_backend.domain.attendances.requests.UpdateAttendanceRequest;
-import com.github.k1mb1.vkr_backend.domain.attendances.responses.AttendanceResponse;
+
+import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpdateStudentGradeRequest;
+import com.github.k1mb1.vkr_backend.domain.student_grades.requests.CreateStudentGradeRequest;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradeResponse;
 import org.mapstruct.*;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = SPRING)
-public interface AttendanceMapper {
-
+public interface StudentGradeMapper {
     @Mapping(source = "lesson.id", target = "lessonId")
     @Mapping(source = "student.id", target = "studentId")
-    AttendanceResponse toResponse(AttendanceEntity entity);
+    StudentGradeResponse toResponse(StudentGradeEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lesson", ignore = true)
     @Mapping(target = "student", ignore = true)
-    AttendanceEntity toEntity(CreateAttendanceRequest request);
+    StudentGradeEntity toEntity(CreateStudentGradeRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
@@ -27,5 +27,5 @@ public interface AttendanceMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lesson", ignore = true)
     @Mapping(target = "student", ignore = true)
-    void update(@MappingTarget AttendanceEntity entity, UpdateAttendanceRequest request);
+    void update(@MappingTarget StudentGradeEntity entity, UpdateStudentGradeRequest request);
 }

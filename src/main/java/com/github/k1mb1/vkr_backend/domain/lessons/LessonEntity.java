@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
-import com.github.k1mb1.vkr_backend.domain.attendances.AttendanceEntity;
-import com.github.k1mb1.vkr_backend.domain.grades.GradeEntity;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.StudentAttendanceEntity;
+import com.github.k1mb1.vkr_backend.domain.student_grades.StudentGradeEntity;
 import com.github.k1mb1.vkr_backend.domain.AuditableBase;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import jakarta.persistence.*;
@@ -38,9 +38,9 @@ public class LessonEntity extends AuditableBase {
 
     @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    Set<AttendanceEntity> attendances = new HashSet<>();
+    Set<StudentAttendanceEntity> attendances = new HashSet<>();
 
     @OneToMany(mappedBy = "lesson", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    Set<GradeEntity> grades = new HashSet<>();
+    Set<StudentGradeEntity> grades = new HashSet<>();
 }

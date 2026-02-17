@@ -22,7 +22,7 @@ public class StudentGroupService {
     private final StudentGroupRepository groupRepository;
     private final StudentGroupMapper groupMapper;
 
-    public Page<StudentGroupResponse> findAll(GroupFilter filter, Pageable pageable) {
+    public Page<StudentGroupResponse> findAll(StudentGroupFilter filter, Pageable pageable) {
         return groupRepository.findAll(filter.toSpecification(), pageable)
                 .map(groupMapper::toResponse);
     }

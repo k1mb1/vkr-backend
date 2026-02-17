@@ -21,7 +21,7 @@ public class StudentGroupController implements StudentGroupApi {
     private final StudentGroupService groupService;
 
     @Override
-    public ResponseEntity<Page<StudentGroupResponse>> findAll(GroupFilter filter, Pageable pageable) {
+    public ResponseEntity<Page<StudentGroupResponse>> findAll(StudentGroupFilter filter, Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(groupService.findAll(filter, pageable));
     }
 

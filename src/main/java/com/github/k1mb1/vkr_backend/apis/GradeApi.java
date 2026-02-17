@@ -1,9 +1,9 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.grades.GradeFilter;
-import com.github.k1mb1.vkr_backend.domain.grades.requests.CreateGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.grades.requests.UpdateGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.grades.responses.GradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.StudentGradeFilter;
+import com.github.k1mb1.vkr_backend.domain.student_grades.requests.CreateStudentGradeRequest;
+import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpdateStudentGradeRequest;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,22 +25,22 @@ public interface GradeApi {
 
     @Operation(summary = "List all grades")
     @GetMapping
-    ResponseEntity<Page<GradeResponse>> findAll(
-            @ParameterObject @ModelAttribute GradeFilter filter,
+    ResponseEntity<Page<StudentGradeResponse>> findAll(
+            @ParameterObject @ModelAttribute StudentGradeFilter filter,
             @ParameterObject Pageable pageable
     );
 
     @Operation(summary = "Get grade by id")
     @GetMapping("/{id}")
-    ResponseEntity<GradeResponse> findById(@PathVariable UUID id);
+    ResponseEntity<StudentGradeResponse> findById(@PathVariable UUID id);
 
     @Operation(summary = "Create grade")
     @PostMapping
-    ResponseEntity<GradeResponse> create(@RequestBody @Valid CreateGradeRequest request);
+    ResponseEntity<StudentGradeResponse> create(@RequestBody @Valid CreateStudentGradeRequest request);
 
     @Operation(summary = "Update grade")
     @PatchMapping("/{id}")
-    ResponseEntity<GradeResponse> update(@PathVariable UUID id, @RequestBody @Valid UpdateGradeRequest request);
+    ResponseEntity<StudentGradeResponse> update(@PathVariable UUID id, @RequestBody @Valid UpdateStudentGradeRequest request);
 
     @Operation(summary = "Delete grade")
     @DeleteMapping("/{id}")
