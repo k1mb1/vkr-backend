@@ -25,7 +25,7 @@ public class StudentEntity extends AuditableBase {
     String username;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id",  nullable = false)
+    @JoinColumn(name = "group_id")
     StudentGroupEntity group;
 
     @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
