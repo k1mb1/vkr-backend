@@ -22,6 +22,10 @@ import java.util.Set;
 @NoArgsConstructor
 @SuperBuilder
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
+@NamedEntityGraph(
+        name = "Teacher.withSubjects",
+        attributeNodes = @NamedAttributeNode("subjects")
+)
 public class TeacherEntity extends AuditableBase {
 
     @Column(nullable = false)

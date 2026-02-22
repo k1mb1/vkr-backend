@@ -26,4 +26,6 @@ public interface StudentMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "group", ignore = true)
     void update(@MappingTarget StudentEntity entity, UpdateStudentRequest request);
+
+    StudentEntity toEntity(StudentResponse studentResponse);
 }

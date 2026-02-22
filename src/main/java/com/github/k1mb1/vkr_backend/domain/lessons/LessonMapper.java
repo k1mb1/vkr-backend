@@ -25,4 +25,6 @@ public interface LessonMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "subject", ignore = true)
     void update(@MappingTarget LessonEntity entity, UpdateLessonRequest request);
+
+    LessonEntity toEntity(LessonResponse lessonResponse);
 }
