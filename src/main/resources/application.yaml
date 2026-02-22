@@ -15,3 +15,8 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_RESOURSESERVER_ISSUER_URI}
