@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.domain.teachers;
 
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +26,9 @@ public class TeacherService {
                 .map(teacherMapper::toResponse);
     }
 
-    public TeacherResponse findById(UUID id) {
-        return teacherRepository.findById(id)
-                .map(teacherMapper::toResponse)
+    public TeacherDetailsResponse findById(UUID id) {
+        return teacherRepository.findWithSubjectsById(id)
+                .map(teacherMapper::toDetailsResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Teacher not found: " + id));
     }
 

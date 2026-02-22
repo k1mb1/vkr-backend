@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.teachers;
 import com.github.k1mb1.vkr_backend.apis.TeacherApi;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,7 @@ public class TeacherController implements TeacherApi {
     }
 
     @Override
-    public ResponseEntity<TeacherResponse> findById(UUID id) {
+    public ResponseEntity<TeacherDetailsResponse> findById(UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.findById(id));
     }
 

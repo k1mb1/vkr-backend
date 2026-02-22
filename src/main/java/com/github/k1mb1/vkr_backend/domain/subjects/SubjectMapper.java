@@ -28,4 +28,6 @@ public interface SubjectMapper {
     @Mapping(target = "teachers", ignore = true)
     @Mapping(target = "lessons", ignore = true)
     void update(@MappingTarget SubjectEntity entity, UpdateSubjectRequest request);
+
+    SubjectEntity toEntity(SubjectResponse subjectResponse);
 }
