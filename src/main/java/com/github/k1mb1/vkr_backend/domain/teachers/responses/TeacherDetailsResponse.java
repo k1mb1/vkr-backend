@@ -11,7 +11,8 @@ import java.util.UUID;
  * DTO for {@link TeacherEntity}
  */
 public record TeacherDetailsResponse(
-        UUID id, Instant createdAt,
+        UUID id,
+        Instant createdAt,
         Instant updatedAt,
         String username,
         String email,

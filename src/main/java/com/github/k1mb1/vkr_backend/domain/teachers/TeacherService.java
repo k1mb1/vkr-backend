@@ -18,8 +18,8 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class TeacherService {
 
-    private final TeacherRepository teacherRepository;
-    private final TeacherMapper teacherMapper;
+    final TeacherRepository teacherRepository;
+    final TeacherMapper teacherMapper;
 
     public Page<TeacherResponse> findAll(TeacherFilter filter, Pageable pageable) {
         return teacherRepository.findAll(filter.toSpecification(), pageable)
@@ -45,8 +45,7 @@ public class TeacherService {
 
     @Transactional
     public TeacherResponse update(UUID id, UpdateTeacherRequest request) {
-        var entity = teacherRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Teacher not found: " + id));
+        var entity = findEntityById(id);
         teacherMapper.update(entity, request);
         return teacherMapper.toResponse(teacherRepository.save(entity));
     }

@@ -1,13 +1,18 @@
 package com.github.k1mb1.vkr_backend.domain.teachers;
 
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
-import com.github.k1mb1.vkr_backend.domain.AuditableBase;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
+
 
 @Entity
 @Table(
@@ -17,6 +22,7 @@ import java.util.Set;
                 @UniqueConstraint(columnNames = "email")
         }
 )
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,7 +32,22 @@ import java.util.Set;
         name = "Teacher.withSubjects",
         attributeNodes = @NamedAttributeNode("subjects")
 )
-public class TeacherEntity extends AuditableBase {
+public class TeacherEntity {
+
+    @Id
+    @Column(name = "id", nullable = false, updatable = false)
+    @ToString.Include
+    UUID id;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamp with time zone")
+    @ToString.Include
+    Instant createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false, columnDefinition = "timestamp with time zone")
+    @ToString.Include
+    Instant updatedAt;
 
     @Column(nullable = false)
     @ToString.Include
@@ -35,7 +56,6 @@ public class TeacherEntity extends AuditableBase {
     @Column(nullable = false)
     @ToString.Include
     String email;
-
 
     @ManyToMany(mappedBy = "teachers", fetch = FetchType.LAZY)
     @Builder.Default

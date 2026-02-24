@@ -14,7 +14,6 @@ public interface TeacherMapper {
 
     TeacherResponse toResponse(TeacherEntity entity);
 
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "subjects", ignore = true)
     TeacherEntity toEntity(CreateTeacherRequest request);
 

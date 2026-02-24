@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TeacherController implements TeacherApi {
 
-    private final TeacherService teacherService;
+    final TeacherService teacherService;
 
     @Override
     public ResponseEntity<Page<TeacherResponse>> findAll(TeacherFilter filter, Pageable pageable) {
@@ -26,12 +27,15 @@ public class TeacherController implements TeacherApi {
     }
 
     @Override
+    @PreAuthorize("@securityService.isSameUser(authentication, #id) or hasAnyRole('DEAN')")
     public ResponseEntity<TeacherDetailsResponse> findById(UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.findById(id));
     }
 
     @Override
+    @PreAuthorize("hasAnyRole('DEAN')")
     public ResponseEntity<TeacherResponse> create(CreateTeacherRequest request) {
+        System.out.println(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(teacherService.create(request));
     }
 
