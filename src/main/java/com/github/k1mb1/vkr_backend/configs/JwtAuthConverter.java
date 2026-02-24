@@ -40,7 +40,7 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
         Object realmAccessObj = jwt.getClaim(ACCESS_CLAIM);
         if (realmAccessObj instanceof Map<?, ?> realmAccess && realmAccess.get(ROLES_CLAIM) instanceof List<?> rolesList) {
 
-            log.info("Extracting roles from realm_access claim: {}", rolesList);
+            log.debug("Extracting roles from realm_access claim: {}", rolesList);
             return rolesList.stream()
                     .filter(Objects::nonNull)
                     .map(Object::toString)
