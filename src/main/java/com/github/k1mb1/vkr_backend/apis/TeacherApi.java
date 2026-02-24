@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherFilter;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,7 +33,7 @@ public interface TeacherApi {
 
     @Operation(summary = "Get teacher by id")
     @GetMapping("/{id}")
-    ResponseEntity<TeacherResponse> findById(@PathVariable UUID id);
+    ResponseEntity<TeacherDetailsResponse> findById(@PathVariable UUID id);
 
     @Operation(summary = "Create teacher")
     @PostMapping

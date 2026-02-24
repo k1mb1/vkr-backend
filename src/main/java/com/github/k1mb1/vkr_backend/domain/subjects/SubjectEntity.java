@@ -18,6 +18,14 @@ import java.util.Set;
 @Setter
 @SuperBuilder(toBuilder = true)
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
+@NamedEntityGraph(
+        name = "Subject.withAssociations",
+        attributeNodes = {
+                @NamedAttributeNode("teachers"),
+                @NamedAttributeNode("students"),
+                @NamedAttributeNode("lessons")
+        }
+)
 public class SubjectEntity extends AuditableBase {
 
     @Column(nullable = false)

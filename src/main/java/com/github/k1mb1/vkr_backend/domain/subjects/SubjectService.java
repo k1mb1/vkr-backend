@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +26,9 @@ public class SubjectService {
                 .map(subjectMapper::toResponse);
     }
 
-    public SubjectResponse findById(UUID id) {
-        return subjectRepository.findById(id)
-                .map(subjectMapper::toResponse)
+    public SubjectDetailsResponse findById(UUID id) {
+        return subjectRepository.findWithDetailsById(id)
+                .map(subjectMapper::toDetailsResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + id));
     }
 

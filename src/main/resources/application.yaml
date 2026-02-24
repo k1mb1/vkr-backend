@@ -2,10 +2,11 @@ spring:
   application:
     name: vkr-backend
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: user
-    password: password
+    # Вариант A: прямо берем переменные SPRING_DATASOURCE_*
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
   jpa:
     open-in-view: false
     hibernate:
@@ -15,3 +16,11 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_RESOURSESERVER_ISSUER_URI}
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}

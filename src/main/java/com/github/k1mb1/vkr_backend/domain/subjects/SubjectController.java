@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 import com.github.k1mb1.vkr_backend.apis.SubjectApi;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,7 @@ public class SubjectController implements SubjectApi {
     }
 
     @Override
-    public ResponseEntity<SubjectResponse> findById(UUID id) {
+    public ResponseEntity<SubjectDetailsResponse> findById(UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(subjectService.findById(id));
     }
 
