@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,6 +24,11 @@ public class SubjectController implements SubjectApi {
     @Override
     public ResponseEntity<Page<SubjectResponse>> findAll(SubjectFilter filter, Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(subjectService.findAll(filter, pageable));
+    }
+
+    @Override
+    public ResponseEntity<List<SubjectResponse>> findAllByTeacherId(UUID teacherId) {
+        return ResponseEntity.status(HttpStatus.OK).body(subjectService.findAllByTeacherId(teacherId));
     }
 
     @Override

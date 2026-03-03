@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectReques
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
+import com.github.k1mb1.vkr_backend.domain.teachers.TeacherRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -20,10 +22,18 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
     private final SubjectMapper subjectMapper;
+    private final TeacherRepository teacherRepository;
 
     public Page<SubjectResponse> findAll(SubjectFilter filter, Pageable pageable) {
         return subjectRepository.findAll(filter.toSpecification(), pageable)
                 .map(subjectMapper::toResponse);
+    }
+
+    public List<SubjectResponse> findAllByTeacherId(UUID teacherId) {
+        return subjectRepository.findAllByTeachers_Id(teacherId)
+                .stream()
+                .map(subjectMapper::toResponse)
+                .toList();
     }
 
     public SubjectDetailsResponse findById(UUID id) {
@@ -39,7 +49,9 @@ public class SubjectService {
 
     @Transactional
     public SubjectResponse create(CreateSubjectRequest request) {
+        var teacher = teacherRepository.getReferenceById(request.teacherId());
         var entity = subjectMapper.toEntity(request);
+        entity.getTeachers().add(teacher);
         return subjectMapper.toResponse(subjectRepository.save(entity));
     }
 

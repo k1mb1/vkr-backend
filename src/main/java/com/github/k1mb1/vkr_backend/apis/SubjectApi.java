@@ -13,8 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -31,12 +33,17 @@ public interface SubjectApi {
             @ParameterObject Pageable pageable
     );
 
+    @Operation(summary = "List all subjects by teacher")
+    @GetMapping("/teachers/{teacherId}")
+    ResponseEntity<List<SubjectResponse>> findAllByTeacherId(@PathVariable UUID teacherId);
+
     @Operation(summary = "Get subject by id")
     @GetMapping("/{id}")
     ResponseEntity<SubjectDetailsResponse> findById(@PathVariable UUID id);
 
     @Operation(summary = "Create subject")
     @PostMapping
+    @PreAuthorize("hasRole('DEAN') or @securityService.isSameUser(authentication, #request.teacherId())")
     ResponseEntity<SubjectResponse> create(@RequestBody @Valid CreateSubjectRequest request);
 
     @Operation(summary = "Update subject")
