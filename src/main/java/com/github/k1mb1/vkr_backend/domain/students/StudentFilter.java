@@ -14,13 +14,13 @@ public record StudentFilter(String nameLike, UUID groupId) {
 
     private Specification<StudentEntity> nameLikeSpec() {
         return ((root, query, cb) -> StringUtils.hasText(nameLike)
-                ? cb.like(cb.lower(root.get("name")), "%" + nameLike.toLowerCase() + "%")
+                ? cb.like(cb.lower(root.get("username")), "%" + nameLike.toLowerCase() + "%")
                 : null);
     }
 
     private Specification<StudentEntity> groupIdSpec() {
         return ((root, query, cb) -> groupId != null
-                ? cb.equal(root.get("groupId"), groupId)
+                ? cb.equal(root.get("group").get("id"), groupId)
                 : null);
     }
 }

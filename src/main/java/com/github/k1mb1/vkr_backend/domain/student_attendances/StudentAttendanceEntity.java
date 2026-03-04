@@ -6,6 +6,8 @@ import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "student_attendances")
@@ -24,7 +26,8 @@ public class StudentAttendanceEntity extends AuditableBase {
     StudentEntity student;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "presence", nullable = false, columnDefinition = "PresenceType")
+    @Column(name = "presence", nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     PresenceType presence = PresenceType.NONE;
 

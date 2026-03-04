@@ -7,6 +7,8 @@ import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -33,6 +35,7 @@ public class LessonEntity extends AuditableBase {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     LessonType type = LessonType.NONE;
 

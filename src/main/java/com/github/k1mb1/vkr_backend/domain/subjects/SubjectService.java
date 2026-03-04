@@ -108,6 +108,14 @@ public class SubjectService {
     }
 
     @Transactional
+    public void addStudentsToSubject(UUID subjectId, List<UUID> studentIds) {
+        var subject = subjectRepository.findWithStudentsById(subjectId)
+                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+        studentIds.forEach(id -> subject.getStudents().add(studentRepository.getReferenceById(id)));
+        subjectRepository.save(subject);
+    }
+
+    @Transactional
     public void removeStudentFromSubject(UUID subjectId, UUID studentId) {
         var subject = subjectRepository.findWithStudentsById(subjectId)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));

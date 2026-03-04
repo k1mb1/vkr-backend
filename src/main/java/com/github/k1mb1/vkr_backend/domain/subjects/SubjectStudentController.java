@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -26,6 +27,12 @@ public class SubjectStudentController implements SubjectStudentApi {
     public ResponseEntity<Void> addStudentToSubject(UUID subjectId, UUID studentId) {
         subjectService.addStudentToSubject(subjectId, studentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @Override
+    public ResponseEntity<Void> addStudentsToSubject(UUID subjectId, List<UUID> studentIds) {
+        subjectService.addStudentsToSubject(subjectId, studentIds);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override
