@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_attendances;
 
 import com.github.k1mb1.vkr_backend.apis.AttendanceApi;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.BulkCreateAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.CreateStudentAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpdateStudentAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceResponse;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +24,31 @@ public class StudentAttendanceController implements AttendanceApi {
     @Override
     public ResponseEntity<Page<StudentAttendanceResponse>> findAll(StudentAttendanceFilter filter, Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(studentAttendanceService.findAll(filter, pageable));
+    }
+
+    @Override
+    public ResponseEntity<List<StudentAttendanceResponse>> findAllByLessonId(UUID lessonId) {
+        return ResponseEntity.status(HttpStatus.OK).body(studentAttendanceService.findAllByLessonId(lessonId));
+    }
+
+    @Override
+    public ResponseEntity<List<StudentAttendanceResponse>> findAllByStudentId(UUID studentId) {
+        return ResponseEntity.status(HttpStatus.OK).body(studentAttendanceService.findAllByStudentId(studentId));
+    }
+
+    @Override
+    public ResponseEntity<List<StudentAttendanceResponse>> findAllBySubjectId(UUID subjectId) {
+        return ResponseEntity.status(HttpStatus.OK).body(studentAttendanceService.findAllBySubjectId(subjectId));
+    }
+
+    @Override
+    public ResponseEntity<List<StudentAttendanceResponse>> findAllByStudentIdAndSubjectId(UUID studentId, UUID subjectId) {
+        return ResponseEntity.status(HttpStatus.OK).body(studentAttendanceService.findAllByStudentIdAndSubjectId(studentId, subjectId));
+    }
+
+    @Override
+    public ResponseEntity<List<StudentAttendanceResponse>> bulkCreate(UUID lessonId, BulkCreateAttendanceRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(studentAttendanceService.bulkCreate(lessonId, request));
     }
 
     @Override

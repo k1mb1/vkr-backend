@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,6 +25,11 @@ public class TeacherController implements TeacherApi {
     @Override
     public ResponseEntity<Page<TeacherResponse>> findAll(TeacherFilter filter, Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(teacherService.findAll(filter, pageable));
+    }
+
+    @Override
+    public ResponseEntity<List<TeacherResponse>> findAllBySubjectId(UUID subjectId) {
+        return ResponseEntity.status(HttpStatus.OK).body(teacherService.findAllBySubjectId(subjectId));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.student_grades.StudentGradeFilter;
+import com.github.k1mb1.vkr_backend.domain.student_grades.requests.BulkCreateGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.CreateStudentGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpdateStudentGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradeResponse;
@@ -14,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -29,6 +31,26 @@ public interface GradeApi {
             @ParameterObject @ModelAttribute StudentGradeFilter filter,
             @ParameterObject Pageable pageable
     );
+
+    @Operation(summary = "List all grades by lesson")
+    @GetMapping("/lessons/{lessonId}")
+    ResponseEntity<List<StudentGradeResponse>> findAllByLessonId(@PathVariable UUID lessonId);
+
+    @Operation(summary = "List all grades by student")
+    @GetMapping("/students/{studentId}")
+    ResponseEntity<List<StudentGradeResponse>> findAllByStudentId(@PathVariable UUID studentId);
+
+    @Operation(summary = "List all grades by subject")
+    @GetMapping("/subjects/{subjectId}")
+    ResponseEntity<List<StudentGradeResponse>> findAllBySubjectId(@PathVariable UUID subjectId);
+
+    @Operation(summary = "List grades by student within a subject")
+    @GetMapping("/students/{studentId}/subjects/{subjectId}")
+    ResponseEntity<List<StudentGradeResponse>> findAllByStudentIdAndSubjectId(@PathVariable UUID studentId, @PathVariable UUID subjectId);
+
+    @Operation(summary = "Bulk create grades for a lesson")
+    @PostMapping("/lessons/{lessonId}/bulk")
+    ResponseEntity<List<StudentGradeResponse>> bulkCreate(@PathVariable UUID lessonId, @RequestBody @Valid BulkCreateGradeRequest request);
 
     @Operation(summary = "Get grade by id")
     @GetMapping("/{id}")

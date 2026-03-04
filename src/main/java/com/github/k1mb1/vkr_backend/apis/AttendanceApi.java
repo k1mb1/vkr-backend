@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.student_attendances.StudentAttendanceFilter;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.BulkCreateAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.CreateStudentAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpdateStudentAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceResponse;
@@ -14,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -29,6 +31,26 @@ public interface AttendanceApi {
             @ParameterObject @ModelAttribute StudentAttendanceFilter filter,
             @ParameterObject Pageable pageable
     );
+
+    @Operation(summary = "List all attendances by lesson")
+    @GetMapping("/lessons/{lessonId}")
+    ResponseEntity<List<StudentAttendanceResponse>> findAllByLessonId(@PathVariable UUID lessonId);
+
+    @Operation(summary = "List all attendances by student")
+    @GetMapping("/students/{studentId}")
+    ResponseEntity<List<StudentAttendanceResponse>> findAllByStudentId(@PathVariable UUID studentId);
+
+    @Operation(summary = "List all attendances by subject")
+    @GetMapping("/subjects/{subjectId}")
+    ResponseEntity<List<StudentAttendanceResponse>> findAllBySubjectId(@PathVariable UUID subjectId);
+
+    @Operation(summary = "List attendances by student within a subject")
+    @GetMapping("/students/{studentId}/subjects/{subjectId}")
+    ResponseEntity<List<StudentAttendanceResponse>> findAllByStudentIdAndSubjectId(@PathVariable UUID studentId, @PathVariable UUID subjectId);
+
+    @Operation(summary = "Bulk create attendances for a lesson")
+    @PostMapping("/lessons/{lessonId}/bulk")
+    ResponseEntity<List<StudentAttendanceResponse>> bulkCreate(@PathVariable UUID lessonId, @RequestBody @Valid BulkCreateAttendanceRequest request);
 
     @Operation(summary = "Get attendance by id")
     @GetMapping("/{id}")

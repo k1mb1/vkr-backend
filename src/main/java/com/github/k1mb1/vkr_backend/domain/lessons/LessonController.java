@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +23,16 @@ public class LessonController implements LessonApi {
     @Override
     public ResponseEntity<Page<LessonResponse>> findAll(LessonFilter filter, Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(lessonService.findAll(filter, pageable));
+    }
+
+    @Override
+    public ResponseEntity<List<LessonResponse>> findAllBySubjectId(UUID subjectId) {
+        return ResponseEntity.status(HttpStatus.OK).body(lessonService.findAllBySubjectId(subjectId));
+    }
+
+    @Override
+    public ResponseEntity<List<LessonResponse>> findAllByStudentId(UUID studentId) {
+        return ResponseEntity.status(HttpStatus.OK).body(lessonService.findAllByStudentId(studentId));
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,6 +26,20 @@ public class StudentService {
     public Page<StudentResponse> findAll(StudentFilter filter, Pageable pageable) {
         return studentRepository.findAll(filter.toSpecification(), pageable)
                 .map(studentMapper::toResponse);
+    }
+
+    public List<StudentResponse> findAllBySubjectId(UUID subjectId) {
+        return studentRepository.findAllBySubjects_Id(subjectId)
+                .stream()
+                .map(studentMapper::toResponse)
+                .toList();
+    }
+
+    public List<StudentResponse> findAllByGroupId(UUID groupId) {
+        return studentRepository.findAllByGroup_Id(groupId)
+                .stream()
+                .map(studentMapper::toResponse)
+                .toList();
     }
 
     public StudentResponse findById(UUID id) {

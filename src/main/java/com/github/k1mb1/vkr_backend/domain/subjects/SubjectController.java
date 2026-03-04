@@ -32,6 +32,11 @@ public class SubjectController implements SubjectApi {
     }
 
     @Override
+    public ResponseEntity<List<SubjectResponse>> findAllByStudentId(UUID studentId) {
+        return ResponseEntity.status(HttpStatus.OK).body(subjectService.findAllByStudentId(studentId));
+    }
+
+    @Override
     public ResponseEntity<SubjectDetailsResponse> findById(UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(subjectService.findById(id));
     }

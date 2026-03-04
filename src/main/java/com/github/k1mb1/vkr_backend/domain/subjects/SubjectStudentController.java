@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.temp;
+package com.github.k1mb1.vkr_backend.domain.subjects;
 
 import com.github.k1mb1.vkr_backend.apis.SubjectStudentApi;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
@@ -15,25 +15,22 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SubjectStudentController implements SubjectStudentApi {
 
-    private final SubjectStudentService subjectStudentService;
+    private final SubjectService subjectService;
 
     @Override
     public ResponseEntity<Page<StudentResponse>> findStudentsBySubject(UUID subjectId, Pageable pageable) {
-//        return ResponseEntity.status(HttpStatus.OK).body(subjectStudentService.findStudentsBySubject(subjectId, pageable));
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        return ResponseEntity.status(HttpStatus.OK).body(subjectService.findStudentsBySubject(subjectId, pageable));
     }
 
     @Override
     public ResponseEntity<Void> addStudentToSubject(UUID subjectId, UUID studentId) {
-//        subjectStudentService.addStudentToSubject(subjectId, studentId);
-//        return ResponseEntity.status(HttpStatus.CREATED).build();
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        subjectService.addStudentToSubject(subjectId, studentId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @Override
     public ResponseEntity<Void> removeStudentFromSubject(UUID subjectId, UUID studentId) {
-//        subjectStudentService.removeStudentFromSubject(subjectId, studentId);
-//        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        subjectService.removeStudentFromSubject(subjectId, studentId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

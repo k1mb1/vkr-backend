@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -29,6 +30,14 @@ public interface StudentApi {
             @ParameterObject @ModelAttribute StudentFilter filter,
             @ParameterObject Pageable pageable
     );
+
+    @Operation(summary = "List all students by subject")
+    @GetMapping("/subjects/{subjectId}")
+    ResponseEntity<List<StudentResponse>> findAllBySubjectId(@PathVariable UUID subjectId);
+
+    @Operation(summary = "List all students by group")
+    @GetMapping("/groups/{groupId}")
+    ResponseEntity<List<StudentResponse>> findAllByGroupId(@PathVariable UUID groupId);
 
     @Operation(summary = "Get student by id")
     @GetMapping("/{id}")

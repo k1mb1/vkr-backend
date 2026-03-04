@@ -37,6 +37,10 @@ public interface SubjectApi {
     @GetMapping("/teachers/{teacherId}")
     ResponseEntity<List<SubjectResponse>> findAllByTeacherId(@PathVariable UUID teacherId);
 
+    @Operation(summary = "List all subjects by student")
+    @GetMapping("/students/{studentId}")
+    ResponseEntity<List<SubjectResponse>> findAllByStudentId(@PathVariable UUID studentId);
+
     @Operation(summary = "Get subject by id")
     @GetMapping("/{id}")
     ResponseEntity<SubjectDetailsResponse> findById(@PathVariable UUID id);

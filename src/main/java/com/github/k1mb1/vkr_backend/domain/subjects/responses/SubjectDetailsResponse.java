@@ -13,8 +13,10 @@ import java.util.UUID;
  * DTO for {@link SubjectEntity}
  */
 public record SubjectDetailsResponse(
-        UUID id, Instant createdAt,
-        Instant updatedAt, String name,
+        UUID id,
+        Instant createdAt,
+        Instant updatedAt,
+        String name,
         String description,
         Set<TeacherResponse> teachers,
         Set<StudentResponse> students,
