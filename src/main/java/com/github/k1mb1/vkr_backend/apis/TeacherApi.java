@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherFilter;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.requests.FindOrCreateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
@@ -13,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +35,10 @@ public interface TeacherApi {
             @ParameterObject @ModelAttribute TeacherFilter filter,
             @ParameterObject Pageable pageable
     );
+
+    @Operation(summary = "Find or create teacher from JWT token (called on login)")
+    @PostMapping("/me")
+    ResponseEntity<TeacherResponse> findOrCreate(@AuthenticationPrincipal Jwt jwt, @RequestBody @Valid FindOrCreateTeacherRequest request);
 
     @Operation(summary = "List all teachers by subject")
     @GetMapping("/subjects/{subjectId}")

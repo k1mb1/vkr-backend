@@ -47,7 +47,7 @@ public interface SubjectApi {
 
     @Operation(summary = "Create subject")
     @PostMapping
-    @PreAuthorize("hasRole('DEAN') or @securityService.isSameUser(authentication, #request.teacherId())")
+    @PreAuthorize("@securityService.isSameUser(authentication, #request.teacherId())")
     ResponseEntity<SubjectResponse> create(@RequestBody @Valid CreateSubjectRequest request);
 
     @Operation(summary = "Update subject")

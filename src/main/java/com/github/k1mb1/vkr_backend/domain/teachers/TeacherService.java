@@ -52,6 +52,20 @@ public class TeacherService {
     }
 
     @Transactional
+    public TeacherResponse findOrCreate(UUID id, String username, String email) {
+        return teacherRepository.findById(id)
+                .map(teacherMapper::toResponse)
+                .orElseGet(() -> {
+                    var entity = TeacherEntity.builder()
+                            .id(id)
+                            .username(username)
+                            .email(email)
+                            .build();
+                    return teacherMapper.toResponse(teacherRepository.save(entity));
+                });
+    }
+
+    @Transactional
     public TeacherResponse update(UUID id, UpdateTeacherRequest request) {
         var entity = findEntityById(id);
         teacherMapper.update(entity, request);
