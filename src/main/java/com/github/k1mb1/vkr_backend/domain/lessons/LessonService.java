@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
@@ -58,6 +59,33 @@ public class LessonService {
         var subject = subjectService.findEntityById(request.subjectId());
         var entity = lessonMapper.toEntity(request).toBuilder().subject(subject).build();
         return lessonMapper.toResponse(lessonRepository.save(entity));
+    }
+
+    @Transactional
+    public List<LessonResponse> createByType(CreateLessonsByTypeRequest request) {
+        var subject = subjectService.findEntityById(request.subjectId());
+        var result = new java.util.ArrayList<LessonEntity>(request.lectureCount() + request.practiceCount());
+
+        for (int i = 0; i < request.lectureCount(); i++) {
+            result.add(LessonEntity.builder()
+                    .name("Лекция " + (i + 1))
+                    .type(LessonType.LECTURE)
+                    .subject(subject)
+                    .build());
+        }
+
+        for (int i = 0; i < request.practiceCount(); i++) {
+            result.add(LessonEntity.builder()
+                    .name("Практика " + (i + 1))
+                    .type(LessonType.PRACTICE)
+                    .subject(subject)
+                    .build());
+        }
+
+        return lessonRepository.saveAll(result)
+                .stream()
+                .map(lessonMapper::toResponse)
+                .toList();
     }
 
     @Transactional

@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +47,10 @@ public interface LessonApi {
     @Operation(summary = "Create lesson")
     @PostMapping
     ResponseEntity<LessonResponse> create(@RequestBody @Valid CreateLessonRequest request);
+
+        @Operation(summary = "Bulk create lessons by type")
+        @PostMapping("/by-type")
+        ResponseEntity<List<LessonResponse>> createByType(@RequestBody @Valid CreateLessonsByTypeRequest request);
 
     @Operation(summary = "Update lesson")
     @PatchMapping("/{id}")
