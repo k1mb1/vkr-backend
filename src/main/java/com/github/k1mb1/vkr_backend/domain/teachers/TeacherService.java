@@ -1,6 +1,5 @@
 package com.github.k1mb1.vkr_backend.domain.teachers;
 
-import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
@@ -40,43 +39,13 @@ public class TeacherService {
                 .orElseThrow(() -> new EntityNotFoundException("Teacher not found: " + id));
     }
 
-    public TeacherEntity findEntityById(UUID id) {
+    @Transactional
+    public TeacherResponse createOrUpdate(UUID id, UpdateTeacherRequest request) {
         return teacherRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Teacher not found: " + id));
-    }
-
-    @Transactional
-    public TeacherResponse create(CreateTeacherRequest request) {
-        var entity = teacherMapper.toEntity(request);
-        return teacherMapper.toResponse(teacherRepository.save(entity));
-    }
-
-    @Transactional
-    public TeacherResponse findOrCreate(UUID id, String username, String email) {
-        return teacherRepository.findById(id)
-                .map(teacherMapper::toResponse)
-                .orElseGet(() -> {
-                    var entity = TeacherEntity.builder()
-                            .id(id)
-                            .username(username)
-                            .email(email)
-                            .build();
-                    return teacherMapper.toResponse(teacherRepository.save(entity));
-                });
-    }
-
-    @Transactional
-    public TeacherResponse update(UUID id, UpdateTeacherRequest request) {
-        var entity = findEntityById(id);
-        teacherMapper.update(entity, request);
-        return teacherMapper.toResponse(teacherRepository.save(entity));
-    }
-
-    @Transactional
-    public void delete(UUID id) {
-        if (!teacherRepository.existsById(id)) {
-            throw new EntityNotFoundException("Teacher not found: " + id);
-        }
-        teacherRepository.deleteById(id);
+                .map(existing -> {
+                    teacherMapper.update(existing, request);
+                    return teacherMapper.toResponse(teacherRepository.save(existing));
+                })
+                .orElseGet(() -> teacherMapper.toResponse(teacherRepository.save(teacherMapper.toEntity(id, request))));
     }
 }

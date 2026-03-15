@@ -9,6 +9,8 @@ import org.mapstruct.*;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
+import java.util.UUID;
+
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = SPRING, uses = {SubjectMapper.class})
 public interface TeacherMapper {
 
@@ -17,11 +19,14 @@ public interface TeacherMapper {
     @Mapping(target = "subjects", ignore = true)
     TeacherEntity toEntity(CreateTeacherRequest request);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "id", source = "id")
     @Mapping(target = "subjects", ignore = true)
-    void update(@MappingTarget TeacherEntity entity, UpdateTeacherRequest request);
+    TeacherEntity toEntity(UUID id, UpdateTeacherRequest request);
 
     @InheritInverseConfiguration(name = "toEntity")
     TeacherDetailsResponse toDetailsResponse(TeacherEntity teacherEntity);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "subjects", ignore = true)
+    void update(@MappingTarget TeacherEntity entity, UpdateTeacherRequest request);
 }

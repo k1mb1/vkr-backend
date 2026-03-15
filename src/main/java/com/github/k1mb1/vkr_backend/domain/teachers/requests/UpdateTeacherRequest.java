@@ -6,6 +6,7 @@ import com.github.k1mb1.vkr_backend.domain.teachers.TeacherEntity;
  * DTO for {@link TeacherEntity}
  */
 public record UpdateTeacherRequest(
-        String name
+        String username,
+        String email
 ) {
 }
