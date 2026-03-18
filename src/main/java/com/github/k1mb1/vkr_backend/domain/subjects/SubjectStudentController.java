@@ -36,6 +36,12 @@ public class SubjectStudentController implements SubjectStudentApi {
     }
 
     @Override
+    public ResponseEntity<Void> addStudentsToSubjectByUsernames(UUID subjectId, List<String> usernames) {
+        subjectService.addStudentsToSubjectByUsernames(subjectId, usernames);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Override
     public ResponseEntity<Void> removeStudentFromSubject(UUID subjectId, UUID studentId) {
         subjectService.removeStudentFromSubject(subjectId, studentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();

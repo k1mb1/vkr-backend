@@ -4,6 +4,8 @@ import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,13 @@ public interface SubjectStudentApi {
     @Operation(summary = "Assign multiple students to subject")
     @PostMapping
     ResponseEntity<Void> addStudentsToSubject(@PathVariable UUID subjectId, @RequestBody @Valid List<UUID> studentIds);
+
+    @Operation(summary = "Assign multiple students to subject by usernames (create if absent)")
+    @PostMapping("/by-usernames")
+    ResponseEntity<Void> addStudentsToSubjectByUsernames(
+            @PathVariable UUID subjectId,
+            @RequestBody @NotEmpty List<@NotBlank String> usernames
+    );
 
     @Operation(summary = "Remove student from subject")
     @DeleteMapping("/{studentId}")

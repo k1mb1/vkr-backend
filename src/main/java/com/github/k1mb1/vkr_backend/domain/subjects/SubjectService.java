@@ -115,6 +115,41 @@ public class SubjectService {
         subjectRepository.save(subject);
     }
 
+        @Transactional
+        public void addStudentsToSubjectByUsernames(UUID subjectId, List<String> usernames) {
+        var subject = subjectRepository.findWithStudentsById(subjectId)
+            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+
+        var normalizedUsernames = usernames.stream()
+            .map(String::trim)
+            .filter(username -> !username.isBlank())
+            .distinct()
+            .toList();
+
+        var existingStudentsByUsername = studentRepository.findAllByUsernameIn(normalizedUsernames)
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(
+                s -> s.getUsername().trim(),
+                s -> s,
+                (left, right) -> left
+            ));
+
+        normalizedUsernames.forEach(username -> {
+            var student = existingStudentsByUsername.get(username);
+            if (student == null) {
+            student = studentRepository.save(
+                com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
+                    .username(username)
+                    .build()
+            );
+            existingStudentsByUsername.put(username, student);
+            }
+            subject.getStudents().add(student);
+        });
+
+        subjectRepository.save(subject);
+        }
+
     @Transactional
     public void removeStudentFromSubject(UUID subjectId, UUID studentId) {
         var subject = subjectRepository.findWithStudentsById(subjectId)

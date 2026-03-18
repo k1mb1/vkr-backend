@@ -11,6 +11,8 @@ import java.util.UUID;
 public interface StudentRepository extends JpaRepository<StudentEntity, UUID>, JpaSpecificationExecutor<StudentEntity> {
     List<StudentEntity> findAllBySubjects_Id(UUID subjectId);
 
+    List<StudentEntity> findAllByUsernameIn(List<String> usernames);
+
     Page<StudentEntity> findAllBySubjects_Id(UUID subjectId, Pageable pageable);
 
     List<StudentEntity> findAllByGroup_Id(UUID groupId);
