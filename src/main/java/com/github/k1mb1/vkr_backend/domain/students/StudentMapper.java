@@ -29,6 +29,4 @@ public interface StudentMapper {
         @MappingTarget StudentEntity entity,
         UpdateStudentRequest request
     );
-
-    StudentEntity toEntity(StudentResponse studentResponse);
 }

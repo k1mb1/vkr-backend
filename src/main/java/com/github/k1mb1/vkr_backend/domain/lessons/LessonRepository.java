@@ -11,6 +11,4 @@ public interface LessonRepository
         JpaSpecificationExecutor<LessonEntity>
 {
     List<LessonEntity> findAllBySubject_Id(UUID subjectId);
-
-    List<LessonEntity> findAllBySubject_Students_Id(UUID studentId);
 }

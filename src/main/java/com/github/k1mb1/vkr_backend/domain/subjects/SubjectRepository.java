@@ -12,19 +12,8 @@ public interface SubjectRepository
         JpaRepository<SubjectEntity, UUID>,
         JpaSpecificationExecutor<SubjectEntity>
 {
-    @EntityGraph(
-        value = "Subject.withAssociations",
-        type = EntityGraph.EntityGraphType.LOAD
-    )
-    Optional<SubjectEntity> findWithDetailsById(UUID id);
-
     @EntityGraph(attributePaths = "students")
     Optional<SubjectEntity> findWithStudentsById(UUID id);
 
-    @EntityGraph(attributePaths = "teachers")
-    Optional<SubjectEntity> findWithTeachersById(UUID id);
-
     List<SubjectEntity> findAllByTeachers_Id(UUID teacherId);
-
-    List<SubjectEntity> findAllByStudents_Id(UUID studentId);
 }

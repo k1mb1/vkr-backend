@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SubjectStudentController implements SubjectStudentApi {
 
-    private final SubjectService subjectService;
+    final SubjectService subjectService;
 
     @Override
     public ResponseEntity<Page<StudentResponse>> findStudentsBySubject(
@@ -34,6 +34,15 @@ public class SubjectStudentController implements SubjectStudentApi {
     ) {
         subjectService.addStudentToSubject(subjectId, studentId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @Override
+    public ResponseEntity<Void> addStudentsByUsernames(
+        UUID subjectId,
+        List<String> usernames
+    ) {
+        subjectService.addStudentsToSubjectByUsernames(subjectId, usernames);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Override

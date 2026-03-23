@@ -29,6 +29,4 @@ public interface LessonMapper {
         @MappingTarget LessonEntity entity,
         UpdateLessonRequest request
     );
-
-    LessonEntity toEntity(LessonResponse lessonResponse);
 }

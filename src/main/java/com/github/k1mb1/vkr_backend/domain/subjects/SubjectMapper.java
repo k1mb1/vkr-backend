@@ -6,7 +6,6 @@ import com.github.k1mb1.vkr_backend.domain.lessons.LessonMapper;
 import com.github.k1mb1.vkr_backend.domain.students.StudentMapper;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
-import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import org.mapstruct.*;
 
@@ -40,15 +39,10 @@ public interface SubjectMapper {
         UpdateSubjectRequest request
     );
 
-    SubjectEntity toEntity(SubjectResponse subjectResponse);
-
     @AfterMapping
     default void linkLessons(@MappingTarget SubjectEntity subjectEntity) {
         subjectEntity
             .getLessons()
             .forEach(lesson -> lesson.setSubject(subjectEntity));
     }
-
-    @InheritInverseConfiguration(name = "toEntity")
-    SubjectDetailsResponse toDetailsResponse(SubjectEntity subjectEntity);
 }

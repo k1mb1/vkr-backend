@@ -8,8 +8,6 @@ import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class LessonController implements LessonApi {
 
-    private final LessonService lessonService;
+    final LessonService lessonService;
 
     @Override
     public ResponseEntity<List<LessonResponse>> findAllBySubjectId(

@@ -8,9 +8,10 @@ import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class LessonService {
 
-    private final LessonRepository lessonRepository;
-    private final SubjectService subjectService;
-    private final LessonMapper lessonMapper;
-
-    public Page<LessonResponse> findAll(
-        LessonFilter filter,
-        Pageable pageable
-    ) {
-        return lessonRepository
-            .findAll(filter.toSpecification(), pageable)
-            .map(lessonMapper::toResponse);
-    }
+    final LessonRepository lessonRepository;
+    final SubjectService subjectService;
+    final LessonMapper lessonMapper;
 
     public List<LessonResponse> findAllBySubjectId(UUID subjectId) {
         return lessonRepository
@@ -38,31 +30,6 @@ public class LessonService {
             .stream()
             .map(lessonMapper::toResponse)
             .toList();
-    }
-
-    public List<LessonResponse> findAllByStudentId(UUID studentId) {
-        return lessonRepository
-            .findAllBySubject_Students_Id(studentId)
-            .stream()
-            .map(lessonMapper::toResponse)
-            .toList();
-    }
-
-    public LessonResponse findById(UUID id) {
-        return lessonRepository
-            .findById(id)
-            .map(lessonMapper::toResponse)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Lesson not found: " + id)
-            );
-    }
-
-    public LessonEntity findEntityById(UUID id) {
-        return lessonRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Lesson not found: " + id)
-            );
     }
 
     @Transactional
@@ -81,32 +48,31 @@ public class LessonService {
         CreateLessonsByTypeRequest request
     ) {
         var subject = subjectService.findEntityById(request.subjectId());
-        var result = new java.util.ArrayList<LessonEntity>(
-            request.lectureCount() + request.practiceCount()
+
+        var lectures = IntStream.range(0, request.lectureCount()).mapToObj(i ->
+            LessonEntity.builder()
+                .name("Лекция " + (i + 1))
+                .type(LessonType.LECTURE)
+                .subject(subject)
+                .build()
         );
 
-        for (int i = 0; i < request.lectureCount(); i++) {
-            result.add(
-                LessonEntity.builder()
-                    .name("Лекция " + (i + 1))
-                    .type(LessonType.LECTURE)
-                    .subject(subject)
-                    .build()
-            );
-        }
-
-        for (int i = 0; i < request.practiceCount(); i++) {
-            result.add(
+        var practices = IntStream.range(0, request.practiceCount()).mapToObj(
+            i ->
                 LessonEntity.builder()
                     .name("Практика " + (i + 1))
                     .type(LessonType.PRACTICE)
                     .subject(subject)
                     .build()
-            );
-        }
+        );
 
-        return lessonRepository
-            .saveAll(result)
+        return Stream.concat(lectures, practices)
+            .collect(
+                Collectors.collectingAndThen(
+                    Collectors.toList(),
+                    lessonRepository::saveAll
+                )
+            )
             .stream()
             .map(lessonMapper::toResponse)
             .toList();

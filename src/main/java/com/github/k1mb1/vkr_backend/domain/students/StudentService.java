@@ -5,11 +5,8 @@ import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentReques
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,51 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class StudentService {
 
-    private final StudentRepository studentRepository;
-    private final StudentGroupService groupService;
-    private final StudentMapper studentMapper;
-
-    public Page<StudentResponse> findAll(
-        StudentFilter filter,
-        Pageable pageable
-    ) {
-        return studentRepository
-            .findAll(filter.toSpecification(), pageable)
-            .map(studentMapper::toResponse);
-    }
-
-    public List<StudentResponse> findAllBySubjectId(UUID subjectId) {
-        return studentRepository
-            .findAllBySubjects_Id(subjectId)
-            .stream()
-            .map(studentMapper::toResponse)
-            .toList();
-    }
-
-    public List<StudentResponse> findAllByGroupId(UUID groupId) {
-        return studentRepository
-            .findAllByGroup_Id(groupId)
-            .stream()
-            .map(studentMapper::toResponse)
-            .toList();
-    }
-
-    public StudentResponse findById(UUID id) {
-        return studentRepository
-            .findById(id)
-            .map(studentMapper::toResponse)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Student not found: " + id)
-            );
-    }
-
-    public StudentEntity findEntityById(UUID id) {
-        return studentRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Student not found: " + id)
-            );
-    }
+    final StudentRepository studentRepository;
+    final StudentGroupService groupService;
+    final StudentMapper studentMapper;
 
     @Transactional
     public StudentResponse create(CreateStudentRequest request) {
@@ -85,13 +40,5 @@ public class StudentService {
         }
         studentMapper.update(entity, request);
         return studentMapper.toResponse(studentRepository.save(entity));
-    }
-
-    @Transactional
-    public void delete(UUID id) {
-        if (!studentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Student not found: " + id);
-        }
-        studentRepository.deleteById(id);
     }
 }

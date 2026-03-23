@@ -2,14 +2,10 @@ package com.github.k1mb1.vkr_backend.domain.teachers;
 
 import com.github.k1mb1.vkr_backend.apis.TeacherApi;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
-import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
