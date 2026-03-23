@@ -2,25 +2,23 @@ package com.github.k1mb1.vkr_backend.domain.teachers;
 
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
-
 @Entity
 @Table(
-        name = "teachers",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = "username"),
-                @UniqueConstraint(columnNames = "email")
-        }
+    name = "teachers",
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = "username"),
+        @UniqueConstraint(columnNames = "email"),
+    }
 )
 @EntityListeners(AuditingEntityListener.class)
 @Getter
@@ -29,8 +27,8 @@ import java.util.UUID;
 @SuperBuilder
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
 @NamedEntityGraph(
-        name = "Teacher.withSubjects",
-        attributeNodes = @NamedAttributeNode("subjects")
+    name = "Teacher.withSubjects",
+    attributeNodes = @NamedAttributeNode("subjects")
 )
 public class TeacherEntity {
 
@@ -40,12 +38,21 @@ public class TeacherEntity {
     UUID id;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "timestamp with time zone")
+    @Column(
+        name = "created_at",
+        nullable = false,
+        updatable = false,
+        columnDefinition = "timestamp with time zone"
+    )
     @ToString.Include
     Instant createdAt;
 
     @LastModifiedDate
-    @Column(name = "updated_at", nullable = false, columnDefinition = "timestamp with time zone")
+    @Column(
+        name = "updated_at",
+        nullable = false,
+        columnDefinition = "timestamp with time zone"
+    )
     @ToString.Include
     Instant updatedAt;
 

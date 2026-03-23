@@ -1,8 +1,9 @@
+server:
+  port: ${PORT:8081}
 spring:
   application:
     name: vkr-backend
   datasource:
-    # Вариант A: прямо берем переменные SPRING_DATASOURCE_*
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}

@@ -11,14 +11,13 @@ import com.github.k1mb1.vkr_backend.domain.teachers.TeacherMapper;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherRepository;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,34 +31,46 @@ public class SubjectService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
 
-    public Page<SubjectResponse> findAll(SubjectFilter filter, Pageable pageable) {
-        return subjectRepository.findAll(filter.toSpecification(), pageable)
-                .map(subjectMapper::toResponse);
+    public Page<SubjectResponse> findAll(
+        SubjectFilter filter,
+        Pageable pageable
+    ) {
+        return subjectRepository
+            .findAll(filter.toSpecification(), pageable)
+            .map(subjectMapper::toResponse);
     }
 
     public List<SubjectResponse> findAllByTeacherId(UUID teacherId) {
-        return subjectRepository.findAllByTeachers_Id(teacherId)
-                .stream()
-                .map(subjectMapper::toResponse)
-                .toList();
+        return subjectRepository
+            .findAllByTeachers_Id(teacherId)
+            .stream()
+            .map(subjectMapper::toResponse)
+            .toList();
     }
 
     public List<SubjectResponse> findAllByStudentId(UUID studentId) {
-        return subjectRepository.findAllByStudents_Id(studentId)
-                .stream()
-                .map(subjectMapper::toResponse)
-                .toList();
+        return subjectRepository
+            .findAllByStudents_Id(studentId)
+            .stream()
+            .map(subjectMapper::toResponse)
+            .toList();
     }
 
     public SubjectDetailsResponse findById(UUID id) {
-        return subjectRepository.findWithDetailsById(id)
-                .map(subjectMapper::toDetailsResponse)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + id));
+        return subjectRepository
+            .findWithDetailsById(id)
+            .map(subjectMapper::toDetailsResponse)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + id)
+            );
     }
 
     public SubjectEntity findEntityById(UUID id) {
-        return subjectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + id));
+        return subjectRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + id)
+            );
     }
 
     @Transactional
@@ -72,8 +83,11 @@ public class SubjectService {
 
     @Transactional
     public SubjectResponse update(UUID id, UpdateSubjectRequest request) {
-        var entity = subjectRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + id));
+        var entity = subjectRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + id)
+            );
         subjectMapper.update(entity, request);
         return subjectMapper.toResponse(subjectRepository.save(entity));
     }
@@ -93,15 +107,22 @@ public class SubjectService {
 
     // --- Student association ---
 
-    public Page<StudentResponse> findStudentsBySubject(UUID subjectId, Pageable pageable) {
-        return studentRepository.findAllBySubjects_Id(subjectId, pageable)
-                .map(studentMapper::toResponse);
+    public Page<StudentResponse> findStudentsBySubject(
+        UUID subjectId,
+        Pageable pageable
+    ) {
+        return studentRepository
+            .findAllBySubjects_Id(subjectId, pageable)
+            .map(studentMapper::toResponse);
     }
 
     @Transactional
     public void addStudentToSubject(UUID subjectId, UUID studentId) {
-        var subject = subjectRepository.findWithStudentsById(subjectId)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+        var subject = subjectRepository
+            .findWithStudentsById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
         var student = studentRepository.getReferenceById(studentId);
         subject.getStudents().add(student);
         subjectRepository.save(subject);
@@ -109,66 +130,91 @@ public class SubjectService {
 
     @Transactional
     public void addStudentsToSubject(UUID subjectId, List<UUID> studentIds) {
-        var subject = subjectRepository.findWithStudentsById(subjectId)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
-        studentIds.forEach(id -> subject.getStudents().add(studentRepository.getReferenceById(id)));
+        var subject = subjectRepository
+            .findWithStudentsById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
+        studentIds.forEach(id ->
+            subject.getStudents().add(studentRepository.getReferenceById(id))
+        );
         subjectRepository.save(subject);
     }
 
-        @Transactional
-        public void addStudentsToSubjectByUsernames(UUID subjectId, List<String> usernames) {
-        var subject = subjectRepository.findWithStudentsById(subjectId)
-            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+    @Transactional
+    public void addStudentsToSubjectByUsernames(
+        UUID subjectId,
+        List<String> usernames
+    ) {
+        var subject = subjectRepository
+            .findWithStudentsById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
 
-        var normalizedUsernames = usernames.stream()
+        var normalizedUsernames = usernames
+            .stream()
             .map(String::trim)
             .filter(username -> !username.isBlank())
             .distinct()
             .toList();
 
-        var existingStudentsByUsername = studentRepository.findAllByUsernameIn(normalizedUsernames)
+        var existingStudentsByUsername = studentRepository
+            .findAllByUsernameIn(normalizedUsernames)
             .stream()
-            .collect(java.util.stream.Collectors.toMap(
-                s -> s.getUsername().trim(),
-                s -> s,
-                (left, right) -> left
-            ));
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    s -> s.getUsername().trim(),
+                    s -> s,
+                    (left, right) -> left
+                )
+            );
 
         normalizedUsernames.forEach(username -> {
             var student = existingStudentsByUsername.get(username);
             if (student == null) {
-            student = studentRepository.save(
-                com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
-                    .username(username)
-                    .build()
-            );
-            existingStudentsByUsername.put(username, student);
+                student = studentRepository.save(
+                    com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
+                        .username(username)
+                        .build()
+                );
+                existingStudentsByUsername.put(username, student);
             }
             subject.getStudents().add(student);
         });
 
         subjectRepository.save(subject);
-        }
+    }
 
     @Transactional
     public void removeStudentFromSubject(UUID subjectId, UUID studentId) {
-        var subject = subjectRepository.findWithStudentsById(subjectId)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+        var subject = subjectRepository
+            .findWithStudentsById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
         subject.getStudents().removeIf(s -> s.getId().equals(studentId));
         subjectRepository.save(subject);
     }
 
     // --- Teacher association ---
 
-    public Page<TeacherResponse> findTeachersBySubject(UUID subjectId, Pageable pageable) {
-        return teacherRepository.findAllBySubjects_Id(subjectId, pageable)
-                .map(teacherMapper::toResponse);
+    public Page<TeacherResponse> findTeachersBySubject(
+        UUID subjectId,
+        Pageable pageable
+    ) {
+        return teacherRepository
+            .findAllBySubjects_Id(subjectId, pageable)
+            .map(teacherMapper::toResponse);
     }
 
     @Transactional
     public void addTeacherToSubject(UUID subjectId, UUID teacherId) {
-        var subject = subjectRepository.findWithTeachersById(subjectId)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+        var subject = subjectRepository
+            .findWithTeachersById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
         var teacher = teacherRepository.getReferenceById(teacherId);
         subject.getTeachers().add(teacher);
         subjectRepository.save(subject);
@@ -176,8 +222,11 @@ public class SubjectService {
 
     @Transactional
     public void removeTeacherFromSubject(UUID subjectId, UUID teacherId) {
-        var subject = subjectRepository.findWithTeachersById(subjectId)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+        var subject = subjectRepository
+            .findWithTeachersById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
         subject.getTeachers().removeIf(t -> t.getId().equals(teacherId));
         subjectRepository.save(subject);
     }

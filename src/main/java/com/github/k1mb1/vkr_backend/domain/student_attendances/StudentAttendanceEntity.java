@@ -17,6 +17,7 @@ import org.hibernate.type.SqlTypes;
 @Setter
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
 public class StudentAttendanceEntity extends AuditableBase {
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)
     LessonEntity lesson;

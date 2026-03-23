@@ -4,6 +4,8 @@ import com.github.k1mb1.vkr_backend.apis.TeacherApi;
 import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherDetailsResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -11,9 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,24 +22,12 @@ public class TeacherController implements TeacherApi {
     final TeacherService teacherService;
 
     @Override
-    public ResponseEntity<Page<TeacherResponse>> findAll(TeacherFilter filter, Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(teacherService.findAll(filter, pageable));
+    public ResponseEntity<TeacherResponse> createOrUpdate(
+        UUID id,
+        UpdateTeacherRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            teacherService.createOrUpdate(id, request)
+        );
     }
-
-
-    @Override
-    public ResponseEntity<List<TeacherResponse>> findAllBySubjectId(UUID subjectId) {
-        return ResponseEntity.status(HttpStatus.OK).body(teacherService.findAllBySubjectId(subjectId));
-    }
-
-    @Override
-    public ResponseEntity<TeacherDetailsResponse> findById(UUID id) {
-        return ResponseEntity.status(HttpStatus.OK).body(teacherService.findById(id));
-    }
-
-    @Override
-    public ResponseEntity<TeacherResponse> createOrUpdate(UUID id, UpdateTeacherRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(teacherService.createOrUpdate(id, request));
-    }
-
 }

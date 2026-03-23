@@ -4,11 +4,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record StudentDetailsResponse(
-        UUID id,
-        String username,
-        UUID groupId,
-        Instant createdAt,
-        Instant updatedAt
-) {
-}
+    UUID id,
+    String username,
+    UUID groupId,
+    Instant createdAt,
+    Instant updatedAt
+) {}
 //TODO add subjects.ids

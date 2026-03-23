@@ -1,15 +1,13 @@
 package com.github.k1mb1.vkr_backend.domain.students;
 
-import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
 import com.github.k1mb1.vkr_backend.domain.AuditableBase;
+import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.util.HashSet;
 import java.util.Set;
-
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "students")

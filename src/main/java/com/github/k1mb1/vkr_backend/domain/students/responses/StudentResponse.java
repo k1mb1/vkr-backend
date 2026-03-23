@@ -4,10 +4,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record StudentResponse(
-        UUID id,
-        String username,
-        UUID groupId,
-        Instant createdAt,
-        Instant updatedAt
-) {
-}
+    UUID id,
+    String username,
+    UUID groupId,
+    Instant createdAt,
+    Instant updatedAt
+) {}

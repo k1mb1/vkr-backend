@@ -1,14 +1,17 @@
 package com.github.k1mb1.vkr_backend.domain.students;
 
+import java.util.List;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.List;
-import java.util.UUID;
-
-public interface StudentRepository extends JpaRepository<StudentEntity, UUID>, JpaSpecificationExecutor<StudentEntity> {
+public interface StudentRepository
+    extends
+        JpaRepository<StudentEntity, UUID>,
+        JpaSpecificationExecutor<StudentEntity>
+{
     List<StudentEntity> findAllBySubjects_Id(UUID subjectId);
 
     List<StudentEntity> findAllByUsernameIn(List<String> usernames);

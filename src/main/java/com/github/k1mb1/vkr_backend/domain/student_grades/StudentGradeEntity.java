@@ -10,7 +10,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-
 @Entity
 @Table(name = "student_grades")
 @NoArgsConstructor

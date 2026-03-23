@@ -5,10 +5,9 @@ import java.util.List;
 import java.util.UUID;
 
 public record StudentGroupDetailResponse(
-        UUID id,
-        String name,
-        List<UUID> studentIds,
-        Instant createdAt,
-        Instant updatedAt
-) {
-}
+    UUID id,
+    String name,
+    List<UUID> studentIds,
+    Instant createdAt,
+    Instant updatedAt
+) {}

@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class VkrBackendApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(VkrBackendApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(VkrBackendApplication.class, args);
+    }
 }
