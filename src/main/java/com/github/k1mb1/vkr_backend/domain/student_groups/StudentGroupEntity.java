@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
-import com.github.k1mb1.vkr_backend.domain.AuditableBase;
+import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import jakarta.persistence.*;
 import java.util.HashSet;
@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @SuperBuilder(toBuilder = true)
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class StudentGroupEntity extends AuditableBase {
+public class StudentGroupEntity extends BaseEntity {
 
     @Column(nullable = false)
     @ToString.Include

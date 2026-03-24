@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_attendances;
 
-import com.github.k1mb1.vkr_backend.domain.AuditableBase;
+import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import jakarta.persistence.*;
@@ -16,7 +16,7 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @Setter
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class StudentAttendanceEntity extends AuditableBase {
+public class StudentAttendanceEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)

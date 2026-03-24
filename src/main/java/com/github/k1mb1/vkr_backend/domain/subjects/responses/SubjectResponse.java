@@ -7,6 +7,8 @@ public record SubjectResponse(
     UUID id,
     String name,
     String description,
+    boolean archived,
+    Instant archivedAt,
     Instant createdAt,
     Instant updatedAt
 ) {}

@@ -29,7 +29,7 @@ public class SubjectService {
 
     public List<SubjectResponse> findAllByTeacherId(UUID teacherId) {
         return subjectRepository
-            .findAllByTeachers_Id(teacherId)
+            .findAllByTeachers_IdAndArchivedFalse(teacherId)
             .stream()
             .map(subjectMapper::toResponse)
             .toList();

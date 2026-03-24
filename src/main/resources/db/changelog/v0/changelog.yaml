@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260205060622-create-uuid-extension.sql
   - include:
       file: db/changelog/v0/20260215214957-initial-tables.sql
+  - include:
+      file: db/changelog/v0/20260324172624_add_archiving.sql

@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.domain.teachers;
 
+import com.github.k1mb1.vkr_backend.domain.based.Auditable;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import jakarta.persistence.*;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -30,31 +30,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
     name = "Teacher.withSubjects",
     attributeNodes = @NamedAttributeNode("subjects")
 )
-public class TeacherEntity {
+public class TeacherEntity extends Auditable {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     @ToString.Include
     UUID id;
-
-    @CreatedDate
-    @Column(
-        name = "created_at",
-        nullable = false,
-        updatable = false,
-        columnDefinition = "timestamp with time zone"
-    )
-    @ToString.Include
-    Instant createdAt;
-
-    @LastModifiedDate
-    @Column(
-        name = "updated_at",
-        nullable = false,
-        columnDefinition = "timestamp with time zone"
-    )
-    @ToString.Include
-    Instant updatedAt;
 
     @Column(nullable = false)
     @ToString.Include

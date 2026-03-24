@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 public interface SubjectApi {
     @Operation(summary = "List all subjects by teacher")
     @GetMapping("/teachers/{teacherId}")
+    @PreAuthorize(
+            "@securityService.isSameUser(authentication, #teacherId())"
+    )
     ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
         @PathVariable UUID teacherId
     );
@@ -32,4 +35,13 @@ public interface SubjectApi {
     ResponseEntity<SubjectResponse> create(
         @RequestBody @Valid CreateSubjectRequest request
     );
+
+//    @Operation(summary = "Archive subject")
+//    @PatchMapping("/{subjectId}/archive")
+//    @PreAuthorize(
+//            "@securityService.canAccessSubject(authentication, #subjectId)"
+//    )
+//    ResponseEntity<Void> archive(
+//            @PathVariable UUID subjectId
+//    );
 }

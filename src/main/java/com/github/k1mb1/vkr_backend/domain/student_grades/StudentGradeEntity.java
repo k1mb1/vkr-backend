@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_grades;
 
-import com.github.k1mb1.vkr_backend.domain.AuditableBase;
+import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import jakarta.persistence.*;
@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @SuperBuilder(toBuilder = true)
 @ToString(onlyExplicitlyIncluded = true, callSuper = true)
-public class StudentGradeEntity extends AuditableBase {
+public class StudentGradeEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)

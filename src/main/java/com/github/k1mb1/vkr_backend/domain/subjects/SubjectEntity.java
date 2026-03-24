@@ -1,12 +1,13 @@
 package com.github.k1mb1.vkr_backend.domain.subjects;
 
-import com.github.k1mb1.vkr_backend.domain.AuditableBase;
+import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherEntity;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.time.Instant;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -25,7 +26,7 @@ import lombok.experimental.SuperBuilder;
         @NamedAttributeNode("lessons"),
     }
 )
-public class SubjectEntity extends AuditableBase {
+public class SubjectEntity extends BaseEntity {
 
     @Column(nullable = false)
     @ToString.Include
@@ -33,6 +34,13 @@ public class SubjectEntity extends AuditableBase {
 
     @Column(columnDefinition = "TEXT")
     String description;
+
+    @Column(nullable = false)
+    @Builder.Default
+    boolean archived = false;
+
+    @Column(name = "archived_at")
+    Instant archivedAt;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

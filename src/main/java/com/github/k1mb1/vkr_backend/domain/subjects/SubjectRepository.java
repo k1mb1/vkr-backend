@@ -16,4 +16,6 @@ public interface SubjectRepository
     Optional<SubjectEntity> findWithStudentsById(UUID id);
 
     List<SubjectEntity> findAllByTeachers_Id(UUID teacherId);
+
+    List<SubjectEntity> findAllByTeachers_IdAndArchivedFalse(UUID teacherId);
 }

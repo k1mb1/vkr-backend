@@ -17,6 +17,8 @@ public record SubjectDetailsResponse(
     Instant updatedAt,
     String name,
     String description,
+    boolean archived,
+    Instant archivedAt,
     Set<TeacherResponse> teachers,
     Set<StudentResponse> students,
     Set<LessonResponse> lessons
