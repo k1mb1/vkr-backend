@@ -1,14 +1,24 @@
 package com.github.k1mb1.vkr_backend.services;
 
-import java.util.UUID;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
+
+import java.util.UUID;
 
 @Component("securityService")
 public class SecurityService {
 
-    public boolean isSameUser(Authentication authentication, UUID id) {
-        var subject = authentication.getName();
-        return subject != null && subject.equals(id.toString());
+    public boolean isSameUser(UUID id) {
+        if (id == null) {
+            return false;
+        }
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return false;
+        }
+        return id.toString().equals(jwt.getSubject());
     }
 }

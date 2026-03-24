@@ -35,6 +35,14 @@ public class SubjectService {
             .toList();
     }
 
+    public List<SubjectResponse> findAllArchivedByTeacherId(UUID teacherId) {
+        return subjectRepository
+            .findAllByTeachers_IdAndArchivedTrue(teacherId)
+            .stream()
+            .map(subjectMapper::toResponse)
+            .toList();
+    }
+
     public SubjectEntity findEntityById(UUID id) {
         return subjectRepository
             .findById(id)

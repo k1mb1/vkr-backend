@@ -21,7 +21,7 @@ public interface TeacherApi {
         summary = "Find or create teacher from JWT token (called on login)"
     )
     @PutMapping("/{id}")
-    @PreAuthorize("@securityService.isSameUser(authentication, #id)")
+    @PreAuthorize("@securityService.isSameUser(#id)")
     ResponseEntity<TeacherResponse> createOrUpdate(
         @PathVariable UUID id,
         @RequestBody @Valid UpdateTeacherRequest request

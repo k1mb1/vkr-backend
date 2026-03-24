@@ -21,27 +21,31 @@ public interface SubjectApi {
     @Operation(summary = "List all subjects by teacher")
     @GetMapping("/teachers/{teacherId}")
     @PreAuthorize(
-            "@securityService.isSameUser(authentication, #teacherId())"
+            "@securityService.isSameUser(#teacherId)"
     )
     ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
         @PathVariable UUID teacherId
     );
 
+    @Operation(summary = "List archived subjects by teacher")
+    @GetMapping("/teachers/{teacherId}/archived")
+    @PreAuthorize(
+            "@securityService.isSameUser(#teacherId)"
+    )
+    ResponseEntity<List<SubjectResponse>> findAllArchivedByTeacherId(
+        @PathVariable UUID teacherId
+    );
+
     @Operation(summary = "Create subject")
     @PostMapping
-    @PreAuthorize(
-        "@securityService.isSameUser(authentication, #request.teacherId())"
-    )
+    @PreAuthorize("@securityService.isSameUser(#request.teacherId)")
     ResponseEntity<SubjectResponse> create(
         @RequestBody @Valid CreateSubjectRequest request
     );
 
-//    @Operation(summary = "Archive subject")
-//    @PatchMapping("/{subjectId}/archive")
-//    @PreAuthorize(
-//            "@securityService.canAccessSubject(authentication, #subjectId)"
-//    )
-//    ResponseEntity<Void> archive(
-//            @PathVariable UUID subjectId
-//    );
+    @Operation(summary = "Archive subject")
+    @PatchMapping("/{subjectId}/archive")
+    ResponseEntity<SubjectResponse> archive(
+            @PathVariable UUID subjectId
+    );
 }

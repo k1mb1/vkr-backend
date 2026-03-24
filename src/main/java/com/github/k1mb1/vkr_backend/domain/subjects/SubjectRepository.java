@@ -18,4 +18,6 @@ public interface SubjectRepository
     List<SubjectEntity> findAllByTeachers_Id(UUID teacherId);
 
     List<SubjectEntity> findAllByTeachers_IdAndArchivedFalse(UUID teacherId);
+    
+    List<SubjectEntity> findAllByTeachers_IdAndArchivedTrue(UUID teacherId);
 }
