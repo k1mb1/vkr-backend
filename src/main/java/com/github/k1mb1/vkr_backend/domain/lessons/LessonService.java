@@ -220,19 +220,15 @@ public class LessonService {
 
         // Anchor to Monday of the week containing startDate
         LocalDate weekStart = entry.startDate().with(DayOfWeek.MONDAY);
-        LocalDate limit = entry.endDate() != null
-            ? entry.endDate()
-            : LocalDate.MAX; // totalCount guards the loop below
 
         outer:
-        while (!weekStart.isAfter(limit)) {
+        while (true) {
             // Emit matching days within this week window
             for (DayOfWeek dow : entry.daysOfWeek()) {
                 LocalDate candidate = weekStart.with(dow);
                 if (candidate.isBefore(entry.startDate())) continue;
-                if (candidate.isAfter(limit)) break outer;
                 result.add(candidate);
-                if (entry.totalCount() != null && result.size() >= entry.totalCount()) break outer;
+                if (result.size() >= entry.totalCount()) break outer;
             }
             weekStart = weekStart.plusWeeks(interval);
         }
@@ -249,10 +245,6 @@ public class LessonService {
         int interval = entry.intervalMonths();
         int anchorDayOfMonth = entry.startDate().getDayOfMonth();
 
-        LocalDate limit = entry.endDate() != null
-            ? entry.endDate()
-            : LocalDate.MAX;
-
         // Start from the month containing startDate
         LocalDate monthCursor = entry.startDate().withDayOfMonth(1);
 
@@ -261,7 +253,6 @@ public class LessonService {
             LocalDate anchor = monthCursor.withDayOfMonth(
                 Math.min(anchorDayOfMonth, monthCursor.lengthOfMonth())
             );
-            if (anchor.isAfter(limit)) break;
 
             for (DayOfWeek dow : entry.daysOfWeek()) {
                 // Find first occurrence of this weekday on or after anchor
@@ -270,14 +261,12 @@ public class LessonService {
                     candidate = candidate.plusDays(1);
                 }
                 if (candidate.isBefore(entry.startDate())) continue;
-                if (candidate.isAfter(limit)) continue;
 
                 result.add(candidate);
-                if (entry.totalCount() != null && result.size() >= entry.totalCount()) break outer;
+                if (result.size() >= entry.totalCount()) break outer;
             }
 
             monthCursor = monthCursor.plusMonths(interval);
-            if (monthCursor.isAfter(limit)) break;
         }
         return result;
     }

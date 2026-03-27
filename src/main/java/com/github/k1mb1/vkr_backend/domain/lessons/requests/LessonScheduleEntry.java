@@ -2,7 +2,6 @@ package com.github.k1mb1.vkr_backend.domain.lessons.requests;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonType;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -22,7 +21,7 @@ import java.util.List;
  *       (first matching weekday on or after the anchor day of the month).</li>
  * </ul>
  *
- * <p>Stop condition: supply either {@code endDate} or {@code totalCount}, not both.
+ * <p>Stop condition: {@code totalCount} — total number of lessons to generate for this entry.
  *
  * <p>Two lessons on the same day: add two entries with the same day but different {@code time} values.
  * The generated lesson name will include an ordinal suffix when multiple lessons land on the same date
@@ -65,23 +64,9 @@ public record LessonScheduleEntry(
      */
     @Min(1) Integer intervalMonths,
 
-    /**
-     * Inclusive end date — generate lessons up to and including this date.
-     * Supply either {@code endDate} or {@code totalCount}, not both.
-     */
-    LocalDate endDate,
-
-    /**
-     * Maximum number of lessons to generate for this entry.
-     * Supply either {@code endDate} or {@code totalCount}, not both.
-     */
-    @Min(1) Integer totalCount
+    /** Total number of lessons to generate for this entry. */
+    @NotNull @Min(1) Integer totalCount
 ) {
-
-    @AssertTrue(message = "Provide either endDate or totalCount, not both and not neither")
-    public boolean hasExactlyOneStopCondition() {
-        return (endDate != null) ^ (totalCount != null);
-    }
 
     @AssertTrue(message = "type must be LECTURE or PRACTICE, not NONE")
     public boolean hasConcreteType() {
