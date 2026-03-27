@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleLessonsR
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.LessonScheduleEntry;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.LessonSlot;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.RecurrenceType;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
@@ -128,33 +129,33 @@ public class LessonService {
     public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
         var subject = subjectService.findEntityById(request.subjectId());
 
-        // 1. Build (date, type, time, labelBase) tuples from every entry
-        record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime, String labelBase) {}
+        // (date, type, dateTime) tuple — one per generated lesson
+        record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime) {}
 
         List<Slot> slots = new ArrayList<>();
         for (LessonScheduleEntry entry : request.schedules()) {
-            List<LocalDate> dates = expandDates(entry);
-            String labelBase = labelPrefix(entry.type());
-            for (LocalDate d : dates) {
-                OffsetDateTime odt = OffsetDateTime.of(d, entry.time(), ZoneOffset.UTC);
-                slots.add(new Slot(d, entry.type(), odt, labelBase));
+            // expandSlots returns (date, lessonSlot) pairs in chronological order
+            List<Map.Entry<LocalDate, LessonSlot>> expanded = expandSlots(entry);
+            for (var pair : expanded) {
+                LocalDate d = pair.getKey();
+                LessonSlot ls = pair.getValue();
+                OffsetDateTime odt = OffsetDateTime.of(d, ls.time(), ZoneOffset.UTC);
+                slots.add(new Slot(d, ls.type(), odt));
             }
         }
 
-        // 2. Sort chronologically so ordinal numbering is predictable
+        // Sort chronologically so ordinal numbering is stable
         slots.sort(Comparator.comparing(Slot::dateTime));
 
-        // 3. Assign per-type global ordinals and per-(date,type) daily ordinals
-        //    to detect collisions (2 lessons of same type on same day)
-        Map<LessonType, Integer> typeCounter = new HashMap<>();
-        // key = "date|type", value = count of slots landing on that combo
+        // Count how many times each (date, type) combo appears — detect same-day collisions
         Map<String, Integer> dayTypeCount = new HashMap<>();
         Map<String, Integer> dayTypeSeen  = new HashMap<>();
-
         for (Slot s : slots) {
-            String key = s.date() + "|" + s.type();
-            dayTypeCount.merge(key, 1, Integer::sum);
+            dayTypeCount.merge(s.date() + "|" + s.type(), 1, Integer::sum);
         }
+
+        // Global per-type ordinal counter (Лекция 1, Лекция 2 …)
+        Map<LessonType, Integer> typeCounter = new HashMap<>();
 
         List<LessonEntity> entities = new ArrayList<>();
         for (Slot s : slots) {
@@ -164,8 +165,8 @@ public class LessonService {
             boolean collision = dayTypeCount.get(key) > 1;
 
             String name = collision
-                ? s.labelBase() + " " + globalOrdinal + " (" + dailyOrdinal + ")"
-                : s.labelBase() + " " + globalOrdinal;
+                ? labelPrefix(s.type()) + " " + globalOrdinal + " (" + dailyOrdinal + ")"
+                : labelPrefix(s.type()) + " " + globalOrdinal;
 
             entities.add(
                 LessonEntity.builder()
@@ -196,10 +197,10 @@ public class LessonService {
     }
 
     /**
-     * Expands a single {@link LessonScheduleEntry} into the list of concrete dates
-     * on which lessons should be created.
+     * Expands a {@link LessonScheduleEntry} into an ordered list of (date, slot) pairs,
+     * respecting {@code totalCount} as the combined stop condition across all slots.
      */
-    private static List<LocalDate> expandDates(LessonScheduleEntry entry) {
+    private static List<Map.Entry<LocalDate, LessonSlot>> expandSlots(LessonScheduleEntry entry) {
         return switch (entry.recurrence()) {
             case WEEKLY  -> expandWeekly(entry);
             case MONTHLY -> expandMonthly(entry);
@@ -207,45 +208,54 @@ public class LessonService {
     }
 
     /**
-     * Weekly expansion: starting from {@code startDate}, advance week-by-week in
-     * steps of {@code intervalWeeks} and emit a date for each matching day-of-week.
+     * Walks the interval cycle week by week.
+     * Within each cycle of {@code intervalWeeks} weeks, only slots whose
+     * {@code weekIndex} matches the current cycle-offset week fire.
      *
-     * <p>The algorithm walks Monday-anchored "week windows" of width {@code intervalWeeks * 7}
-     * days. Within every selected window it emits any day that matches {@code daysOfWeek}
-     * and falls on or after {@code startDate}.
+     * <p>Days within one week are emitted in DayOfWeek order as declared in the slot.
+     * All slots are interleaved chronologically before the totalCount cap is applied.
      */
-    private static List<LocalDate> expandWeekly(LessonScheduleEntry entry) {
-        List<LocalDate> result = new ArrayList<>();
+    private static List<Map.Entry<LocalDate, LessonSlot>> expandWeekly(LessonScheduleEntry entry) {
+        List<Map.Entry<LocalDate, LessonSlot>> result = new ArrayList<>();
         int interval = entry.intervalWeeks();
 
-        // Anchor to Monday of the week containing startDate
-        LocalDate weekStart = entry.startDate().with(DayOfWeek.MONDAY);
+        // Anchor to Monday of the week containing startDate — cycle offset 0
+        LocalDate cycleStart = entry.startDate().with(DayOfWeek.MONDAY);
 
         outer:
         while (true) {
-            // Emit matching days within this week window
-            for (DayOfWeek dow : entry.daysOfWeek()) {
-                LocalDate candidate = weekStart.with(dow);
-                if (candidate.isBefore(entry.startDate())) continue;
-                result.add(candidate);
-                if (result.size() >= entry.totalCount()) break outer;
+            // Iterate over each week within this cycle
+            for (int weekOffset = 0; weekOffset < interval; weekOffset++) {
+                LocalDate weekStart = cycleStart.plusWeeks(weekOffset);
+
+                // Fire every slot whose weekIndex matches this week
+                for (LessonSlot slot : entry.slots()) {
+                    if (slot.resolvedWeekIndex() != weekOffset) continue;
+
+                    for (DayOfWeek dow : slot.daysOfWeek()) {
+                        LocalDate candidate = weekStart.with(dow);
+                        if (candidate.isBefore(entry.startDate())) continue;
+                        result.add(Map.entry(candidate, slot));
+                        if (result.size() >= entry.totalCount()) break outer;
+                    }
+                }
             }
-            weekStart = weekStart.plusWeeks(interval);
+            cycleStart = cycleStart.plusWeeks(interval);
         }
+
         return result;
     }
 
     /**
-     * Monthly expansion: for each selected month (stepping by {@code intervalMonths}),
-     * find the first occurrence of each listed day-of-week that falls on or after
-     * the day-of-month of {@code startDate}.
+     * Monthly expansion: for each month, fires every slot once by finding the first
+     * occurrence of each listed weekday on or after the anchor day of that month.
+     * {@code weekIndex} is ignored for monthly recurrence.
      */
-    private static List<LocalDate> expandMonthly(LessonScheduleEntry entry) {
-        List<LocalDate> result = new ArrayList<>();
+    private static List<Map.Entry<LocalDate, LessonSlot>> expandMonthly(LessonScheduleEntry entry) {
+        List<Map.Entry<LocalDate, LessonSlot>> result = new ArrayList<>();
         int interval = entry.intervalMonths();
         int anchorDayOfMonth = entry.startDate().getDayOfMonth();
 
-        // Start from the month containing startDate
         LocalDate monthCursor = entry.startDate().withDayOfMonth(1);
 
         outer:
@@ -254,20 +264,22 @@ public class LessonService {
                 Math.min(anchorDayOfMonth, monthCursor.lengthOfMonth())
             );
 
-            for (DayOfWeek dow : entry.daysOfWeek()) {
-                // Find first occurrence of this weekday on or after anchor
-                LocalDate candidate = anchor;
-                while (candidate.getDayOfWeek() != dow) {
-                    candidate = candidate.plusDays(1);
-                }
-                if (candidate.isBefore(entry.startDate())) continue;
+            for (LessonSlot slot : entry.slots()) {
+                for (DayOfWeek dow : slot.daysOfWeek()) {
+                    LocalDate candidate = anchor;
+                    while (candidate.getDayOfWeek() != dow) {
+                        candidate = candidate.plusDays(1);
+                    }
+                    if (candidate.isBefore(entry.startDate())) continue;
 
-                result.add(candidate);
-                if (result.size() >= entry.totalCount()) break outer;
+                    result.add(Map.entry(candidate, slot));
+                    if (result.size() >= entry.totalCount()) break outer;
+                }
             }
 
             monthCursor = monthCursor.plusMonths(interval);
         }
+
         return result;
     }
 }

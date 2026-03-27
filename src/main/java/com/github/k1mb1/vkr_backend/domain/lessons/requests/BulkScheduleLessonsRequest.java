@@ -9,40 +9,24 @@ import java.util.UUID;
 /**
  * Request to bulk-generate lessons for a subject using recurring schedules.
  *
- * <p>Each entry in {@code schedules} independently describes one recurrence rule
- * for a given lesson type. You can mix lecture and practice entries freely:
+ * <p>Each entry combines all lesson types (lectures + practices) within one cycle,
+ * so a single entry can describe both a Monday lecture and a Wednesday practice
+ * repeating every 2 weeks — no need for separate entries per type.
  *
  * <pre>
  * {
  *   "subjectId": "...",
  *   "schedules": [
  *     {
- *       "type": "LECTURE",
  *       "recurrence": "WEEKLY",
- *       "daysOfWeek": ["MONDAY"],
- *       "time": "09:00",
- *       "startDate": "2025-09-01",
- *       "intervalWeeks": 1,
- *       "endDate": "2026-01-31"
- *     },
- *     {
- *       "type": "PRACTICE",
- *       "recurrence": "WEEKLY",
- *       "daysOfWeek": ["WEDNESDAY", "FRIDAY"],
- *       "time": "11:00",
- *       "startDate": "2025-09-03",
  *       "intervalWeeks": 2,
- *       "totalCount": 10
- *     },
- *     {
- *       "comment": "Second lecture on the same Monday at a different time",
- *       "type": "LECTURE",
- *       "recurrence": "WEEKLY",
- *       "daysOfWeek": ["MONDAY"],
- *       "time": "13:00",
  *       "startDate": "2025-09-01",
- *       "intervalWeeks": 1,
- *       "endDate": "2026-01-31"
+ *       "totalCount": 16,
+ *       "slots": [
+ *         { "type": "LECTURE",  "weekIndex": 0, "daysOfWeek": ["MONDAY"],    "time": "09:00" },
+ *         { "type": "LECTURE",  "weekIndex": 1, "daysOfWeek": ["MONDAY"],    "time": "09:00" },
+ *         { "type": "PRACTICE", "weekIndex": 1, "daysOfWeek": ["WEDNESDAY"], "time": "11:00" }
+ *       ]
  *     }
  *   ]
  * }

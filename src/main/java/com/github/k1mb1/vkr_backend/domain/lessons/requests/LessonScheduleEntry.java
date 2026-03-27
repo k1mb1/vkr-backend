@@ -1,53 +1,57 @@
 package com.github.k1mb1.vkr_backend.domain.lessons.requests;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.github.k1mb1.vkr_backend.domain.lessons.LessonType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 /**
- * Describes a recurring schedule for one lesson type (LECTURE or PRACTICE).
+ * One recurring schedule rule that can describe multiple lesson types (lectures + practices)
+ * within the same interval cycle — eliminating the need for a separate entry per type.
  *
- * <p>Recurrence modes:
- * <ul>
- *   <li>{@code WEEKLY}  — repeat every {@code intervalWeeks} weeks on the given {@code daysOfWeek}.</li>
- *   <li>{@code MONTHLY} — repeat every {@code intervalMonths} months on the given {@code daysOfWeek}
- *       (first matching weekday on or after the anchor day of the month).</li>
- * </ul>
+ * <p>The {@code slots} array defines what fires in each week of the cycle.
+ * {@code weekIndex} inside each slot identifies which week of the cycle (0-based) it belongs to.
  *
- * <p>Stop condition: {@code totalCount} — total number of lessons to generate for this entry.
+ * <p>WEEKLY example — 2-week cycle, lecture every week on Monday, practice only on odd weeks Wednesday:
+ * <pre>
+ * {
+ *   "recurrence": "WEEKLY",
+ *   "intervalWeeks": 2,
+ *   "startDate": "2025-09-01",
+ *   "totalCount": 16,
+ *   "slots": [
+ *     { "type": "LECTURE",  "weekIndex": 0, "daysOfWeek": ["MONDAY"],    "time": "09:00" },
+ *     { "type": "LECTURE",  "weekIndex": 1, "daysOfWeek": ["MONDAY"],    "time": "09:00" },
+ *     { "type": "PRACTICE", "weekIndex": 1, "daysOfWeek": ["WEDNESDAY"], "time": "11:00" }
+ *   ]
+ * }
+ * </pre>
  *
- * <p>Two lessons on the same day: add two entries with the same day but different {@code time} values.
- * The generated lesson name will include an ordinal suffix when multiple lessons land on the same date
- * (e.g. "Лекция 1 (2)" for the second lecture of that day).
+ * <p>MONTHLY example — every month, lecture on Monday and practice on Friday:
+ * <pre>
+ * {
+ *   "recurrence": "MONTHLY",
+ *   "intervalMonths": 1,
+ *   "startDate": "2025-09-01",
+ *   "totalCount": 10,
+ *   "slots": [
+ *     { "type": "LECTURE",  "daysOfWeek": ["MONDAY"],  "time": "09:00" },
+ *     { "type": "PRACTICE", "daysOfWeek": ["FRIDAY"],  "time": "11:00" }
+ *   ]
+ * }
+ * </pre>
+ *
+ * <p>Two lessons of the same type on the same day: add two slots with the same weekIndex and day
+ * but different {@code time}. Generated names get ordinal suffixes, e.g. "Лекция 3 (2)".
  */
 public record LessonScheduleEntry(
 
-    /** LECTURE or PRACTICE — NOT NONE. */
-    @NotNull LessonType type,
-
     /** Recurrence strategy. */
     @NotNull RecurrenceType recurrence,
-
-    /**
-     * Days of week on which this lesson occurs.
-     * For WEEKLY: every intervalWeeks-th week on these days.
-     * For MONTHLY: the first occurrence of each listed weekday on/after the anchor date each month.
-     */
-    @NotEmpty List<@NotNull DayOfWeek> daysOfWeek,
-
-    /**
-     * Start time of the lesson (e.g. 08:30).
-     * When two entries share the same date and type, ordinal suffixes are added to names
-     * so they remain distinguishable.
-     */
-    @NotNull @JsonFormat(pattern = "HH:mm") LocalTime time,
 
     /** Date of the very first occurrence; the schedule begins from this date. */
     @NotNull LocalDate startDate,
@@ -64,14 +68,19 @@ public record LessonScheduleEntry(
      */
     @Min(1) Integer intervalMonths,
 
-    /** Total number of lessons to generate for this entry. */
-    @NotNull @Min(1) Integer totalCount
-) {
+    /**
+     * Total number of lessons to generate across ALL slots in this entry combined.
+     * Generation stops once this many lessons have been collected.
+     */
+    @NotNull @Min(1) Integer totalCount,
 
-    @AssertTrue(message = "type must be LECTURE or PRACTICE, not NONE")
-    public boolean hasConcreteType() {
-        return type != null && type != LessonType.NONE;
-    }
+    /**
+     * All lesson slots within one cycle iteration.
+     * Each slot specifies the type, weekIndex (for WEEKLY), days of week, and time.
+     */
+    @NotEmpty List<@Valid LessonSlot> slots
+
+) {
 
     @AssertTrue(message = "intervalWeeks is required for WEEKLY recurrence")
     public boolean hasIntervalWeeksIfWeekly() {
@@ -81,5 +90,11 @@ public record LessonScheduleEntry(
     @AssertTrue(message = "intervalMonths is required for MONTHLY recurrence")
     public boolean hasIntervalMonthsIfMonthly() {
         return recurrence != RecurrenceType.MONTHLY || intervalMonths != null;
+    }
+
+    @AssertTrue(message = "weekIndex must be in range [0, intervalWeeks-1] for all WEEKLY slots")
+    public boolean hasValidWeekIndices() {
+        if (recurrence != RecurrenceType.WEEKLY || intervalWeeks == null || slots == null) return true;
+        return slots.stream().allMatch(s -> s.resolvedWeekIndex() < intervalWeeks);
     }
 }
