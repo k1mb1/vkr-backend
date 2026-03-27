@@ -51,6 +51,14 @@ public class SubjectService {
             );
     }
 
+    /**
+     * Returns a Hibernate proxy without hitting the DB.
+     * Use when you only need the entity as a FK reference (e.g. bulk inserts).
+     */
+    public SubjectEntity getReferenceById(UUID id) {
+        return subjectRepository.getReferenceById(id);
+    }
+
     @Transactional
     public SubjectResponse create(CreateSubjectRequest request) {
         var teacher = teacherRepository.getReferenceById(request.teacherId());

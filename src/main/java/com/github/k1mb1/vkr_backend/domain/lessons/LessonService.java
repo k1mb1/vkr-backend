@@ -127,7 +127,9 @@ public class LessonService {
      */
     @Transactional
     public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
-        var subject = subjectService.findEntityById(request.subjectId());
+        // getReferenceById — lazy proxy, не делает SELECT до первого обращения к полю.
+        // Subject нужен только как FK в INSERT, поэтому SELECT вообще не происходит.
+        var subject = subjectService.getReferenceById(request.subjectId());
 
         // (date, type, dateTime) tuple — one per generated lesson
         record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime) {}
