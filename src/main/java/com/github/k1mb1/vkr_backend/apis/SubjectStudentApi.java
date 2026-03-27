@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.apis;
 
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradesResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,12 @@ public interface SubjectStudentApi {
     ResponseEntity<Page<StudentResponse>> findStudentsBySubject(
         @PathVariable UUID subjectId,
         @ParameterObject Pageable pageable
+    );
+
+    @Operation(summary = "Get all grades for all students in a subject")
+    @GetMapping("/grades")
+    ResponseEntity<List<StudentGradesResponse>> findGradesBySubject(
+        @PathVariable UUID subjectId
     );
 
     @Operation(summary = "Assign student to subject")

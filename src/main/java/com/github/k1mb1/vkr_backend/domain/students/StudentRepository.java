@@ -14,5 +14,7 @@ public interface StudentRepository
 {
     List<StudentEntity> findAllByUsernameIn(List<String> usernames);
 
+    List<StudentEntity> findAllBySubjects_Id(UUID subjectId);
+
     Page<StudentEntity> findAllBySubjects_Id(UUID subjectId, Pageable pageable);
 }

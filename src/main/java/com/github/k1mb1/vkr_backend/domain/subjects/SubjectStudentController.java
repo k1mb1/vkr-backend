@@ -1,6 +1,8 @@
 package com.github.k1mb1.vkr_backend.domain.subjects;
 
 import com.github.k1mb1.vkr_backend.apis.SubjectStudentApi;
+import com.github.k1mb1.vkr_backend.domain.student_grades.StudentGradeService;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradesResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SubjectStudentController implements SubjectStudentApi {
 
     final SubjectService subjectService;
+    final StudentGradeService studentGradeService;
 
     @Override
     public ResponseEntity<Page<StudentResponse>> findStudentsBySubject(
@@ -24,6 +27,15 @@ public class SubjectStudentController implements SubjectStudentApi {
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
             subjectService.findStudentsBySubject(subjectId, pageable)
+        );
+    }
+
+    @Override
+    public ResponseEntity<List<StudentGradesResponse>> findGradesBySubject(
+        UUID subjectId
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            studentGradeService.findGradesBySubject(subjectId)
         );
     }
 
