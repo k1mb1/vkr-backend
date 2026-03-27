@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.apis.LessonApi;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleLessonsRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
@@ -40,6 +41,15 @@ public class LessonController implements LessonApi {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             lessonService.createByType(request)
+        );
+    }
+
+    @Override
+    public ResponseEntity<List<LessonResponse>> bulkSchedule(
+        BulkScheduleLessonsRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonService.bulkSchedule(request)
         );
     }
 
