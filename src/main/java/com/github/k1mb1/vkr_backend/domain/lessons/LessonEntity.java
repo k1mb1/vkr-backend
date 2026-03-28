@@ -46,6 +46,13 @@ public class LessonEntity extends BaseEntity {
     @Builder.Default
     LessonType type = LessonType.NONE;
 
+    /**
+     * Subgroup number (1, 2, etc.) that attends this lesson.
+     * NULL means the entire group attends (e.g. lectures).
+     */
+    @Column
+    Integer subgroup;
+
     @OneToMany(
         mappedBy = "lesson",
         fetch = FetchType.LAZY,

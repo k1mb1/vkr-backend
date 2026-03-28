@@ -38,7 +38,13 @@ public record LessonSlot(
     @NotEmpty List<@NotNull DayOfWeek> daysOfWeek,
 
     /** Start time of the lesson. */
-    @NotNull @JsonFormat(pattern = "HH:mm") LocalTime time
+    @NotNull @JsonFormat(pattern = "HH:mm") LocalTime time,
+
+    /**
+     * Subgroup number (1, 2, etc.) that attends this lesson.
+     * NULL means the entire group attends (e.g. lectures).
+     */
+    @Min(1) Integer subgroup
 
 ) {
     /** Returns weekIndex defaulting to 0 when not provided. */

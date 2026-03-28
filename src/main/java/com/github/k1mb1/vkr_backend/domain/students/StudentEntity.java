@@ -22,6 +22,13 @@ public class StudentEntity extends BaseEntity {
     @ToString.Include
     String username;
 
+    /**
+     * Subgroup number (1, 2, etc.) for splitting the main group.
+     * NULL means the student is not assigned to any subgroup.
+     */
+    @Column
+    Integer subgroup;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     StudentGroupEntity group;

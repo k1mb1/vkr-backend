@@ -11,6 +11,7 @@ public record LessonResponse(
     String name,
     OffsetDateTime dateTime,
     LessonType type,
+    Integer subgroup,
     UUID subjectId,
     boolean archived,
     Instant archivedAt,

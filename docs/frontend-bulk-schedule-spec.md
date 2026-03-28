@@ -16,15 +16,29 @@ type DayOfWeek = "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "S
 type LessonType = "LECTURE" | "PRACTICE";
 type RecurrenceType = "WEEKLY" | "MONTHLY";
 
+/**
+ * Слот — конкретное занятие внутри цикла расписания.
+ * weekIndex определяет, на какой неделе цикла срабатывает слот.
+ */
+interface LessonSlot {
+  type: LessonType;           // LECTURE или PRACTICE
+  weekIndex?: number;         // индекс недели в цикле (0..intervalWeeks-1), по умолчанию 0
+  daysOfWeek: DayOfWeek[];    // дни недели, минимум 1
+  time: string;               // формат "HH:mm", например "09:00"
+  subgroup?: number | null;   // номер подгруппы (1, 2, ...) или null = вся группа
+}
+
+/**
+ * Entry описывает один цикл расписания с набором слотов.
+ * Все слоты внутри entry делят общий ритм повторения.
+ */
 interface LessonScheduleEntry {
-  type: LessonType;           // обязательно, LECTURE или PRACTICE
-  recurrence: RecurrenceType; // обязательно, WEEKLY или MONTHLY
-  daysOfWeek: DayOfWeek[];    // обязательно, минимум 1 день
-  time: string;               // обязательно, формат "HH:mm" (UTC), например "09:00"
-  startDate: string;          // обязательно, формат "YYYY-MM-DD"
-  intervalWeeks?: number;     // обязательно если recurrence == WEEKLY, минимум 1
-  intervalMonths?: number;    // обязательно если recurrence == MONTHLY, минимум 1
-  totalCount: number;         // обязательно, минимум 1 — сколько занятий сгенерировать
+  recurrence: RecurrenceType; // WEEKLY или MONTHLY
+  startDate: string;          // дата начала, формат "YYYY-MM-DD"
+  intervalWeeks?: number;     // каждые N недель (если WEEKLY), минимум 1
+  intervalMonths?: number;    // каждые N месяцев (если MONTHLY), минимум 1
+  slots: LessonSlot[];        // минимум 1 слот
+  totalCount: number;         // общее количество занятий по всем слотам
 }
 
 interface BulkScheduleLessonsRequest {
@@ -41,10 +55,11 @@ interface BulkScheduleLessonsRequest {
 
 ```ts
 interface LessonResponse {
-  id: string;          // UUID
-  name: string;        // "Лекция 1", "Практика 3 (2)" и т.д.
-  dateTime: string;    // ISO 8601 с timezone, например "2025-09-01T09:00:00Z"
+  id: string;               // UUID
+  name: string;             // "Лекция 1", "Практика 3 (2)" и т.д.
+  dateTime: string;         // ISO 8601, например "2025-09-01T09:00:00Z"
   type: LessonType;
+  subgroup: number | null;  // номер подгруппы или null (вся группа)
   subjectId: string;
   archived: boolean;
   archivedAt: string | null;
@@ -57,120 +72,98 @@ type BulkScheduleResponse = LessonResponse[];
 
 ---
 
-## Логика интерфейса
+## Логика подгрупп
 
-### Структура страницы
+- **`subgroup = null`** — занятие для всей группы (лекция).
+- **`subgroup = 1`** — занятие только для подгруппы 1 (практика).
+- **`subgroup = 2`** — занятие только для подгруппы 2.
+
+Студенты имеют поле `subgroup` (1, 2, или null). При отображении посещаемости/оценок фильтруйте:
+- Если `lesson.subgroup == null` — показывать всех студентов предмета.
+- Если `lesson.subgroup == N` — показывать только студентов с `student.subgroup == N`.
+
+---
+
+## Структура интерфейса
 
 ```
 [Заголовок "Создание занятий"]
 
-[+ Добавить блок лекций] [+ Добавить блок практик]
+--- Цикл расписания ---
+  Повторение: [каждые N недель ▼]  Интервал: [2] нед.
+  Начало: [01.09.2025]  Всего занятий: [32]
 
---- Блок 1: ЛЕКЦИИ ---
-  Тип: [ЛЕКЦИЯ]  Повторение: [каждую неделю ▼]  каждые [1] нед.
-  Дни: [ПН] [ВТ] [СР] [ЧТ] [ПТ] [СБ] [ВС]   (кнопки-переключатели)
-  Время: [09:00]
-  Начало: [01.09.2025]  Количество: [16]
-  [Удалить блок]
+  [+ Добавить слот]
 
---- Блок 2: ПРАКТИКИ ---
-  Тип: [ПРАКТИКА]  Повторение: [каждые N недель ▼]  каждые [2] нед.
-  Дни: [СР] [ПТ]
-  Время: [11:00]
-  Начало: [03.09.2025]  Количество: [10]
-  [Удалить блок]
+  Слот 1: Лекция | Неделя [0] | Дни: [ПН] | Время: [09:00] | Подгруппа: [Вся группа ▼] [X]
+  Слот 2: Практика | Неделя [0] | Дни: [СР] | Время: [11:00] | Подгруппа: [1 ▼] [X]
+  Слот 3: Практика | Неделя [0] | Дни: [СР] | Время: [13:00] | Подгруппа: [2 ▼] [X]
+  Слот 4: Практика | Неделя [1] | Дни: [ПН] [СР] | Время: [11:00] | Подгруппа: [Вся группа ▼] [X]
 
-[Предпросмотр: 26 занятий будет создано]
+[Предпросмотр: 32 занятия]
 
 [Создать занятия]
 ```
 
 ---
 
-### Поля блока
+## Поля слота
 
 | Поле | UI-элемент | Значения | Обязательно |
 |---|---|---|---|
-| `type` | Скрыт / читается из контекста блока | `LECTURE`, `PRACTICE` | да |
-| `recurrence` | Select | "Каждую неделю" → `WEEKLY`, "Каждый месяц" → `MONTHLY` | да |
-| `intervalWeeks` | Number input | min 1, показывается только если `WEEKLY` | если WEEKLY |
-| `intervalMonths` | Number input | min 1, показывается только если `MONTHLY` | если MONTHLY |
-| `daysOfWeek` | Toggle-кнопки (Пн, Вт, Ср, Чт, Пт, Сб, Вс) | мультиселект | да, мин. 1 |
+| `type` | Select | `LECTURE`, `PRACTICE` | да |
+| `weekIndex` | Number input (0..intervalWeeks-1) | по умолчанию 0, прятать если intervalWeeks == 1 | нет |
+| `daysOfWeek` | Toggle-кнопки Пн-Вс | мультиселект, мин. 1 | да |
 | `time` | Time picker | "HH:mm" | да |
-| `startDate` | Date picker | "YYYY-MM-DD" | да |
-| `totalCount` | Number input | min 1 | да |
+| `subgroup` | Select | "Вся группа" (null), "1", "2", ... | нет |
 
 ---
 
-### Правила отображения
+## Пример: практики по подгруппам
 
-1. **Интервал:** если `recurrence = WEEKLY` — показывать `intervalWeeks`, прятать `intervalMonths`. И наоборот.
-2. **Два занятия в один день:** пользователь просто добавляет два блока одного типа с одинаковыми днями, но разным `time`. Показать предупреждение:
-   > "Два блока одного типа пересекаются по дням — занятия получат суффикс (1), (2) в названии"
-3. **Предпросмотр счётчика:** вычислять на клиенте как `schedules.reduce((sum, s) => sum + s.totalCount, 0)`.
-4. **Валидация перед отправкой:**
-   - Минимум 1 блок
-   - Каждый блок: выбран тип, выбраны дни, задано время, задана дата начала, totalCount >= 1
-   - Если WEEKLY — intervalWeeks >= 1
-   - Если MONTHLY — intervalMonths >= 1
-
----
-
-### Конструирование запроса
-
-```ts
-function buildRequest(subjectId: string, blocks: FormBlock[]): BulkScheduleLessonsRequest {
-  return {
-    subjectId,
-    schedules: blocks.map(block => ({
-      type: block.type,                     // "LECTURE" | "PRACTICE"
-      recurrence: block.recurrence,         // "WEEKLY" | "MONTHLY"
-      daysOfWeek: block.selectedDays,       // ["MONDAY", "WEDNESDAY"]
-      time: block.time,                     // "09:00"
-      startDate: block.startDate,           // "2025-09-01"
-      ...(block.recurrence === "WEEKLY"
-        ? { intervalWeeks: block.interval }
-        : { intervalMonths: block.interval }
-      ),
-      totalCount: block.totalCount,
-    })),
-  };
-}
-```
-
----
-
-### Обработка ответа
-
-- `201` — показать тост "Создано N занятий", обновить список занятий предмета.
-- `400` — показать текст ошибки из `message` поля ответа под соответствующим полем формы.
-- `404` — "Предмет не найден".
-
----
-
-## Пример итогового запроса
+Две практики в один день (среда), но для разных подгрупп:
 
 ```json
 {
-  "subjectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "subjectId": "...",
   "schedules": [
     {
-      "type": "LECTURE",
       "recurrence": "WEEKLY",
-      "daysOfWeek": ["MONDAY"],
-      "time": "09:00",
-      "startDate": "2025-09-01",
       "intervalWeeks": 1,
-      "totalCount": 16
-    },
-    {
-      "type": "PRACTICE",
-      "recurrence": "WEEKLY",
-      "daysOfWeek": ["WEDNESDAY", "FRIDAY"],
-      "time": "11:00",
       "startDate": "2025-09-03",
+      "totalCount": 32,
+      "slots": [
+        { "type": "LECTURE",  "weekIndex": 0, "daysOfWeek": ["MONDAY"],    "time": "09:00", "subgroup": null },
+        { "type": "PRACTICE", "weekIndex": 0, "daysOfWeek": ["WEDNESDAY"], "time": "11:00", "subgroup": 1 },
+        { "type": "PRACTICE", "weekIndex": 0, "daysOfWeek": ["WEDNESDAY"], "time": "11:00", "subgroup": 2 }
+      ]
+    }
+  ]
+}
+```
+
+Результат: каждую среду создаются 2 практики — одна для подгруппы 1, другая для подгруппы 2.
+
+---
+
+## Пример: чередование недель
+
+Лекции только на нечётных неделях, практики каждую неделю:
+
+```json
+{
+  "subjectId": "...",
+  "schedules": [
+    {
+      "recurrence": "WEEKLY",
       "intervalWeeks": 2,
-      "totalCount": 10
+      "startDate": "2025-09-01",
+      "totalCount": 24,
+      "slots": [
+        { "type": "LECTURE",  "weekIndex": 0, "daysOfWeek": ["MONDAY"],    "time": "09:00" },
+        { "type": "PRACTICE", "weekIndex": 0, "daysOfWeek": ["WEDNESDAY"], "time": "11:00" },
+        { "type": "PRACTICE", "weekIndex": 1, "daysOfWeek": ["WEDNESDAY"], "time": "11:00" }
+      ]
     }
   ]
 }
@@ -178,7 +171,59 @@ function buildRequest(subjectId: string, blocks: FormBlock[]): BulkScheduleLesso
 
 ---
 
-## Маппинг дней для отображения
+## Конструирование запроса
+
+```ts
+interface FormSlot {
+  type: LessonType;
+  weekIndex: number;
+  selectedDays: DayOfWeek[];
+  time: string;
+  subgroup: number | null;
+}
+
+interface FormEntry {
+  recurrence: RecurrenceType;
+  interval: number;
+  startDate: string;
+  totalCount: number;
+  slots: FormSlot[];
+}
+
+function buildRequest(subjectId: string, entries: FormEntry[]): BulkScheduleLessonsRequest {
+  return {
+    subjectId,
+    schedules: entries.map(entry => ({
+      recurrence: entry.recurrence,
+      startDate: entry.startDate,
+      totalCount: entry.totalCount,
+      ...(entry.recurrence === "WEEKLY"
+        ? { intervalWeeks: entry.interval }
+        : { intervalMonths: entry.interval }
+      ),
+      slots: entry.slots.map(slot => ({
+        type: slot.type,
+        weekIndex: slot.weekIndex,
+        daysOfWeek: slot.selectedDays,
+        time: slot.time,
+        ...(slot.subgroup !== null && { subgroup: slot.subgroup }),
+      })),
+    })),
+  };
+}
+```
+
+---
+
+## Обработка ответа
+
+- `201` — показать тост "Создано N занятий", обновить список.
+- `400` — показать ошибку валидации.
+- `404` — "Предмет не найден".
+
+---
+
+## Маппинг дней
 
 ```ts
 const DAY_LABELS: Record<DayOfWeek, string> = {

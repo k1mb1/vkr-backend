@@ -131,8 +131,8 @@ public class LessonService {
         // Subject нужен только как FK в INSERT, поэтому SELECT вообще не происходит.
         var subject = subjectService.getReferenceById(request.subjectId());
 
-        // (date, type, dateTime) tuple — one per generated lesson
-        record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime) {}
+        // (date, type, dateTime, subgroup) tuple — one per generated lesson
+        record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime, Integer subgroup) {}
 
         List<Slot> slots = new ArrayList<>();
         for (LessonScheduleEntry entry : request.schedules()) {
@@ -142,7 +142,7 @@ public class LessonService {
                 LocalDate d = pair.getKey();
                 LessonSlot ls = pair.getValue();
                 OffsetDateTime odt = OffsetDateTime.of(d, ls.time(), ZoneOffset.UTC);
-                slots.add(new Slot(d, ls.type(), odt));
+                slots.add(new Slot(d, ls.type(), odt, ls.subgroup()));
             }
         }
 
@@ -175,6 +175,7 @@ public class LessonService {
                     .name(name)
                     .type(s.type())
                     .dateTime(s.dateTime())
+                    .subgroup(s.subgroup())
                     .subject(subject)
                     .build()
             );
