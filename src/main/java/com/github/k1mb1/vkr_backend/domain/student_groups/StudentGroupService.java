@@ -64,7 +64,7 @@ public class StudentGroupService {
                 .sorted(Comparator.comparing(s -> s.getUsername()))
                 .map(s -> new StudentEntry(s.getId(), s.getUsername()))
                 .toList()
-            : List.of();
+            : List.<StudentEntry>of();
 
         return new StudentGroupResponse(group.getId(), group.getName(), directStudents, subgroups);
     }
