@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentEntry;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
@@ -44,22 +45,26 @@ public class StudentGroupService {
                 new EntityNotFoundException("Group not found: " + id)
             );
 
-        var directStudents = group.getStudents().stream()
-            .map(s -> s.getUsername())
-            .sorted()
-            .toList();
-
         var subgroups = group.getSubgroups().stream()
             .sorted(Comparator.comparing(StudentGroupEntity::getName))
             .map(sg -> new SubgroupResponse(
                 sg.getId(),
                 sg.getName(),
                 sg.getStudents().stream()
-                    .map(s -> s.getUsername())
-                    .sorted()
+                    .sorted(Comparator.comparing(s -> s.getUsername()))
+                    .map(s -> new StudentEntry(s.getId(), s.getUsername()))
                     .toList()
             ))
             .toList();
+
+        // If subgroups exist — direct students list is empty to avoid duplication.
+        // If no subgroups — all members are under the group directly.
+        var directStudents = subgroups.isEmpty()
+            ? group.getStudents().stream()
+                .sorted(Comparator.comparing(s -> s.getUsername()))
+                .map(s -> new StudentEntry(s.getId(), s.getUsername()))
+                .toList()
+            : List.of();
 
         return new StudentGroupResponse(group.getId(), group.getName(), directStudents, subgroups);
     }
