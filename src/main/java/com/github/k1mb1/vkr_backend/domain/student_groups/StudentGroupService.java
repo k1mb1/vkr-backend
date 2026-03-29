@@ -7,11 +7,13 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroup
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,6 +31,7 @@ public class StudentGroupService {
 
     final StudentGroupRepository groupRepository;
     final StudentRepository studentRepository;
+    final EntityManager entityManager;
 
     public StudentGroupEntity findEntityById(UUID id) {
         return groupRepository
@@ -73,6 +76,9 @@ public class StudentGroupService {
         var mainGroup = groupRepository.save(
             StudentGroupEntity.builder().name(groupName).build()
         );
+        // Flush now so subgroup INSERTs (which reference mainGroup via FK)
+        // are sent as a clean separate batch — avoids HHH90032022 circular sort warning.
+        entityManager.flush();
 
         // 2. Batch INSERT subgroups if needed
         var subgroupByIndex = new HashMap<Integer, StudentGroupEntity>();
@@ -102,8 +108,11 @@ public class StudentGroupService {
         studentRepository.findAllByUsernameIn(allUsernames)
             .forEach(s -> existingByUsername.put(s.getUsername().trim(), s));
 
-        // 4. Batch INSERT new students
-        var toCreate = new ArrayList<StudentEntity>();
+        // 4. Batch INSERT new students + batch UPDATE existing ones' group
+        var toInsert = new ArrayList<StudentEntity>();
+        // group → list of existing student ids that need their group updated
+        var toUpdate = new HashMap<StudentGroupEntity, List<UUID>>();
+
         for (int i = 0; i < request.studentNames().size(); i++) {
             var targetGroup = useSubgroups ? subgroupByIndex.get(i) : mainGroup;
             for (var raw : request.studentNames().get(i)) {
@@ -114,16 +123,20 @@ public class StudentGroupService {
                         .username(username)
                         .group(targetGroup)
                         .build();
-                    toCreate.add(s);
+                    toInsert.add(s);
                     existingByUsername.put(username, s);
                 } else {
-                    existingByUsername.get(username).setGroup(targetGroup);
+                    // Collect ids for batch UPDATE instead of dirty-tracking
+                    toUpdate.computeIfAbsent(targetGroup, k -> new ArrayList<>())
+                        .add(existingByUsername.get(username).getId());
                 }
             }
         }
-        if (!toCreate.isEmpty()) {
-            studentRepository.saveAll(toCreate);
+        if (!toInsert.isEmpty()) {
+            studentRepository.saveAll(toInsert);
         }
+        // One UPDATE per distinct target group (usually 1-2 groups)
+        toUpdate.forEach((group, ids) -> studentRepository.updateGroupForIds(group, ids));
 
         // 5. Build response from in-memory data — no extra SELECT
         var subgroupResponses = new ArrayList<SubgroupResponse>();
