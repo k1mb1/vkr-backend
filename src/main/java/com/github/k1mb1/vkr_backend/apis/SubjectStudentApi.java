@@ -2,8 +2,10 @@ package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradesResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.requests.AddStudentsByGroupRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
@@ -35,6 +37,21 @@ public interface SubjectStudentApi {
     @GetMapping("/grades")
     ResponseEntity<List<StudentGradesResponse>> findGradesBySubject(
         @PathVariable UUID subjectId
+    );
+
+    @Operation(
+        summary = "Assign students to subject by group",
+        description = """
+            Bulk-assigns students to a subject with optional group/subgroup placement.
+            Missing students are created automatically.
+            The main group is created if it does not exist.
+            Subgroups are created under the main group if they do not exist.
+            """
+    )
+    @PostMapping("/by-group")
+    ResponseEntity<Void> addStudentsByGroup(
+        @PathVariable UUID subjectId,
+        @RequestBody @Valid AddStudentsByGroupRequest request
     );
 
     @Operation(summary = "Assign student to subject")

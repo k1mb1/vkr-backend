@@ -1,8 +1,11 @@
 package com.github.k1mb1.vkr_backend.domain.subjects;
 
+import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
+import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.students.StudentMapper;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.requests.AddStudentsByGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
@@ -26,6 +29,7 @@ public class SubjectService {
     final TeacherRepository teacherRepository;
     final StudentRepository studentRepository;
     final StudentMapper studentMapper;
+    final StudentGroupRepository studentGroupRepository;
 
     public List<SubjectResponse> findAllByTeacherId(UUID teacherId) {
         return subjectRepository
@@ -140,6 +144,92 @@ public class SubjectService {
             }
             subject.getStudents().add(student);
         });
+
+        subjectRepository.save(subject);
+    }
+
+    /**
+     * Assigns students to a subject in bulk, auto-creating missing students,
+     * the main group, and subgroups as needed.
+     *
+     * <p>Each entry in the request can optionally specify a subgroup name.
+     * Students without a subgroup are placed directly in the main group.
+     */
+    @Transactional
+    public void addStudentsByGroup(UUID subjectId, AddStudentsByGroupRequest request) {
+        var subject = subjectRepository
+            .findWithStudentsById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Subject not found: " + subjectId)
+            );
+
+        // 1. Find or create the main group
+        var mainGroup = studentGroupRepository
+            .findByNameAndParentGroupIsNull(request.groupName().trim())
+            .orElseGet(() -> studentGroupRepository.save(
+                StudentGroupEntity.builder()
+                    .name(request.groupName().trim())
+                    .build()
+            ));
+
+        // 2. Cache subgroups by name to avoid duplicate DB calls within this request
+        var subgroupCache = new java.util.HashMap<String, StudentGroupEntity>();
+
+        // 3. Bulk-load existing students
+        var normalizedUsernames = request.students().stream()
+            .map(e -> e.username().trim())
+            .filter(u -> !u.isBlank())
+            .distinct()
+            .toList();
+
+        var existingByUsername = studentRepository
+            .findAllByUsernameIn(normalizedUsernames)
+            .stream()
+            .collect(java.util.stream.Collectors.toMap(
+                s -> s.getUsername().trim(),
+                s -> s,
+                (a, b) -> a
+            ));
+
+        for (var entry : request.students()) {
+            var username = entry.username().trim();
+            if (username.isBlank()) continue;
+
+            // Resolve the target group (main or subgroup)
+            StudentGroupEntity targetGroup;
+            if (entry.subgroupName() != null && !entry.subgroupName().isBlank()) {
+                var sgName = entry.subgroupName().trim();
+                targetGroup = subgroupCache.computeIfAbsent(sgName, name ->
+                    studentGroupRepository
+                        .findByNameAndParentGroup_Id(name, mainGroup.getId())
+                        .orElseGet(() -> studentGroupRepository.save(
+                            StudentGroupEntity.builder()
+                                .name(name)
+                                .parentGroup(mainGroup)
+                                .build()
+                        ))
+                );
+            } else {
+                targetGroup = mainGroup;
+            }
+
+            // Find or create the student, update their group
+            var student = existingByUsername.get(username);
+            if (student == null) {
+                student = studentRepository.save(
+                    com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
+                        .username(username)
+                        .group(targetGroup)
+                        .build()
+                );
+                existingByUsername.put(username, student);
+            } else {
+                // Update group assignment if it changed
+                student.setGroup(targetGroup);
+            }
+
+            subject.getStudents().add(student);
+        }
 
         subjectRepository.save(subject);
     }

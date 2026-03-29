@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.apis.SubjectStudentApi;
 import com.github.k1mb1.vkr_backend.domain.student_grades.StudentGradeService;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentGradesResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.requests.AddStudentsByGroupRequest;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,15 @@ public class SubjectStudentController implements SubjectStudentApi {
         UUID studentId
     ) {
         subjectService.addStudentToSubject(subjectId, studentId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @Override
+    public ResponseEntity<Void> addStudentsByGroup(
+        UUID subjectId,
+        AddStudentsByGroupRequest request
+    ) {
+        subjectService.addStudentsByGroup(subjectId, request);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
