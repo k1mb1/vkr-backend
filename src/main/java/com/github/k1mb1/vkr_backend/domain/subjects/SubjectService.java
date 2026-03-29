@@ -149,11 +149,13 @@ public class SubjectService {
     }
 
     /**
-     * Assigns students to a subject in bulk, auto-creating missing students,
-     * the main group, and subgroups as needed.
+     * Assigns students to a subject using a nested-list structure where the outer
+     * index determines the subgroup.
      *
-     * <p>Each entry in the request can optionally specify a subgroup name.
-     * Students without a subgroup are placed directly in the main group.
+     * <ul>
+     *   <li>1 inner list  → all students go to the main group, no subgroups created.</li>
+     *   <li>N inner lists → subgroup "groupName/1" … "groupName/N" are created automatically.</li>
+     * </ul>
      */
     @Transactional
     public void addStudentsByGroup(UUID subjectId, AddStudentsByGroupRequest request) {
@@ -172,63 +174,66 @@ public class SubjectService {
                     .build()
             ));
 
-        // 2. Cache subgroups by name to avoid duplicate DB calls within this request
-        var subgroupCache = new java.util.HashMap<String, StudentGroupEntity>();
+        boolean useSubgroups = request.usernames().size() > 1;
 
-        // 3. Bulk-load existing students
-        var normalizedUsernames = request.students().stream()
-            .map(e -> e.username().trim())
+        // 2. Collect all unique usernames for a single bulk SELECT
+        var allUsernames = request.usernames().stream()
+            .flatMap(List::stream)
+            .map(String::trim)
             .filter(u -> !u.isBlank())
             .distinct()
             .toList();
 
         var existingByUsername = studentRepository
-            .findAllByUsernameIn(normalizedUsernames)
+            .findAllByUsernameIn(allUsernames)
             .stream()
             .collect(java.util.stream.Collectors.toMap(
                 s -> s.getUsername().trim(),
                 s -> s,
-                (a, b) -> a
+                (a, b) -> a,
+                java.util.HashMap::new
             ));
 
-        for (var entry : request.students()) {
-            var username = entry.username().trim();
-            if (username.isBlank()) continue;
+        // 3. Iterate outer list — each index is a subgroup (or main group if only one list)
+        for (int i = 0; i < request.usernames().size(); i++) {
+            var usernamesInGroup = request.usernames().get(i);
 
-            // Resolve the target group (main or subgroup)
             StudentGroupEntity targetGroup;
-            if (entry.subgroupName() != null && !entry.subgroupName().isBlank()) {
-                var sgName = entry.subgroupName().trim();
-                targetGroup = subgroupCache.computeIfAbsent(sgName, name ->
-                    studentGroupRepository
-                        .findByNameAndParentGroup_Id(name, mainGroup.getId())
-                        .orElseGet(() -> studentGroupRepository.save(
-                            StudentGroupEntity.builder()
-                                .name(name)
-                                .parentGroup(mainGroup)
-                                .build()
-                        ))
-                );
+            if (useSubgroups) {
+                // Subgroup name: "ИСТ-21/1", "ИСТ-21/2", …
+                var sgName = request.groupName().trim() + "/" + (i + 1);
+                var idx = i;
+                targetGroup = studentGroupRepository
+                    .findByNameAndParentGroup_Id(sgName, mainGroup.getId())
+                    .orElseGet(() -> studentGroupRepository.save(
+                        StudentGroupEntity.builder()
+                            .name(sgName)
+                            .parentGroup(mainGroup)
+                            .build()
+                    ));
             } else {
                 targetGroup = mainGroup;
             }
 
-            // Find or create the student, update their group
-            var student = existingByUsername.get(username);
-            if (student == null) {
-                student = studentRepository.save(
-                    com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
-                        .username(username)
-                        .group(targetGroup)
-                        .build()
-                );
-                existingByUsername.put(username, student);
-            } else {
-                // Update group assignment if it changed
-                student.setGroup(targetGroup);
-            }
+            for (var raw : usernamesInGroup) {
+                var username = raw.trim();
+                if (username.isBlank()) continue;
 
-            subject.getStudents().add(student);
+                var student = existingByUsername.get(username);
+                if (student == null) {
+                    student = studentRepository.save(
+                        com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
+                            .username(username)
+                            .group(targetGroup)
+                            .build()
+                    );
+                    existingByUsername.put(username, student);
+                } else {
+                    student.setGroup(targetGroup);
+                }
+
+                subject.getStudents().add(student);
+            }
         }
 
         subjectRepository.save(subject);
