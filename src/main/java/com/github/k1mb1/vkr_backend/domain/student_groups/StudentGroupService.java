@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -45,40 +46,43 @@ public class StudentGroupService {
     /**
      * Creates a new main group with students (and optional subgroups) in one call.
      *
-     * DB queries:
-     *   1 SELECT  — check group name uniqueness
-     *   1 SELECT  — bulk-load existing students by username
+     * DB queries (happy path):
      *   1 batch INSERT — main group + subgroups
+     *   1 SELECT       — bulk-load existing students by username
      *   1 batch INSERT — new students (if any)
+     *
+     * Uniqueness is enforced by a DB index — no extra SELECT needed.
+     * Duplicate name throws 409 via DataIntegrityViolationException.
      */
     @Transactional
     public StudentGroupResponse create(CreateGroupRequest request) {
-        var groupName = request.groupName().trim();
-
-        // Fail fast if name already taken
-        if (groupRepository.findWithSubgroupsByNameAndParentGroupIsNull(groupName).isPresent()) {
+        try {
+            return doCreate(request);
+        } catch (DataIntegrityViolationException ex) {
             throw new ResponseStatusException(
-                HttpStatus.CONFLICT, "Group already exists: " + groupName
+                HttpStatus.CONFLICT, "Group already exists: " + request.groupName().trim()
             );
         }
+    }
 
+    private StudentGroupResponse doCreate(CreateGroupRequest request) {
+        var groupName = request.groupName().trim();
         boolean useSubgroups = request.studentNames().size() > 1;
 
-        // 1. Create main group
+        // 1. INSERT main group — uniqueness guaranteed by DB index
         var mainGroup = groupRepository.save(
             StudentGroupEntity.builder().name(groupName).build()
         );
 
-        // 2. Create subgroups in one batch if needed
+        // 2. Batch INSERT subgroups if needed
         var subgroupByIndex = new HashMap<Integer, StudentGroupEntity>();
         if (useSubgroups) {
             var toCreate = new ArrayList<StudentGroupEntity>();
             for (int i = 0; i < request.studentNames().size(); i++) {
-                var sg = StudentGroupEntity.builder()
+                toCreate.add(StudentGroupEntity.builder()
                     .name(groupName + "/" + (i + 1))
                     .parentGroup(mainGroup)
-                    .build();
-                toCreate.add(sg);
+                    .build());
             }
             var saved = groupRepository.saveAll(toCreate);
             for (int i = 0; i < saved.size(); i++) {
@@ -98,7 +102,7 @@ public class StudentGroupService {
         studentRepository.findAllByUsernameIn(allUsernames)
             .forEach(s -> existingByUsername.put(s.getUsername().trim(), s));
 
-        // 4. Build new students in memory, then one batch INSERT
+        // 4. Batch INSERT new students
         var toCreate = new ArrayList<StudentEntity>();
         for (int i = 0; i < request.studentNames().size(); i++) {
             var targetGroup = useSubgroups ? subgroupByIndex.get(i) : mainGroup;
@@ -129,7 +133,7 @@ public class StudentGroupService {
                 var students = request.studentNames().get(i).stream()
                     .map(String::trim)
                     .filter(u -> !u.isBlank())
-                    .map(u -> existingByUsername.get(u))
+                    .map(existingByUsername::get)
                     .filter(s -> s != null)
                     .sorted(Comparator.comparing(StudentEntity::getUsername))
                     .map(s -> new StudentEntry(s.getId(), s.getUsername()))
@@ -143,7 +147,7 @@ public class StudentGroupService {
             : request.studentNames().get(0).stream()
                 .map(String::trim)
                 .filter(u -> !u.isBlank())
-                .map(u -> existingByUsername.get(u))
+                .map(existingByUsername::get)
                 .filter(s -> s != null)
                 .sorted(Comparator.comparing(StudentEntity::getUsername))
                 .map(s -> new StudentEntry(s.getId(), s.getUsername()))
