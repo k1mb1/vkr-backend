@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
 import com.github.k1mb1.vkr_backend.apis.StudentGroupApi;
+import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
 import java.util.UUID;
@@ -21,6 +22,13 @@ public class StudentGroupController implements StudentGroupApi {
     public ResponseEntity<Page<StudentGroupPageResponse>> findAll(Pageable pageable) {
         return ResponseEntity.status(HttpStatus.OK).body(
             studentGroupService.findAll(pageable)
+        );
+    }
+
+    @Override
+    public ResponseEntity<StudentGroupResponse> create(CreateGroupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            studentGroupService.create(request)
         );
     }
 
