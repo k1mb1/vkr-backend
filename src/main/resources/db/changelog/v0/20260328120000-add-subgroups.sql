@@ -1,21 +1,27 @@
 --liquibase formatted sql
 --changeset k1mb1:20260328-add-subgroups
 
--- Add subgroup column to students (which subgroup the student belongs to)
--- NULL means the student is not assigned to any subgroup yet
-ALTER TABLE STUDENTS ADD COLUMN SUBGROUP SMALLINT;
+-- Allow student_groups to be subgroups of another group.
+-- parent_group_id = NULL  → main group  (e.g. ИСТ-21)
+-- parent_group_id = <id>  → subgroup    (e.g. ИСТ-21/1, ИСТ-21/2)
+ALTER TABLE STUDENT_GROUPS
+    ADD COLUMN PARENT_GROUP_ID UUID,
+    ADD CONSTRAINT FK_STUDENT_GROUPS_PARENT
+        FOREIGN KEY (PARENT_GROUP_ID) REFERENCES STUDENT_GROUPS (ID) ON DELETE CASCADE;
 
--- Add subgroup column to lessons (which subgroup attends this lesson)
--- NULL means the entire group attends (e.g. lectures)
-ALTER TABLE LESSONS ADD COLUMN SUBGROUP SMALLINT;
+-- A lesson can now be targeted at a specific group or subgroup.
+-- NULL means the lesson is for every student enrolled in the subject (no group filter).
+ALTER TABLE LESSONS
+    ADD COLUMN GROUP_ID UUID,
+    ADD CONSTRAINT FK_LESSONS_GROUP
+        FOREIGN KEY (GROUP_ID) REFERENCES STUDENT_GROUPS (ID) ON DELETE SET NULL;
 
--- Index for filtering lessons by subgroup
-CREATE INDEX IX_LESSONS_SUBGROUP ON LESSONS (SUBGROUP);
+CREATE INDEX IX_STUDENT_GROUPS_PARENT_GROUP_ID ON STUDENT_GROUPS (PARENT_GROUP_ID);
+CREATE INDEX IX_LESSONS_GROUP_ID ON LESSONS (GROUP_ID);
 
--- Index for filtering students by subgroup
-CREATE INDEX IX_STUDENTS_SUBGROUP ON STUDENTS (SUBGROUP);
-
---rollback DROP INDEX IF EXISTS IX_STUDENTS_SUBGROUP;
---rollback DROP INDEX IF EXISTS IX_LESSONS_SUBGROUP;
---rollback ALTER TABLE LESSONS DROP COLUMN IF EXISTS SUBGROUP;
---rollback ALTER TABLE STUDENTS DROP COLUMN IF EXISTS SUBGROUP;
+--rollback DROP INDEX IF EXISTS IX_LESSONS_GROUP_ID;
+--rollback DROP INDEX IF EXISTS IX_STUDENT_GROUPS_PARENT_GROUP_ID;
+--rollback ALTER TABLE LESSONS DROP CONSTRAINT IF EXISTS FK_LESSONS_GROUP;
+--rollback ALTER TABLE LESSONS DROP COLUMN IF EXISTS GROUP_ID;
+--rollback ALTER TABLE STUDENT_GROUPS DROP CONSTRAINT IF EXISTS FK_STUDENT_GROUPS_PARENT;
+--rollback ALTER TABLE STUDENT_GROUPS DROP COLUMN IF EXISTS PARENT_GROUP_ID;

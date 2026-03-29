@@ -2,12 +2,12 @@ package com.github.k1mb1.vkr_backend.domain.lessons.requests;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonType;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A single "slot" within a recurring schedule cycle.
@@ -41,10 +41,11 @@ public record LessonSlot(
     @NotNull @JsonFormat(pattern = "HH:mm") LocalTime time,
 
     /**
-     * Subgroup number (1, 2, etc.) that attends this lesson.
-     * NULL means the entire group attends (e.g. lectures).
+     * Target group or subgroup for this lesson.
+     * NULL = lesson is for all students enrolled in the subject (e.g. a lecture).
+     * Non-null = lesson is restricted to the specified group/subgroup.
      */
-    @Min(1) Integer subgroup
+    UUID groupId
 
 ) {
     /** Returns weekIndex defaulting to 0 when not provided. */

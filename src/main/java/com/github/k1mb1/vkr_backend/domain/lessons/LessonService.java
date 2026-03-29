@@ -7,6 +7,7 @@ import com.github.k1mb1.vkr_backend.domain.lessons.requests.LessonScheduleEntry;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.LessonSlot;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.RecurrenceType;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
 import jakarta.persistence.EntityNotFoundException;
@@ -34,6 +35,7 @@ public class LessonService {
 
     final LessonRepository lessonRepository;
     final SubjectService subjectService;
+    final StudentGroupRepository studentGroupRepository;
     final LessonMapper lessonMapper;
 
     public List<LessonResponse> findAllBySubjectId(UUID subjectId) {
@@ -131,18 +133,22 @@ public class LessonService {
         // Subject нужен только как FK в INSERT, поэтому SELECT вообще не происходит.
         var subject = subjectService.getReferenceById(request.subjectId());
 
-        // (date, type, dateTime, subgroup) tuple — one per generated lesson
-        record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime, Integer subgroup) {}
+        // (date, type, dateTime, group) tuple — one per generated lesson
+        record Slot(LocalDate date, LessonType type, OffsetDateTime dateTime,
+                    com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity group) {}
 
         List<Slot> slots = new ArrayList<>();
         for (LessonScheduleEntry entry : request.schedules()) {
-            // expandSlots returns (date, lessonSlot) pairs in chronological order
             List<Map.Entry<LocalDate, LessonSlot>> expanded = expandSlots(entry);
             for (var pair : expanded) {
                 LocalDate d = pair.getKey();
                 LessonSlot ls = pair.getValue();
                 OffsetDateTime odt = OffsetDateTime.of(d, ls.time(), ZoneOffset.UTC);
-                slots.add(new Slot(d, ls.type(), odt, ls.subgroup()));
+                // null groupId → null group (lesson for everyone)
+                var group = ls.groupId() != null
+                    ? studentGroupRepository.getReferenceById(ls.groupId())
+                    : null;
+                slots.add(new Slot(d, ls.type(), odt, group));
             }
         }
 
@@ -175,7 +181,7 @@ public class LessonService {
                     .name(name)
                     .type(s.type())
                     .dateTime(s.dateTime())
-                    .subgroup(s.subgroup())
+                    .group(s.group())
                     .subject(subject)
                     .build()
             );

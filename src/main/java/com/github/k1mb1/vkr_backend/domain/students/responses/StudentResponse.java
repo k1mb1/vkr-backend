@@ -7,7 +7,6 @@ public record StudentResponse(
     UUID id,
     String username,
     UUID groupId,
-    Integer subgroup,
     Instant createdAt,
     Instant updatedAt
 ) {}
