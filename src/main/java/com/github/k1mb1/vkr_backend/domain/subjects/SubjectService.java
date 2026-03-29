@@ -156,27 +156,60 @@ public class SubjectService {
      *   <li>1 inner list  → all students go to the main group, no subgroups created.</li>
      *   <li>N inner lists → subgroup "groupName/1" … "groupName/N" are created automatically.</li>
      * </ul>
+     *
+     * Total DB queries:
+     *   1 SELECT  — subject + students (EntityGraph)
+     *   1 SELECT  — main group + all its subgroups (JOIN FETCH)
+     *   1 SELECT  — all existing students by username (IN clause)
+     *   1 batch INSERT — new students (if any)
+     *   1 batch INSERT — new subgroups (if any, via saveAll)
+     *   1 INSERT/UPDATE — subject join table + student group updates (flush)
      */
     @Transactional
     public void addStudentsByGroup(UUID subjectId, AddStudentsByGroupRequest request) {
         var subject = subjectRepository
             .findWithStudentsById(subjectId)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Subject not found: " + subjectId)
-            );
-
-        // 1. Find or create the main group
-        var mainGroup = studentGroupRepository
-            .findByNameAndParentGroupIsNull(request.groupName().trim())
-            .orElseGet(() -> studentGroupRepository.save(
-                StudentGroupEntity.builder()
-                    .name(request.groupName().trim())
-                    .build()
-            ));
+            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
         boolean useSubgroups = request.usernames().size() > 1;
+        var groupName = request.groupName().trim();
 
-        // 2. Collect all unique usernames for a single bulk SELECT
+        // 1. One SELECT: main group + all existing subgroups
+        var mainGroup = studentGroupRepository
+            .findWithSubgroupsByNameAndParentGroupIsNull(groupName)
+            .orElseGet(() -> studentGroupRepository.save(
+                StudentGroupEntity.builder().name(groupName).build()
+            ));
+
+        // Build subgroup lookup map from already-loaded collection — no extra SELECTs
+        var subgroupByName = mainGroup.getSubgroups().stream()
+            .collect(java.util.stream.Collectors.toMap(
+                StudentGroupEntity::getName,
+                sg -> sg,
+                (a, b) -> a,
+                java.util.HashMap::new
+            ));
+
+        // Create missing subgroups in memory, then saveAll in one batch
+        if (useSubgroups) {
+            var toCreate = new java.util.ArrayList<StudentGroupEntity>();
+            for (int i = 0; i < request.usernames().size(); i++) {
+                var sgName = groupName + "/" + (i + 1);
+                if (!subgroupByName.containsKey(sgName)) {
+                    var sg = StudentGroupEntity.builder()
+                        .name(sgName)
+                        .parentGroup(mainGroup)
+                        .build();
+                    toCreate.add(sg);
+                    subgroupByName.put(sgName, sg);
+                }
+            }
+            if (!toCreate.isEmpty()) {
+                studentGroupRepository.saveAll(toCreate);
+            }
+        }
+
+        // 2. One SELECT: all existing students by username
         var allUsernames = request.usernames().stream()
             .flatMap(List::stream)
             .map(String::trim)
@@ -194,48 +227,38 @@ public class SubjectService {
                 java.util.HashMap::new
             ));
 
-        // 3. Iterate outer list — each index is a subgroup (or main group if only one list)
+        // Build new students in memory, then saveAll in one batch
+        var toCreate = new java.util.ArrayList<com.github.k1mb1.vkr_backend.domain.students.StudentEntity>();
         for (int i = 0; i < request.usernames().size(); i++) {
-            var usernamesInGroup = request.usernames().get(i);
+            var targetGroup = useSubgroups
+                ? subgroupByName.get(groupName + "/" + (i + 1))
+                : mainGroup;
 
-            StudentGroupEntity targetGroup;
-            if (useSubgroups) {
-                // Subgroup name: "ИСТ-21/1", "ИСТ-21/2", …
-                var sgName = request.groupName().trim() + "/" + (i + 1);
-                var idx = i;
-                targetGroup = studentGroupRepository
-                    .findByNameAndParentGroup_Id(sgName, mainGroup.getId())
-                    .orElseGet(() -> studentGroupRepository.save(
-                        StudentGroupEntity.builder()
-                            .name(sgName)
-                            .parentGroup(mainGroup)
-                            .build()
-                    ));
-            } else {
-                targetGroup = mainGroup;
-            }
-
-            for (var raw : usernamesInGroup) {
+            for (var raw : request.usernames().get(i)) {
                 var username = raw.trim();
                 if (username.isBlank()) continue;
 
                 var student = existingByUsername.get(username);
                 if (student == null) {
-                    student = studentRepository.save(
-                        com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
-                            .username(username)
-                            .group(targetGroup)
-                            .build()
-                    );
+                    student = com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
+                        .username(username)
+                        .group(targetGroup)
+                        .build();
+                    toCreate.add(student);
                     existingByUsername.put(username, student);
                 } else {
                     student.setGroup(targetGroup);
                 }
-
-                subject.getStudents().add(student);
             }
         }
 
+        // 3. One batch INSERT for all new students
+        if (!toCreate.isEmpty()) {
+            studentRepository.saveAll(toCreate);
+        }
+
+        // 4. Add all students to subject and flush once
+        existingByUsername.values().forEach(s -> subject.getStudents().add(s));
         subjectRepository.save(subject);
     }
 

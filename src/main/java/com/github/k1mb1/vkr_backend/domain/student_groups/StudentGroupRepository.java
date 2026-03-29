@@ -12,8 +12,13 @@ public interface StudentGroupRepository
         JpaRepository<StudentGroupEntity, UUID>,
         JpaSpecificationExecutor<StudentGroupEntity> {
 
-    /** Find a top-level group (no parent) by name. */
-    Optional<StudentGroupEntity> findByNameAndParentGroupIsNull(String name);
+    /** Find a top-level group (no parent) by name, eagerly loading its subgroups. */
+    @Query("""
+        SELECT DISTINCT g FROM StudentGroupEntity g
+        LEFT JOIN FETCH g.subgroups
+        WHERE g.name = :name AND g.parentGroup IS NULL
+        """)
+    Optional<StudentGroupEntity> findWithSubgroupsByNameAndParentGroupIsNull(@Param("name") String name);
 
     /** Find a subgroup by name under a specific parent group. */
     Optional<StudentGroupEntity> findByNameAndParentGroup_Id(String name, UUID parentGroupId);
