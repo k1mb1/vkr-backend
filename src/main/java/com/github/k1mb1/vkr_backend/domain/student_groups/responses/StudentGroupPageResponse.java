@@ -5,5 +5,6 @@ import java.util.UUID;
 public record StudentGroupPageResponse(
     UUID id,
     String name,
-    long studentCount
+    long studentCount,
+    long subgroupCount
 ) {}
