@@ -42,11 +42,11 @@ public interface SubjectStudentApi {
     @Operation(
         summary = "Assign students to subject by group",
         description = """
-            Bulk-assigns students to a subject with optional group/subgroup placement.
-            Missing students are created automatically.
-            The main group is created if it does not exist.
-            Subgroups are created under the main group if they do not exist.
-            """
+        Bulk-assigns students to a subject with optional group/subgroup placement.
+        Missing students are created automatically.
+        The main group is created if it does not exist.
+        Subgroups are created under the main group if they do not exist.
+        """
     )
     @PostMapping("/by-group")
     ResponseEntity<Void> addStudentsByGroup(

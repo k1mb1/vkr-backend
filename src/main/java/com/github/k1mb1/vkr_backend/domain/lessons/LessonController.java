@@ -3,8 +3,6 @@ package com.github.k1mb1.vkr_backend.domain.lessons;
 import com.github.k1mb1.vkr_backend.apis.LessonApi;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleLessonsRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import java.util.List;
 import java.util.UUID;
@@ -35,33 +33,15 @@ public class LessonController implements LessonApi {
         );
     }
 
-    @Override
-    public ResponseEntity<List<LessonResponse>> createByType(
-        CreateLessonsByTypeRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            lessonService.createByType(request)
-        );
-    }
+//    @Override
+//    public ResponseEntity<List<LessonResponse>> bulkSchedule(
+//        BulkScheduleLessonsRequest request
+//    ) {
+//        return ResponseEntity.status(HttpStatus.CREATED).body(
+//            lessonService.bulkSchedule(request)
+//        );
+//    }
 
-    @Override
-    public ResponseEntity<List<LessonResponse>> bulkSchedule(
-        BulkScheduleLessonsRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            lessonService.bulkSchedule(request)
-        );
-    }
-
-    @Override
-    public ResponseEntity<LessonResponse> update(
-        UUID id,
-        UpdateLessonRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            lessonService.update(id, request)
-        );
-    }
 
     @Override
     public ResponseEntity<Void> delete(UUID id) {

@@ -1,7 +1,10 @@
 package com.github.k1mb1.vkr_backend.domain.subjects;
 
+import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
+
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
+import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentMapper;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
@@ -51,14 +54,10 @@ public class SubjectService {
         return subjectRepository
             .findById(id)
             .orElseThrow(() ->
-                new EntityNotFoundException("Subject not found: " + id)
+                    new EntityNotFoundException(NOT_FOUND_MESSAGE.formatted("Subject", id))
             );
     }
 
-    /**
-     * Returns a Hibernate proxy without hitting the DB.
-     * Use when you only need the entity as a FK reference (e.g. bulk inserts).
-     */
     public SubjectEntity getReferenceById(UUID id) {
         return subjectRepository.getReferenceById(id);
     }
@@ -76,7 +75,9 @@ public class SubjectService {
         var entity = subjectRepository
             .findById(id)
             .orElseThrow(() ->
-                new EntityNotFoundException("Subject not found: " + id)
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", id)
+                )
             );
         subjectMapper.update(entity, request);
         return subjectMapper.toResponse(subjectRepository.save(entity));
@@ -96,7 +97,9 @@ public class SubjectService {
         var subject = subjectRepository
             .findWithStudentsById(subjectId)
             .orElseThrow(() ->
-                new EntityNotFoundException("Subject not found: " + subjectId)
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", subjectId)
+                )
             );
         var student = studentRepository.getReferenceById(studentId);
         subject.getStudents().add(student);
@@ -111,7 +114,9 @@ public class SubjectService {
         var subject = subjectRepository
             .findWithStudentsById(subjectId)
             .orElseThrow(() ->
-                new EntityNotFoundException("Subject not found: " + subjectId)
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", subjectId)
+                )
             );
 
         var normalizedUsernames = usernames
@@ -136,9 +141,7 @@ public class SubjectService {
             var student = existingStudentsByUsername.get(username);
             if (student == null) {
                 student = studentRepository.save(
-                    com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
-                        .username(username)
-                        .build()
+                    StudentEntity.builder().username(username).build()
                 );
                 existingStudentsByUsername.put(username, student);
             }
@@ -166,10 +169,17 @@ public class SubjectService {
      *   1 INSERT/UPDATE — subject join table + student group updates (flush)
      */
     @Transactional
-    public void addStudentsByGroup(UUID subjectId, AddStudentsByGroupRequest request) {
+    public void addStudentsByGroup(
+        UUID subjectId,
+        AddStudentsByGroupRequest request
+    ) {
         var subject = subjectRepository
             .findWithStudentsById(subjectId)
-            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", subjectId)
+                )
+            );
 
         boolean useSubgroups = request.usernames().size() > 1;
         var groupName = request.groupName().trim();
@@ -177,18 +187,24 @@ public class SubjectService {
         // 1. One SELECT: main group + all existing subgroups
         var mainGroup = studentGroupRepository
             .findWithSubgroupsByNameAndParentGroupIsNull(groupName)
-            .orElseGet(() -> studentGroupRepository.save(
-                StudentGroupEntity.builder().name(groupName).build()
-            ));
+            .orElseGet(() ->
+                studentGroupRepository.save(
+                    StudentGroupEntity.builder().name(groupName).build()
+                )
+            );
 
         // Build subgroup lookup map from already-loaded collection — no extra SELECTs
-        var subgroupByName = mainGroup.getSubgroups().stream()
-            .collect(java.util.stream.Collectors.toMap(
-                StudentGroupEntity::getName,
-                sg -> sg,
-                (a, b) -> a,
-                java.util.HashMap::new
-            ));
+        var subgroupByName = mainGroup
+            .getSubgroups()
+            .stream()
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    StudentGroupEntity::getName,
+                    sg -> sg,
+                    (a, b) -> a,
+                    java.util.HashMap::new
+                )
+            );
 
         // Create missing subgroups in memory, then saveAll in one batch
         if (useSubgroups) {
@@ -210,7 +226,9 @@ public class SubjectService {
         }
 
         // 2. One SELECT: all existing students by username
-        var allUsernames = request.usernames().stream()
+        var allUsernames = request
+            .usernames()
+            .stream()
             .flatMap(List::stream)
             .map(String::trim)
             .filter(u -> !u.isBlank())
@@ -220,15 +238,19 @@ public class SubjectService {
         var existingByUsername = studentRepository
             .findAllByUsernameIn(allUsernames)
             .stream()
-            .collect(java.util.stream.Collectors.toMap(
-                s -> s.getUsername().trim(),
-                s -> s,
-                (a, b) -> a,
-                java.util.HashMap::new
-            ));
+            .collect(
+                java.util.stream.Collectors.toMap(
+                    s -> s.getUsername().trim(),
+                    s -> s,
+                    (a, b) -> a,
+                    java.util.HashMap::new
+                )
+            );
 
         // Build new students in memory, then saveAll in one batch
-        var toCreate = new java.util.ArrayList<com.github.k1mb1.vkr_backend.domain.students.StudentEntity>();
+        var toCreate = new java.util.ArrayList<
+            com.github.k1mb1.vkr_backend.domain.students.StudentEntity
+        >();
         for (int i = 0; i < request.usernames().size(); i++) {
             var targetGroup = useSubgroups
                 ? subgroupByName.get(groupName + "/" + (i + 1))
@@ -240,10 +262,11 @@ public class SubjectService {
 
                 var student = existingByUsername.get(username);
                 if (student == null) {
-                    student = com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
-                        .username(username)
-                        .group(targetGroup)
-                        .build();
+                    student =
+                        com.github.k1mb1.vkr_backend.domain.students.StudentEntity.builder()
+                            .username(username)
+                            .group(targetGroup)
+                            .build();
                     toCreate.add(student);
                     existingByUsername.put(username, student);
                 } else {

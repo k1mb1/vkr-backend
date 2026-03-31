@@ -6,17 +6,14 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroup
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.UUID;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RequestMapping(
     value = "/api/groups",
@@ -24,8 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 )
 @Tag(name = "Groups", description = "Student group management")
 public interface StudentGroupApi {
-
-    @Operation(summary = "List all main groups with student count")
+    @Operation(summary = "List all groups")
     @GetMapping
     ResponseEntity<Page<StudentGroupPageResponse>> findAll(
         @ParameterObject Pageable pageable
@@ -34,12 +30,10 @@ public interface StudentGroupApi {
     @Operation(
         summary = "Create a group with students",
         description = """
-            Creates a main group and assigns students to it.
-            One inner list  → all students placed directly in the group (no subgroups).
-            N inner lists → subgroups "groupName/1" … "groupName/N" are auto-created.
-            Missing students are created automatically.
-            Returns 409 if a group with the same name already exists.
-            """
+        Creates a main group and assigns students to it.
+        One inner list  → all students placed directly in the group (no subgroups).
+        N inner lists → subgroups "groupName/1" … "groupName/N" are auto-created.
+        """
     )
     @PostMapping
     ResponseEntity<StudentGroupResponse> create(

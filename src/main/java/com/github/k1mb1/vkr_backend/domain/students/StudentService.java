@@ -28,17 +28,4 @@ public class StudentService {
         return studentMapper.toResponse(studentRepository.save(entity));
     }
 
-    @Transactional
-    public StudentResponse update(UUID id, UpdateStudentRequest request) {
-        var entity = studentRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Student not found: " + id)
-            );
-        if (request.groupId() != null) {
-            entity.setGroup(groupService.findEntityById(request.groupId()));
-        }
-        studentMapper.update(entity, request);
-        return studentMapper.toResponse(studentRepository.save(entity));
-    }
 }

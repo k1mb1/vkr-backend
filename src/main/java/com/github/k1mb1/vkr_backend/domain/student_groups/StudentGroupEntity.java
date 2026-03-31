@@ -29,7 +29,12 @@ public class StudentGroupEntity extends BaseEntity {
     @JoinColumn(name = "parent_group_id")
     StudentGroupEntity parentGroup;
 
-    @OneToMany(mappedBy = "parentGroup", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+        mappedBy = "parentGroup",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
     @Builder.Default
     Set<StudentGroupEntity> subgroups = new HashSet<>();
 
