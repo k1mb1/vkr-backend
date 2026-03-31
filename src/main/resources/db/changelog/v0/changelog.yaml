@@ -7,7 +7,3 @@ databaseChangeLog:
       file: db/changelog/v0/20260324172624_add_archiving.sql
   - include:
       file: db/changelog/v0/20260328120000-add-subgroups.sql
-  - include:
-      file: db/changelog/v0/20260329100000-unique-group-name.sql
-  - include:
-      file: db/changelog/v0/20260330191000-default-student-group-id.sql
