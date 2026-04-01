@@ -31,7 +31,7 @@ public interface StudentGroupRepository
         value = """
         SELECT new com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse(
             g.id, g.name,
-            (SELECT COUNT(s) FROM StudentEntity s WHERE s.group = g OR s.group.parentGroup = g)
+            (SELECT COUNT(sg) FROM StudentGroupEntity sg WHERE sg.parentGroup = g)
         )
         FROM StudentGroupEntity g
         WHERE g.parentGroup IS NULL
