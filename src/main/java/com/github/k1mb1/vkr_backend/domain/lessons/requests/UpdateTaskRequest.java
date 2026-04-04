@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.lessons.requests;
 import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
+import java.time.Instant;
 
 /**
  * Request body for updating an existing task.
@@ -17,6 +18,8 @@ import java.math.BigDecimal;
  *                        front-end can recompute displacement for older tasks.
  * @param penaltyMode     Updated penalty mode.
  * @param penaltyStep     Updated penalty step.
+ * @param isMandatory     Toggle mandatory/bonus status (null = keep existing).
+ * @param deadline        New deadline (null = keep existing; use explicit "clear" endpoint to remove).
  */
 public record UpdateTaskRequest(
     String title,
@@ -25,5 +28,7 @@ public record UpdateTaskRequest(
     @Min(0) Integer position,
     @Min(0) Integer issuedTaskIndex,
     PenaltyMode penaltyMode,
-    @DecimalMin("0.0001") @DecimalMax("1.0") BigDecimal penaltyStep
+    @DecimalMin("0.0001") @DecimalMax("1.0") BigDecimal penaltyStep,
+    Boolean isMandatory,
+    Instant deadline
 ) {}

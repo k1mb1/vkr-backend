@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.lessons;
 import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.Instant;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -89,4 +90,24 @@ public class LessonTaskEntity extends BaseEntity {
     @Column(nullable = false, precision = 5, scale = 4)
     @Builder.Default
     BigDecimal penaltyStep = new BigDecimal("0.25");
+
+    /**
+     * Whether this task is mandatory.
+     *
+     * <p>Mandatory tasks ({@code true}, default) are always counted in the
+     * student's total, even if the student did not submit — they receive 0.
+     * Non-mandatory (bonus) tasks contribute only when submitted.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    boolean isMandatory = true;
+
+    /**
+     * Optional submission deadline for this task.
+     * {@code null} means there is no hard deadline.
+     * The front-end uses this to highlight overdue submissions and may apply
+     * an additional late-submission penalty if configured.
+     */
+    @Column(name = "deadline")
+    Instant deadline;
 }

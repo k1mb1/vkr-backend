@@ -25,6 +25,8 @@ import java.util.UUID;
  * @param issuedTaskIndex Position of the currently-active task in the lesson.
  * @param penaltyMode     SUBTRACT or MULTIPLY.
  * @param penaltyStep     Step size for the penalty (e.g. 0.25 or 0.5).
+ * @param isMandatory     True = always counted in total; false = bonus, counted only if submitted.
+ * @param deadline        Optional submission deadline (null = no deadline).
  * @param createdAt       Creation timestamp.
  * @param updatedAt       Last-update timestamp.
  */
@@ -38,6 +40,8 @@ public record TaskResponse(
     int issuedTaskIndex,
     PenaltyMode penaltyMode,
     BigDecimal penaltyStep,
+    boolean isMandatory,
+    Instant deadline,
     Instant createdAt,
     Instant updatedAt
 ) {}

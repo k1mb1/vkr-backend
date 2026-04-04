@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Grade for a single student on a single {@link LessonTaskEntity}.
@@ -47,4 +49,16 @@ public class StudentTaskGradeEntity extends BaseEntity {
     /** When the student submitted their work. Null = not yet submitted. */
     @Column(name = "submitted_at")
     Instant submittedAt;
+
+    /**
+     * Lifecycle status of this submission.
+     * Defaults to {@link SubmissionStatus#NOT_SUBMITTED} when the grade row is
+     * first created (i.e. the task has been issued but the student has not yet
+     * submitted anything).
+     */
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Builder.Default
+    SubmissionStatus status = SubmissionStatus.NOT_SUBMITTED;
 }

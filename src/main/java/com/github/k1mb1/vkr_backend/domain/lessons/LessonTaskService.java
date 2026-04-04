@@ -62,6 +62,8 @@ public class LessonTaskService {
         if (request.issuedTaskIndex() != null) entity.setIssuedTaskIndex(request.issuedTaskIndex());
         if (request.penaltyMode()     != null) entity.setPenaltyMode(request.penaltyMode());
         if (request.penaltyStep()     != null) entity.setPenaltyStep(request.penaltyStep());
+        if (request.isMandatory()     != null) entity.setMandatory(request.isMandatory());
+        if (request.deadline()        != null) entity.setDeadline(request.deadline());
 
         return taskMapper.toResponse(taskRepository.save(entity));
     }

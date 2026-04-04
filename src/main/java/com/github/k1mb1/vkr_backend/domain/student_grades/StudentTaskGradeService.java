@@ -7,6 +7,7 @@ import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeRes
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -79,9 +80,29 @@ public class StudentTaskGradeService {
                 .build()
             );
 
-        grade.setValue(request.value());
-        grade.setComment(request.comment());
-        grade.setSubmittedAt(request.submittedAt());
+        if (request.value()   != null) grade.setValue(request.value());
+        if (request.comment() != null) grade.setComment(request.comment());
+
+        // Status logic: apply the requested status and auto-set submittedAt.
+        SubmissionStatus newStatus = request.status() != null
+            ? request.status()
+            : grade.getStatus();
+
+        grade.setStatus(newStatus);
+
+        // Auto-set submittedAt when transitioning into SUBMITTED (if not provided explicitly).
+        if (newStatus == SubmissionStatus.SUBMITTED && grade.getSubmittedAt() == null) {
+            grade.setSubmittedAt(
+                request.submittedAt() != null ? request.submittedAt() : Instant.now()
+            );
+        } else if (request.submittedAt() != null) {
+            grade.setSubmittedAt(request.submittedAt());
+        }
+
+        // Clear submittedAt when explicitly reset to NOT_SUBMITTED.
+        if (newStatus == SubmissionStatus.NOT_SUBMITTED) {
+            grade.setSubmittedAt(null);
+        }
 
         return toResponse(gradeRepository.save(grade));
     }
@@ -97,6 +118,7 @@ public class StudentTaskGradeService {
             g.getStudent().getId(),
             g.getValue(),
             g.getComment(),
+            g.getStatus(),
             g.getSubmittedAt(),
             g.getCreatedAt(),
             g.getUpdatedAt()
