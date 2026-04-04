@@ -44,20 +44,23 @@ public class StudentGroupService {
             .build();
 
         if (request.studentNames().size() > 1) {
+            // Build subgroups as an ordered list so the index assignment below
+            // is deterministic. HashSet iteration order is undefined, so we
+            // must create the subgroups in a List and add them to the entity.
+            var orderedSubgroups = new java.util.ArrayList<StudentGroupEntity>(
+                request.studentNames().size()
+            );
             for (int i = 0; i < request.studentNames().size(); i++) {
                 var sg = StudentGroupEntity.builder()
                     .name(request.groupName() + "/" + (i + 1))
                     .parentGroup(mainGroup)
                     .build();
+                orderedSubgroups.add(sg);
                 mainGroup.getSubgroups().add(sg);
             }
 
             for (int i = 0; i < request.studentNames().size(); i++) {
-                var subgroup = mainGroup
-                    .getSubgroups()
-                    .stream()
-                    .toList()
-                    .get(i);
+                var subgroup = orderedSubgroups.get(i);
                 var studentNames = request.studentNames().get(i);
 
                 for (String name : studentNames) {

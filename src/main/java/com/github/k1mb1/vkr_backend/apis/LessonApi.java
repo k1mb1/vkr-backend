@@ -2,7 +2,6 @@ package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleLessonsRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,15 +18,29 @@ import org.springframework.web.bind.annotation.*;
 )
 @Tag(name = "Lessons", description = "Lesson management")
 public interface LessonApi {
+
     @Operation(summary = "List all lessons by subject")
     @GetMapping("/subjects/{subjectId}")
     ResponseEntity<List<LessonResponse>> findAllBySubjectId(
         @PathVariable UUID subjectId
     );
 
-    @Operation(summary = "Create lesson")
+    @Operation(summary = "Create a single lesson")
     @PostMapping
     ResponseEntity<LessonResponse> create(
         @RequestBody @Valid CreateLessonRequest request
+    );
+
+    /**
+     * Bulk-schedule recurring lessons from a timetable.
+     *
+     * <p>Lectures are generated with {@code groupId = null} (whole cohort).
+     * Practices can optionally target a specific subgroup via {@code groupId}
+     * in each {@link com.github.k1mb1.vkr_backend.domain.lessons.requests.LessonSlot}.
+     */
+    @Operation(summary = "Bulk-schedule recurring lessons")
+    @PostMapping("/bulk-schedule")
+    ResponseEntity<List<LessonResponse>> bulkSchedule(
+        @RequestBody @Valid BulkScheduleLessonsRequest request
     );
 }

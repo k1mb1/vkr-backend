@@ -32,4 +32,13 @@ public class LessonController implements LessonApi {
             lessonService.create(request)
         );
     }
+
+    @Override
+    public ResponseEntity<List<LessonResponse>> bulkSchedule(
+        BulkScheduleLessonsRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonService.bulkSchedule(request)
+        );
+    }
 }
