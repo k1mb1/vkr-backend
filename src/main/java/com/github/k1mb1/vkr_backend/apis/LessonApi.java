@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleLessonsRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateDecayFactorRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,5 +43,18 @@ public interface LessonApi {
     @PostMapping("/bulk-schedule")
     ResponseEntity<List<LessonResponse>> bulkSchedule(
         @RequestBody @Valid BulkScheduleLessonsRequest request
+    );
+
+    /**
+     * Update the decay factor of a lesson.
+     *
+     * <p>The decay factor is a multiplier [0..1] applied by the front-end to
+     * the weighted sum of task scores for this lesson. 1.0 means no decay.
+     */
+    @Operation(summary = "Update lesson decay factor")
+    @PatchMapping("/{id}/decay-factor")
+    ResponseEntity<LessonResponse> updateDecayFactor(
+        @PathVariable UUID id,
+        @RequestBody @Valid UpdateDecayFactorRequest request
     );
 }

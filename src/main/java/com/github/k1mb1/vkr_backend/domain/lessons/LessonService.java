@@ -4,8 +4,7 @@ import com.github.k1mb1.vkr_backend.domain.lessons.requests.*;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
-import jakarta.persistence.EntityNotFoundException;
-import java.time.LocalDate;
+import jakarta.persistence.EntityNotFoundException;import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -128,6 +127,20 @@ public class LessonService {
     @Transactional
     public void delete(UUID id) {
         lessonRepository.deleteById(id);
+    }
+
+    /**
+     * Updates the decay factor of a lesson.
+     *
+     * <p>The front-end multiplies the weighted sum of all task scores for the
+     * lesson by this value. 1.0 = no decay; 0.5 = all scores halved.
+     */
+    @Transactional
+    public LessonResponse updateDecayFactor(UUID id, UpdateDecayFactorRequest request) {
+        var lesson = lessonRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
+        lesson.setDecayFactor(request.decayFactor());
+        return lessonMapper.toResponse(lessonRepository.save(lesson));
     }
 
     // -------------------------------------------------------------------------

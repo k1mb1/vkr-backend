@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260324172624_add_archiving.sql
   - include:
       file: db/changelog/v0/20260328120000-add-subgroups.sql
+  - include:
+      file: db/changelog/v0/20260404000000-add-lesson-tasks.sql

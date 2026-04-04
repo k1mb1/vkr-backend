@@ -14,10 +14,11 @@ public interface LessonMapper {
     @Mapping(target = "subgroupNumber", expression = "java(extractSubgroupNumber(entity))")
     LessonResponse toResponse(LessonEntity entity);
 
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "id",        ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "subject", ignore = true)
+    @Mapping(target = "subject",   ignore = true)
+    @Mapping(target = "tasks",     ignore = true)
     LessonEntity toEntity(CreateLessonRequest request);
 
     /**
