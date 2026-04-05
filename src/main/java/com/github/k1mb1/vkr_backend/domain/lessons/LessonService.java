@@ -46,21 +46,19 @@ public class LessonService {
     /**
      * Bulk-schedule lessons from a recurring timetable.
      *
-     * <p>For each {@link LessonScheduleEntry} the algorithm:
+     * <p>Algorithm per {@link LessonScheduleEntry}:
      * <ol>
-     *   <li>Walks from {@code startDate} one week at a time, tracking the current
-     *       position inside the repeating {@code intervalWeeks} cycle.</li>
-     *   <li>For every day in the current week it checks each slot whose
-     *       {@code weekIndex} matches the cycle position and whose
-     *       {@code daysOfWeek} includes that day-of-week.</li>
-     *   <li>Creates a {@link LessonEntity} with:
-     *       <ul>
-     *         <li>{@code group = null} when {@code type == LECTURE} (whole cohort)</li>
-     *         <li>{@code group = <subgroup>} when {@code type == PRACTICE} and a
-     *             {@code groupId} is provided</li>
-     *       </ul>
-     *   </li>
-     *   <li>Stops once {@code totalCount} lessons have been generated for that entry.</li>
+     *   <li><b>WEEKLY</b> – walks weeks starting from the Monday of {@code startDate}'s week,
+     *       tracking the repeating {@code intervalWeeks} cycle. For each week it collects all
+     *       candidate (date, slot) pairs whose {@code weekIndex} matches and whose
+     *       {@code dayOfWeek} does not fall in {@code excludeDates}, <b>sorts them by date</b>
+     *       ascending, then creates lessons in that order until {@code totalCount} is reached.</li>
+     *   <li><b>ONCE</b> – iterates each slot exactly once using {@code startDate}'s calendar date
+     *       adjusted to the slot's {@code dayOfWeek} within the same week. No cycling.
+     *       {@code totalCount} still acts as a hard cap.</li>
+     *   <li>Duplicate guard – if a lesson with the same (subject, dateTime, type, group) already
+     *       exists in the database it is silently skipped (does NOT consume from {@code totalCount}).
+     *       This makes repeated calls to bulk-schedule idempotent.</li>
      * </ol>
      */
     @Transactional
@@ -69,52 +67,10 @@ public class LessonService {
         var entities = new ArrayList<LessonEntity>();
 
         for (var entry : request.schedules()) {
-            int remaining = entry.totalCount();
-            int intervalWeeks = entry.intervalWeeks() != null
-                ? entry.intervalWeeks()
-                : 1;
-
-            // Walk week by week starting from startDate's Monday.
-            LocalDate weekStart = entry.startDate()
-                .toLocalDate()
-                .with(java.time.DayOfWeek.MONDAY);
-            int cycleWeek = 0; // 0-based position inside the repeating cycle
-
-            while (remaining > 0) {
-                for (var slot : entry.slots()) {
-                    if (remaining == 0) break;
-                    if (slot.resolvedWeekIndex() != cycleWeek) continue;
-
-                    for (var dow : slot.daysOfWeek()) {
-                        if (remaining == 0) break;
-
-                        LocalDate lessonDate = weekStart.with(dow);
-                        OffsetDateTime dateTime = lessonDate
-                            .atTime(slot.time())
-                            .atOffset(ZoneOffset.UTC);
-
-                        // Resolve group reference: null for lectures.
-                        var group = resolveGroup(slot);
-
-                        String lessonName = buildLessonName(
-                            subject.getName(), slot, group
-                        );
-
-                        var lesson = LessonEntity.builder()
-                            .name(lessonName)
-                            .dateTime(dateTime)
-                            .type(slot.type())
-                            .subject(subject)
-                            .group(group)
-                            .build();
-
-                        entities.add(lesson);
-                        remaining--;
-                    }
-                }
-
-                weekStart = weekStart.plusWeeks(1);
-                cycleWeek = (cycleWeek + 1) % intervalWeeks;
+            if (entry.recurrence() == RecurrenceType.ONCE) {
+                scheduleOnce(entry, subject, entities);
+            } else {
+                scheduleWeekly(entry, subject, entities);
             }
         }
 
@@ -144,7 +100,124 @@ public class LessonService {
     }
 
     // -------------------------------------------------------------------------
-    // Helpers
+    // Scheduling strategies
+    // -------------------------------------------------------------------------
+
+    /**
+     * WEEKLY strategy.
+     *
+     * <p>Walks week by week. For each week it collects all (date, slot) candidates
+     * whose {@code weekIndex} matches the current cycle position, filters out
+     * excluded dates, <b>sorts by date ascending</b> so that the generated lessons
+     * are always in chronological order regardless of slot ordering in the request,
+     * and creates lessons until {@code totalCount} is reached.
+     */
+    private void scheduleWeekly(
+        LessonScheduleEntry entry,
+        com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject,
+        List<LessonEntity> result
+    ) {
+        int remaining = entry.totalCount();
+        int intervalWeeks = entry.intervalWeeks() != null ? entry.intervalWeeks() : 1;
+        var excludeSet = new java.util.HashSet<>(entry.resolvedExcludeDates());
+
+        LocalDate weekStart = entry.startDate()
+            .toLocalDate()
+            .with(java.time.DayOfWeek.MONDAY);
+        int cycleWeek = 0;
+
+        while (remaining > 0) {
+            // Collect all (date, slot) candidates for this week, sorted by date.
+            record Candidate(LocalDate date, LessonSlot slot) {}
+            var candidates = entry.slots().stream()
+                .filter(s -> s.resolvedWeekIndex() == cycleWeek)
+                .map(s -> new Candidate(weekStart.with(s.dayOfWeek()), s))
+                .filter(c -> !excludeSet.contains(c.date()))
+                .sorted(java.util.Comparator.comparing(Candidate::date)
+                    .thenComparing(c -> c.slot().time()))
+                .toList();
+
+            for (var candidate : candidates) {
+                if (remaining == 0) break;
+                var entity = buildLesson(candidate.date(), candidate.slot(), subject);
+                if (entity != null) {
+                    result.add(entity);
+                    remaining--;
+                }
+            }
+
+            weekStart = weekStart.plusWeeks(1);
+            cycleWeek = (cycleWeek + 1) % intervalWeeks;
+        }
+    }
+
+    /**
+     * ONCE strategy.
+     *
+     * <p>Each slot is placed on its {@code dayOfWeek} within the week of
+     * {@code startDate}. Slots are sorted by date+time before creation.
+     * {@code totalCount} acts as a hard cap.
+     */
+    private void scheduleOnce(
+        LessonScheduleEntry entry,
+        com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject,
+        List<LessonEntity> result
+    ) {
+        int remaining = entry.totalCount();
+        var excludeSet = new java.util.HashSet<>(entry.resolvedExcludeDates());
+        LocalDate weekStart = entry.startDate()
+            .toLocalDate()
+            .with(java.time.DayOfWeek.MONDAY);
+
+        record Candidate(LocalDate date, LessonSlot slot) {}
+        var candidates = entry.slots().stream()
+            .map(s -> new Candidate(weekStart.with(s.dayOfWeek()), s))
+            .filter(c -> !excludeSet.contains(c.date()))
+            .sorted(java.util.Comparator.comparing(Candidate::date)
+                .thenComparing(c -> c.slot().time()))
+            .toList();
+
+        for (var candidate : candidates) {
+            if (remaining == 0) break;
+            var entity = buildLesson(candidate.date(), candidate.slot(), subject);
+            if (entity != null) {
+                result.add(entity);
+                remaining--;
+            }
+        }
+    }
+
+    /**
+     * Creates a {@link LessonEntity} for the given date+slot, or returns
+     * {@code null} if an identical lesson already exists (duplicate guard).
+     */
+    private LessonEntity buildLesson(
+        LocalDate date,
+        LessonSlot slot,
+        com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject
+    ) {
+        var group = resolveGroup(slot);
+        OffsetDateTime dateTime = date.atTime(slot.time()).atOffset(ZoneOffset.UTC);
+        UUID groupId = group != null ? group.getId() : null;
+
+        // Idempotency: skip if an identical lesson already exists.
+        boolean duplicate = lessonRepository
+            .existsBySubject_IdAndDateTimeAndTypeAndGroup_Id(
+                subject.getId(), dateTime, slot.type(), groupId
+            );
+        if (duplicate) return null;
+
+        return LessonEntity.builder()
+            .name(buildLessonName(subject.getName(), slot, group))
+            .dateTime(dateTime)
+            .type(slot.type())
+            .subject(subject)
+            .group(group)
+            .build();
+    }
+
+    // -------------------------------------------------------------------------
+    // Generic helpers
     // -------------------------------------------------------------------------
 
     /**
