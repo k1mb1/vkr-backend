@@ -22,4 +22,16 @@ public interface StudentTaskGradeRepository
         WHERE g.task.lesson.id = :lessonId
     """)
     List<StudentTaskGradeEntity> findAllByLessonId(@Param("lessonId") UUID lessonId);
+
+    /**
+     * Loads all task grades for a subject in one query — used by the grade-sheet
+     * endpoint. Joins through task → lesson → subject to filter by subject.
+     */
+    @Query("""
+        SELECT g FROM StudentTaskGradeEntity g
+        JOIN FETCH g.task t
+        JOIN FETCH g.student s
+        WHERE t.lesson.subject.id = :subjectId
+    """)
+    List<StudentTaskGradeEntity> findAllBySubjectId(@Param("subjectId") UUID subjectId);
 }

@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 import com.github.k1mb1.vkr_backend.apis.SubjectApi;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.GradeSheetResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 
 import java.time.Instant;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SubjectController implements SubjectApi {
 
     final SubjectService subjectService;
+    final GradeSheetService gradeSheetService;
 
     @Override
     public ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
@@ -55,5 +57,10 @@ public class SubjectController implements SubjectApi {
                         UpdateSubjectRequest.builder().archived(true).archivedAt(Instant.now()).build()
                 )
         );
+    }
+
+    @Override
+    public ResponseEntity<GradeSheetResponse> getGradeSheet(UUID subjectId) {
+        return ResponseEntity.ok(gradeSheetService.getGradeSheet(subjectId));
     }
 }

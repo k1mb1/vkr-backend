@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface LessonRepository
     extends
@@ -15,8 +17,6 @@ public interface LessonRepository
 
     /**
      * Used during bulk-schedule to detect duplicates.
-     * A duplicate is defined as: same subject, same dateTime, same type, same group
-     * (group may be null for lectures).
      */
     boolean existsBySubject_IdAndDateTimeAndTypeAndGroup_Id(
         UUID subjectId,
@@ -24,4 +24,16 @@ public interface LessonRepository
         LessonType type,
         UUID groupId
     );
+
+    /**
+     * Loads all lessons for a subject together with their tasks in a single
+     * query — used by the grade-sheet endpoint to avoid N+1.
+     */
+    @Query("""
+        SELECT DISTINCT l FROM LessonEntity l
+        LEFT JOIN FETCH l.tasks
+        WHERE l.subject.id = :subjectId
+        ORDER BY l.dateTime ASC NULLS LAST
+    """)
+    List<LessonEntity> findAllWithTasksBySubjectId(@Param("subjectId") UUID subjectId);
 }

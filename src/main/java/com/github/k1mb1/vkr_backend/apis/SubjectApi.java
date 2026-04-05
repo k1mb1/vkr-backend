@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.GradeSheetResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,4 +43,15 @@ public interface SubjectApi {
     @Operation(summary = "Archive subject")
     @PatchMapping("/{subjectId}/archive")
     ResponseEntity<SubjectResponse> archive(@PathVariable UUID subjectId);
+
+    /**
+     * Returns the full grade-sheet for a subject in a single response.
+     *
+     * <p>Contains all lessons (with their tasks) and all enrolled students
+     * (with their task grades and attendance records). The front-end uses this
+     * single call to render the teacher's journal table without further requests.
+     */
+    @Operation(summary = "Get grade-sheet for a subject")
+    @GetMapping("/{subjectId}/grade-sheet")
+    ResponseEntity<GradeSheetResponse> getGradeSheet(@PathVariable UUID subjectId);
 }
