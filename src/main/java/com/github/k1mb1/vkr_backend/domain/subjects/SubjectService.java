@@ -2,25 +2,17 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 
 import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
 
-import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
-import com.github.k1mb1.vkr_backend.domain.students.StudentMapper;
-import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.subjects.requests.AddStudentsByGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherRepository;
 import jakarta.persistence.EntityNotFoundException;
-
 import java.util.List;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,32 +24,22 @@ public class SubjectService {
     final SubjectRepository subjectRepository;
     final SubjectMapper subjectMapper;
     final TeacherRepository teacherRepository;
-    final StudentRepository studentRepository;
-    final StudentMapper studentMapper;
     final StudentGroupRepository studentGroupRepository;
 
     public List<SubjectResponse> findAllByTeacherId(UUID teacherId) {
         return subjectRepository
-                .findAllByTeachers_IdAndArchivedFalse(teacherId)
-                .stream()
-                .map(subjectMapper::toResponse)
-                .toList();
+            .findAllByTeachers_IdAndArchivedFalse(teacherId)
+            .stream()
+            .map(subjectMapper::toResponse)
+            .toList();
     }
 
     public List<SubjectResponse> findAllArchivedByTeacherId(UUID teacherId) {
         return subjectRepository
-                .findAllByTeachers_IdAndArchivedTrue(teacherId)
-                .stream()
-                .map(subjectMapper::toResponse)
-                .toList();
-    }
-
-    public SubjectEntity findEntityById(UUID id) {
-        return subjectRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(NOT_FOUND_MESSAGE.formatted("Subject", id))
-                );
+            .findAllByTeachers_IdAndArchivedTrue(teacherId)
+            .stream()
+            .map(subjectMapper::toResponse)
+            .toList();
     }
 
     public SubjectEntity getReferenceById(UUID id) {
@@ -77,5 +59,53 @@ public class SubjectService {
         var entity = subjectRepository.getReferenceById(id);
         subjectMapper.update(entity, request);
         return subjectMapper.toResponse(subjectRepository.save(entity));
+    }
+
+    @Transactional
+    public AttachGroupToSubjectResponse attachGroup(UUID subjectId, UUID groupId) {
+        var subject = subjectRepository
+            .findById(subjectId)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", subjectId)
+                )
+            );
+
+        var group = studentGroupRepository
+            .findWithSubgroupsAndStudentsById(groupId)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Main group", groupId)
+                )
+            );
+
+        int addedStudentsCount = 0;
+
+        for (var student : group.getStudents()) {
+            addedStudentsCount += attachStudent(subject, student);
+        }
+
+        for (var subgroup : group.getSubgroups()) {
+            for (var student : subgroup.getStudents()) {
+                addedStudentsCount += attachStudent(subject, student);
+            }
+        }
+
+        var savedSubject = subjectRepository.save(subject);
+
+        return new AttachGroupToSubjectResponse(
+            savedSubject.getId(),
+            savedSubject.getName(),
+            group.getId(),
+            group.getName(),
+            addedStudentsCount,
+            savedSubject.getStudents().size()
+        );
+    }
+
+    private int attachStudent(SubjectEntity subject, StudentEntity student) {
+        boolean added = subject.getStudents().add(student);
+        student.getSubjects().add(subject);
+        return added ? 1 : 0;
     }
 }

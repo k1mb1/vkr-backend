@@ -30,5 +30,5 @@ public enum PenaltyMode {
      * Multiply by {@code penalty_step} for each step back from the active task.
      * Approaches zero geometrically.
      */
-    MULTIPLY
+    MULTIPLY,
 }

@@ -1,7 +1,8 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleLessonsRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.Bulk;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateDecayFactorRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,25 +33,19 @@ public interface LessonApi {
         @RequestBody @Valid CreateLessonRequest request
     );
 
-    /**
-     * Bulk-schedule recurring lessons from a timetable.
-     *
-     * <p>Lectures are generated with {@code groupId = null} (whole cohort).
-     * Practices can optionally target a specific subgroup via {@code groupId}
-     * in each {@link com.github.k1mb1.vkr_backend.domain.lessons.requests.LessonSlot}.
-     */
+
+    @Operation(summary = "Create lessons by type counts")
+    @PostMapping("/bulk-by-type")
+    ResponseEntity<List<LessonResponse>> createByType(
+        @RequestBody @Valid CreateLessonsByTypeRequest request
+    );
+
     @Operation(summary = "Bulk-schedule recurring lessons")
     @PostMapping("/bulk-schedule")
     ResponseEntity<List<LessonResponse>> bulkSchedule(
-        @RequestBody @Valid BulkScheduleLessonsRequest request
+        @RequestBody @Valid Bulk request
     );
 
-    /**
-     * Update the decay factor of a lesson.
-     *
-     * <p>The decay factor is a multiplier [0..1] applied by the front-end to
-     * the weighted sum of task scores for this lesson. 1.0 means no decay.
-     */
     @Operation(summary = "Update lesson decay factor")
     @PatchMapping("/{id}/decay-factor")
     ResponseEntity<LessonResponse> updateDecayFactor(

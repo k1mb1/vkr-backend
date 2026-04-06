@@ -2,10 +2,13 @@ package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.*;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
-import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
+import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
 import jakarta.persistence.EntityNotFoundException;
+
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +23,6 @@ public class LessonService {
 
     final LessonRepository lessonRepository;
     final SubjectService subjectService;
-    final StudentGroupRepository studentGroupRepository;
     final LessonMapper lessonMapper;
 
     public List<LessonResponse> findAllBySubjectId(UUID subjectId) {
@@ -42,35 +44,46 @@ public class LessonService {
         return lessonMapper.toResponse(lessonRepository.save(entity));
     }
 
+    @Transactional
+    public List<LessonResponse> createByType(CreateLessonsByTypeRequest request) {
+        var subject = subjectService.getReferenceById(request.subjectId());
+        var entities = new ArrayList<LessonEntity>();
+        var baseDateTime = OffsetDateTime.now(ZoneOffset.UTC);
+
+        for (int i = 0; i < request.lectureCount(); i++) {
+            entities.add(LessonEntity.builder()
+                .name(buildLessonName(subject.getName(), LessonType.LECTURE))
+                .dateTime(baseDateTime.plusMinutes(i))
+                .type(LessonType.LECTURE)
+                .subject(subject)
+                .build());
+        }
+
+        for (int i = 0; i < request.practiceCount(); i++) {
+            entities.add(LessonEntity.builder()
+                .name(buildLessonName(subject.getName(), LessonType.PRACTICE))
+                .dateTime(baseDateTime.plusMinutes(request.lectureCount() + i))
+                .type(LessonType.PRACTICE)
+                .subject(subject)
+                .build());
+        }
+
+        return lessonRepository.saveAll(entities)
+            .stream()
+            .map(lessonMapper::toResponse)
+            .toList();
+    }
+
     /**
-     * Bulk-schedule lessons from a recurring timetable.
-     *
-     * <p>Algorithm per {@link LessonScheduleEntry}:
-     * <ol>
-     *   <li><b>WEEKLY</b> – walks weeks starting from the Monday of {@code startDate}'s week,
-     *       tracking the repeating {@code intervalWeeks} cycle. For each week it collects all
-     *       candidate (date, slot) pairs whose {@code weekIndex} matches and whose
-     *       {@code dayOfWeek} does not fall in {@code excludeDates}, <b>sorts them by date</b>
-     *       ascending, then creates lessons in that order until {@code totalCount} is reached.</li>
-     *   <li><b>ONCE</b> – iterates each slot exactly once using {@code startDate}'s calendar date
-     *       adjusted to the slot's {@code dayOfWeek} within the same week. No cycling.
-     *       {@code totalCount} still acts as a hard cap.</li>
-     *   <li>Duplicate guard – if a lesson with the same (subject, dateTime, type, group) already
-     *       exists in the database it is silently skipped (does NOT consume from {@code totalCount}).
-     *       This makes repeated calls to bulk-schedule idempotent.</li>
-     * </ol>
+     * Bulk lesson creation from a repeating week pattern.
      */
     @Transactional
-    public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
+    public List<LessonResponse> bulkSchedule(Bulk request) {
         var subject = subjectService.getReferenceById(request.subjectId());
         var entities = new ArrayList<LessonEntity>();
 
         for (var entry : request.schedules()) {
-            if (entry.recurrence() == RecurrenceType.ONCE) {
-                scheduleOnce(entry, subject, entities);
-            } else {
-                scheduleWeekly(entry, subject, entities);
-            }
+            createByPattern(entry, subject, entities);
         }
 
         return lessonRepository.saveAll(entities)
@@ -98,152 +111,47 @@ public class LessonService {
         return lessonMapper.toResponse(lessonRepository.save(lesson));
     }
 
-    // -------------------------------------------------------------------------
-    // Scheduling strategies
-    // -------------------------------------------------------------------------
-
-    /**
-     * WEEKLY strategy.
-     *
-     * <p>Each slot carries its own first-occurrence {@code date}. The algorithm
-     * advances every slot independently by {@code intervalWeeks} weeks until the
-     * combined {@code totalCount} across all slots is reached.
-     *
-     * <p>Within each "round" (one pass over all slots for the current week offset)
-     * candidates are sorted by date+time ascending so lessons are always stored in
-     * chronological order regardless of slot ordering in the request.
-     */
-    private void scheduleWeekly(
-        LessonScheduleEntry entry,
-        com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject,
+    private void createByPattern(
+        Bulk.Entry entry,
+        SubjectEntity subject,
         List<LessonEntity> result
     ) {
-        int remaining = entry.totalCount();
-        int intervalWeeks = entry.intervalWeeks() != null ? entry.intervalWeeks() : 1;
-        var excludeSet = new java.util.HashSet<>(entry.resolvedExcludeDates());
+        if (entry.daysOfWeek().stream().allMatch(List::isEmpty)) {
+            throw new IllegalArgumentException("daysOfWeek must contain at least one day");
+        }
 
-        // Track current date per slot (starts at each slot's own date).
-        var slotDates = entry.slots().stream()
-            .collect(java.util.stream.Collectors.toMap(
-                s -> s,
-                s -> s.date().toLocalDate(),
-                (a, b) -> a,
-                java.util.LinkedHashMap::new
-            ));
+        int remaining = entry.totalCount();
+        int cycleWeeks = entry.daysOfWeek().size();
+        LocalDate weekStart = entry.startDate()
+            .minusDays(entry.startDate().getDayOfWeek().getValue() - 1L);
+        int weekOffset = 0;
 
         while (remaining > 0) {
-            // Collect candidates for this round, sorted chronologically.
-            record Candidate(LocalDate date, LessonSlot slot) {}
-            var candidates = entry.slots().stream()
-                .map(s -> new Candidate(slotDates.get(s), s))
-                .filter(c -> !excludeSet.contains(c.date()))
-                .sorted(java.util.Comparator.comparing(Candidate::date)
-                    .thenComparing(c -> c.slot().date().toLocalTime()))
+            var weekPattern = entry.daysOfWeek().get(weekOffset % cycleWeeks)
+                .stream()
+                .distinct()
+                .sorted()
                 .toList();
 
-            for (var candidate : candidates) {
+            LocalDate currentWeekStart = weekStart.plusWeeks(weekOffset);
+            for (var day : weekPattern) {
                 if (remaining == 0) break;
-                // Build dateTime by combining per-slot date with the time from slot.date().
-                OffsetDateTime dateTime = candidate.date()
-                    .atTime(candidate.slot().date().toLocalTime())
-                    .atOffset(candidate.slot().date().getOffset());
-                var entity = buildLesson(dateTime, candidate.slot(), subject);
-                if (entity != null) {
-                    result.add(entity);
-                    remaining--;
+
+                LocalDate lessonDate = currentWeekStart.plusDays(day.getValue() - 1L);
+                if (lessonDate.isBefore(entry.startDate())) {
+                    continue;
                 }
-            }
 
-            // Advance every slot by intervalWeeks for the next round.
-            slotDates.replaceAll((s, d) -> d.plusWeeks(intervalWeeks));
-        }
-    }
-
-    /**
-     * ONCE strategy.
-     *
-     * <p>Each slot is created exactly once using its own {@code date}.
-     * Slots are sorted by date+time before creation.
-     * {@code totalCount} acts as a hard cap.
-     */
-    private void scheduleOnce(
-        LessonScheduleEntry entry,
-        com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject,
-        List<LessonEntity> result
-    ) {
-        int remaining = entry.totalCount();
-        var excludeSet = new java.util.HashSet<>(entry.resolvedExcludeDates());
-
-        record Candidate(OffsetDateTime dateTime, LessonSlot slot) {}
-        var candidates = entry.slots().stream()
-            .filter(s -> !excludeSet.contains(s.date().toLocalDate()))
-            .map(s -> new Candidate(s.date(), s))
-            .sorted(java.util.Comparator.comparing(Candidate::dateTime))
-            .toList();
-
-        for (var candidate : candidates) {
-            if (remaining == 0) break;
-            var entity = buildLesson(candidate.dateTime(), candidate.slot(), subject);
-            if (entity != null) {
-                result.add(entity);
+                result.add(LessonEntity.builder()
+                    .name(buildLessonName(subject.getName(), entry.type()))
+                    .dateTime(lessonDate.atStartOfDay().atOffset(ZoneOffset.UTC))
+                    .type(entry.type())
+                    .subject(subject)
+                    .build());
                 remaining--;
             }
+            weekOffset++;
         }
-    }
-
-    /**
-     * Creates a {@link LessonEntity} for the given dateTime+slot, or returns
-     * {@code null} if an identical lesson already exists (duplicate guard).
-     */
-    private LessonEntity buildLesson(
-        OffsetDateTime dateTime,
-        LessonSlot slot,
-        com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject
-    ) {
-        var group = resolveGroup(slot);
-        UUID groupId = group != null ? group.getId() : null;
-
-        // Idempotency: skip if an identical lesson already exists.
-        boolean duplicate = lessonRepository
-            .existsBySubject_IdAndDateTimeAndTypeAndGroup_Id(
-                subject.getId(), dateTime, slot.type(), groupId
-            );
-        if (duplicate) return null;
-
-        return LessonEntity.builder()
-            .name(buildLessonName(subject.getName(), slot, group))
-            .dateTime(dateTime)
-            .type(slot.type())
-            .subject(subject)
-            .group(group)
-            .build();
-    }
-
-    // -------------------------------------------------------------------------
-    // Generic helpers
-    // -------------------------------------------------------------------------
-
-    /**
-     * Returns the target group entity for a slot, or {@code null} for lectures.
-     * Throws {@link EntityNotFoundException} if a non-null groupId does not exist.
-     */
-    private com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity resolveGroup(
-        LessonSlot slot
-    ) {
-        if (slot.type() == LessonType.LECTURE) {
-            // Lectures are always for the whole enrolled cohort.
-            return null;
-        }
-        if (slot.groupId() == null) {
-            return null;
-        }
-        return studentGroupRepository
-            .findById(slot.groupId())
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "StudentGroup not found: " + slot.groupId()
-                )
-            );
     }
 
     /**
@@ -252,17 +160,13 @@ public class LessonService {
      */
     private String buildLessonName(
         String subjectName,
-        LessonSlot slot,
-        com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity group
+        LessonType type
     ) {
-        String typeName = switch (slot.type()) {
+        String typeName = switch (type) {
             case LECTURE  -> "Лекция";
             case PRACTICE -> "Практика";
             case NONE     -> "Занятие";
         };
-        if (group != null) {
-            return subjectName + " — " + typeName + " (" + group.getName() + ")";
-        }
         return subjectName + " — " + typeName;
     }
 }

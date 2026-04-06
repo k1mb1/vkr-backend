@@ -2,7 +2,6 @@ package com.github.k1mb1.vkr_backend.domain.based;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;

@@ -25,7 +25,9 @@ public interface StudentRepository
     @Modifying
     @Query("UPDATE StudentEntity s SET s.group = :group WHERE s.id IN :ids")
     void updateGroupForIds(
-        @Param("group") com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity group,
+        @Param(
+            "group"
+        ) com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity group,
         @Param("ids") List<UUID> ids
     );
 }

@@ -17,7 +17,9 @@ public class StudentTaskGradeController implements StudentTaskGradeApi {
     final StudentTaskGradeService gradeService;
 
     @Override
-    public ResponseEntity<List<StudentTaskGradesResponse>> findByLesson(UUID lessonId) {
+    public ResponseEntity<List<StudentTaskGradesResponse>> findByLesson(
+        UUID lessonId
+    ) {
         return ResponseEntity.ok(gradeService.findGradesByLesson(lessonId));
     }
 
@@ -27,6 +29,8 @@ public class StudentTaskGradeController implements StudentTaskGradeApi {
         UUID taskId,
         UpsertTaskGradeRequest request
     ) {
-        return ResponseEntity.ok(gradeService.upsert(lessonId, taskId, request));
+        return ResponseEntity.ok(
+            gradeService.upsert(lessonId, taskId, request)
+        );
     }
 }

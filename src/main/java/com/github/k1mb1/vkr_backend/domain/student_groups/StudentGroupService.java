@@ -23,16 +23,6 @@ public class StudentGroupService {
 
     final StudentGroupRepository groupRepository;
 
-    public StudentGroupEntity findEntityById(UUID id) {
-        return groupRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    NOT_FOUND_MESSAGE.formatted("User", id)
-                )
-            );
-    }
-
     public Page<StudentGroupPageResponse> findAll(Pageable pageable) {
         return groupRepository.findAllMainGroupsWithStudentCount(pageable);
     }
@@ -44,10 +34,7 @@ public class StudentGroupService {
             .build();
 
         if (request.studentNames().size() > 1) {
-            // Build subgroups as an ordered list so the index assignment below
-            // is deterministic. HashSet iteration order is undefined, so we
-            // must create the subgroups in a List and add them to the entity.
-            var orderedSubgroups = new java.util.ArrayList<StudentGroupEntity>(
+            var orderedSubgroups = new ArrayList<StudentGroupEntity>(
                 request.studentNames().size()
             );
             for (int i = 0; i < request.studentNames().size(); i++) {

@@ -4,15 +4,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
-
-import java.util.Objects;
-import java.util.UUID;
 
 @MappedSuperclass
 @SuperBuilder(toBuilder = true)
@@ -35,8 +34,14 @@ public abstract class BaseEntity extends Auditable {
         if (o == null) {
             return false;
         }
-        Class<?> objectEffectiveClass = o instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        Class<?> objectEffectiveClass =
+            o instanceof HibernateProxy proxy
+                ? proxy.getHibernateLazyInitializer().getPersistentClass()
+                : o.getClass();
+        Class<?> thisEffectiveClass =
+            this instanceof HibernateProxy proxy
+                ? proxy.getHibernateLazyInitializer().getPersistentClass()
+                : this.getClass();
         if (thisEffectiveClass != objectEffectiveClass) {
             return false;
         }
@@ -46,6 +51,11 @@ public abstract class BaseEntity extends Auditable {
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+        return this instanceof HibernateProxy proxy
+            ? proxy
+                  .getHibernateLazyInitializer()
+                  .getPersistentClass()
+                  .hashCode()
+            : getClass().hashCode();
     }
 }

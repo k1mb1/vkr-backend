@@ -4,7 +4,8 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface LessonTaskRepository extends JpaRepository<LessonTaskEntity, UUID> {
-
+public interface LessonTaskRepository
+    extends JpaRepository<LessonTaskEntity, UUID>
+{
     List<LessonTaskEntity> findAllByLesson_IdOrderByPositionAsc(UUID lessonId);
 }

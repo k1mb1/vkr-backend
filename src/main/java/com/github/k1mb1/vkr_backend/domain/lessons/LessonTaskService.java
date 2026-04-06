@@ -29,10 +29,14 @@ public class LessonTaskService {
 
     @Transactional
     public TaskResponse create(UUID lessonId, CreateTaskRequest request) {
-        var lesson = lessonRepository.findById(lessonId)
-            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + lessonId));
+        var lesson = lessonRepository
+            .findById(lessonId)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Lesson not found: " + lessonId)
+            );
 
-        var entity = taskMapper.toEntity(request)
+        var entity = taskMapper
+            .toEntity(request)
             .toBuilder()
             .lesson(lesson)
             .build();
@@ -48,33 +52,55 @@ public class LessonTaskService {
      * coefficients for older tasks.
      */
     @Transactional
-    public TaskResponse update(UUID lessonId, UUID taskId, UpdateTaskRequest request) {
-        var entity = taskRepository.findById(taskId)
+    public TaskResponse update(
+        UUID lessonId,
+        UUID taskId,
+        UpdateTaskRequest request
+    ) {
+        var entity = taskRepository
+            .findById(taskId)
             .filter(t -> t.getLesson().getId().equals(lessonId))
-            .orElseThrow(() -> new EntityNotFoundException(
-                "Task " + taskId + " not found in lesson " + lessonId
-            ));
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "Task " + taskId + " not found in lesson " + lessonId
+                )
+            );
 
-        if (request.title()           != null) entity.setTitle(request.title());
-        if (request.description()     != null) entity.setDescription(request.description());
-        if (request.maxPoints()       != null) entity.setMaxPoints(request.maxPoints());
-        if (request.position()        != null) entity.setPosition(request.position());
-        if (request.issuedTaskIndex() != null) entity.setIssuedTaskIndex(request.issuedTaskIndex());
-        if (request.penaltyMode()     != null) entity.setPenaltyMode(request.penaltyMode());
-        if (request.penaltyStep()     != null) entity.setPenaltyStep(request.penaltyStep());
-        if (request.isMandatory()     != null) entity.setMandatory(request.isMandatory());
-        if (request.deadline()        != null) entity.setDeadline(request.deadline());
+        if (request.title() != null) entity.setTitle(request.title());
+        if (request.description() != null) entity.setDescription(
+            request.description()
+        );
+        if (request.maxPoints() != null) entity.setMaxPoints(
+            request.maxPoints()
+        );
+        if (request.position() != null) entity.setPosition(request.position());
+        if (request.issuedTaskIndex() != null) entity.setIssuedTaskIndex(
+            request.issuedTaskIndex()
+        );
+        if (request.penaltyMode() != null) entity.setPenaltyMode(
+            request.penaltyMode()
+        );
+        if (request.penaltyStep() != null) entity.setPenaltyStep(
+            request.penaltyStep()
+        );
+        if (request.isMandatory() != null) entity.setMandatory(
+            request.isMandatory()
+        );
+        if (request.deadline() != null) entity.setDeadline(request.deadline());
 
         return taskMapper.toResponse(taskRepository.save(entity));
     }
 
     @Transactional
     public void delete(UUID lessonId, UUID taskId) {
-        var entity = taskRepository.findById(taskId)
+        var entity = taskRepository
+            .findById(taskId)
             .filter(t -> t.getLesson().getId().equals(lessonId))
-            .orElseThrow(() -> new EntityNotFoundException(
-                "Task " + taskId + " not found in lesson " + lessonId
-            ));
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "Task " + taskId + " not found in lesson " + lessonId
+                )
+            );
         taskRepository.delete(entity);
     }
 }

@@ -52,10 +52,8 @@ public class LessonTaskEntity extends BaseEntity {
     @Column(columnDefinition = "text")
     String description;
 
-    /** Maximum achievable points for this task. */
     @Column(nullable = false)
-    @Builder.Default
-    int maxPoints = 100;
+    int maxPoints;
 
     /**
      * 0-based display/ordering position within the lesson.

@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
     value = "/api/lessons/{lessonId}/tasks",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@Tag(name = "Lesson Tasks", description = "Manage tasks (assignments) within a lesson")
+@Tag(
+    name = "Lesson Tasks",
+    description = "Manage tasks (assignments) within a lesson"
+)
 public interface LessonTaskApi {
-
     @Operation(summary = "List all tasks for a lesson, ordered by position")
     @GetMapping
     ResponseEntity<List<TaskResponse>> findAll(@PathVariable UUID lessonId);

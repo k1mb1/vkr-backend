@@ -8,17 +8,19 @@ import org.mapstruct.*;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = SPRING)
 public interface LessonMapper {
-
     @Mapping(source = "subject.id", target = "subjectId")
     @Mapping(source = "group.id", target = "groupId")
-    @Mapping(target = "subgroupNumber", expression = "java(extractSubgroupNumber(entity))")
+    @Mapping(
+        target = "subgroupNumber",
+        expression = "java(extractSubgroupNumber(entity))"
+    )
     LessonResponse toResponse(LessonEntity entity);
 
-    @Mapping(target = "id",        ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "subject",   ignore = true)
-    @Mapping(target = "tasks",     ignore = true)
+    @Mapping(target = "subject", ignore = true)
+    @Mapping(target = "tasks", ignore = true)
     LessonEntity toEntity(CreateLessonRequest request);
 
     /**

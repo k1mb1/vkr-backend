@@ -23,14 +23,24 @@ public class LessonTaskController implements LessonTaskApi {
     }
 
     @Override
-    public ResponseEntity<TaskResponse> create(UUID lessonId, CreateTaskRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(lessonTaskService.create(lessonId, request));
+    public ResponseEntity<TaskResponse> create(
+        UUID lessonId,
+        CreateTaskRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonTaskService.create(lessonId, request)
+        );
     }
 
     @Override
-    public ResponseEntity<TaskResponse> update(UUID lessonId, UUID taskId, UpdateTaskRequest request) {
-        return ResponseEntity.ok(lessonTaskService.update(lessonId, taskId, request));
+    public ResponseEntity<TaskResponse> update(
+        UUID lessonId,
+        UUID taskId,
+        UpdateTaskRequest request
+    ) {
+        return ResponseEntity.ok(
+            lessonTaskService.update(lessonId, taskId, request)
+        );
     }
 
     @Override

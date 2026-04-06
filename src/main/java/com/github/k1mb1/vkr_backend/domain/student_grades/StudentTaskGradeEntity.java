@@ -24,7 +24,7 @@ import org.hibernate.type.SqlTypes;
     name = "student_task_grades",
     uniqueConstraints = @UniqueConstraint(
         name = "UK_TASK_GRADE_TASK_STUDENT",
-        columnNames = {"task_id", "student_id"}
+        columnNames = { "task_id", "student_id" }
     )
 )
 @NoArgsConstructor

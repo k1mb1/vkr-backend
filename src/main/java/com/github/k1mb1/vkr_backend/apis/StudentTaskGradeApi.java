@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
     value = "/api/lessons/{lessonId}",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@Tag(name = "Student Task Grades", description = "Grades for lesson task assignments")
+@Tag(
+    name = "Student Task Grades",
+    description = "Grades for lesson task assignments"
+)
 public interface StudentTaskGradeApi {
-
     @Operation(summary = "All task grades for a lesson grouped by student")
     @GetMapping("/task-grades")
     ResponseEntity<List<StudentTaskGradesResponse>> findByLesson(
@@ -27,8 +29,8 @@ public interface StudentTaskGradeApi {
 
     @Operation(
         summary = "Upsert a student grade for a task",
-        description = "Creates or updates the grade for the given (task, student) pair. "
-            + "Pass submittedAt to record submission time."
+        description = "Creates or updates the grade for the given (task, student) pair. " +
+            "Pass submittedAt to record submission time."
     )
     @PutMapping("/tasks/{taskId}/grades")
     ResponseEntity<TaskGradeResponse> upsert(

@@ -5,9 +5,9 @@ import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherEntity;
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
-import java.time.Instant;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
