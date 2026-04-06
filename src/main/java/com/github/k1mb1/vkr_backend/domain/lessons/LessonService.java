@@ -4,9 +4,8 @@ import com.github.k1mb1.vkr_backend.domain.lessons.requests.*;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
-import jakarta.persistence.EntityNotFoundException;import java.time.LocalDate;
+import jakarta.persistence.EntityNotFoundException;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -106,11 +105,13 @@ public class LessonService {
     /**
      * WEEKLY strategy.
      *
-     * <p>Walks week by week. For each week it collects all (date, slot) candidates
-     * whose {@code weekIndex} matches the current cycle position, filters out
-     * excluded dates, <b>sorts by date ascending</b> so that the generated lessons
-     * are always in chronological order regardless of slot ordering in the request,
-     * and creates lessons until {@code totalCount} is reached.
+     * <p>Each slot carries its own first-occurrence {@code date}. The algorithm
+     * advances every slot independently by {@code intervalWeeks} weeks until the
+     * combined {@code totalCount} across all slots is reached.
+     *
+     * <p>Within each "round" (one pass over all slots for the current week offset)
+     * candidates are sorted by date+time ascending so lessons are always stored in
+     * chronological order regardless of slot ordering in the request.
      */
     private void scheduleWeekly(
         LessonScheduleEntry entry,
@@ -121,41 +122,48 @@ public class LessonService {
         int intervalWeeks = entry.intervalWeeks() != null ? entry.intervalWeeks() : 1;
         var excludeSet = new java.util.HashSet<>(entry.resolvedExcludeDates());
 
-        LocalDate weekStart = entry.startDate()
-            .toLocalDate()
-            .with(java.time.DayOfWeek.MONDAY);
-        int cycleWeek = 0;
+        // Track current date per slot (starts at each slot's own date).
+        var slotDates = entry.slots().stream()
+            .collect(java.util.stream.Collectors.toMap(
+                s -> s,
+                s -> s.date().toLocalDate(),
+                (a, b) -> a,
+                java.util.LinkedHashMap::new
+            ));
 
         while (remaining > 0) {
-            // Collect all (date, slot) candidates for this week, sorted by date.
+            // Collect candidates for this round, sorted chronologically.
             record Candidate(LocalDate date, LessonSlot slot) {}
             var candidates = entry.slots().stream()
-                .filter(s -> s.resolvedWeekIndex() == cycleWeek)
-                .map(s -> new Candidate(weekStart.with(s.dayOfWeek()), s))
+                .map(s -> new Candidate(slotDates.get(s), s))
                 .filter(c -> !excludeSet.contains(c.date()))
                 .sorted(java.util.Comparator.comparing(Candidate::date)
-                    .thenComparing(c -> c.slot().time()))
+                    .thenComparing(c -> c.slot().date().toLocalTime()))
                 .toList();
 
             for (var candidate : candidates) {
                 if (remaining == 0) break;
-                var entity = buildLesson(candidate.date(), candidate.slot(), subject);
+                // Build dateTime by combining per-slot date with the time from slot.date().
+                OffsetDateTime dateTime = candidate.date()
+                    .atTime(candidate.slot().date().toLocalTime())
+                    .atOffset(candidate.slot().date().getOffset());
+                var entity = buildLesson(dateTime, candidate.slot(), subject);
                 if (entity != null) {
                     result.add(entity);
                     remaining--;
                 }
             }
 
-            weekStart = weekStart.plusWeeks(1);
-            cycleWeek = (cycleWeek + 1) % intervalWeeks;
+            // Advance every slot by intervalWeeks for the next round.
+            slotDates.replaceAll((s, d) -> d.plusWeeks(intervalWeeks));
         }
     }
 
     /**
      * ONCE strategy.
      *
-     * <p>Each slot is placed on its {@code dayOfWeek} within the week of
-     * {@code startDate}. Slots are sorted by date+time before creation.
+     * <p>Each slot is created exactly once using its own {@code date}.
+     * Slots are sorted by date+time before creation.
      * {@code totalCount} acts as a hard cap.
      */
     private void scheduleOnce(
@@ -165,21 +173,17 @@ public class LessonService {
     ) {
         int remaining = entry.totalCount();
         var excludeSet = new java.util.HashSet<>(entry.resolvedExcludeDates());
-        LocalDate weekStart = entry.startDate()
-            .toLocalDate()
-            .with(java.time.DayOfWeek.MONDAY);
 
-        record Candidate(LocalDate date, LessonSlot slot) {}
+        record Candidate(OffsetDateTime dateTime, LessonSlot slot) {}
         var candidates = entry.slots().stream()
-            .map(s -> new Candidate(weekStart.with(s.dayOfWeek()), s))
-            .filter(c -> !excludeSet.contains(c.date()))
-            .sorted(java.util.Comparator.comparing(Candidate::date)
-                .thenComparing(c -> c.slot().time()))
+            .filter(s -> !excludeSet.contains(s.date().toLocalDate()))
+            .map(s -> new Candidate(s.date(), s))
+            .sorted(java.util.Comparator.comparing(Candidate::dateTime))
             .toList();
 
         for (var candidate : candidates) {
             if (remaining == 0) break;
-            var entity = buildLesson(candidate.date(), candidate.slot(), subject);
+            var entity = buildLesson(candidate.dateTime(), candidate.slot(), subject);
             if (entity != null) {
                 result.add(entity);
                 remaining--;
@@ -188,16 +192,15 @@ public class LessonService {
     }
 
     /**
-     * Creates a {@link LessonEntity} for the given date+slot, or returns
+     * Creates a {@link LessonEntity} for the given dateTime+slot, or returns
      * {@code null} if an identical lesson already exists (duplicate guard).
      */
     private LessonEntity buildLesson(
-        LocalDate date,
+        OffsetDateTime dateTime,
         LessonSlot slot,
         com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity subject
     ) {
         var group = resolveGroup(slot);
-        OffsetDateTime dateTime = date.atTime(slot.time()).atOffset(ZoneOffset.UTC);
         UUID groupId = group != null ? group.getId() : null;
 
         // Idempotency: skip if an identical lesson already exists.
