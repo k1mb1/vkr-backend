@@ -78,7 +78,7 @@ public class LessonService {
      * Bulk lesson creation from a repeating week pattern.
      */
     @Transactional
-    public List<LessonResponse> bulkSchedule(Bulk request) {
+    public List<LessonResponse> bulkSchedule(BulkScheduleRequest request) {
         var subject = subjectService.getReferenceById(request.subjectId());
         var entities = new ArrayList<LessonEntity>();
 
@@ -112,7 +112,7 @@ public class LessonService {
     }
 
     private void createByPattern(
-        Bulk.Entry entry,
+        BulkScheduleRequest.Entry entry,
         SubjectEntity subject,
         List<LessonEntity> result
     ) {

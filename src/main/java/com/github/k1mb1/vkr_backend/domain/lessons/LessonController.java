@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.apis.LessonApi;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.Bulk;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateDecayFactorRequest;
@@ -46,7 +46,7 @@ public class LessonController implements LessonApi {
 
     @Override
     public ResponseEntity<List<LessonResponse>> bulkSchedule(
-        Bulk request
+        BulkScheduleRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             lessonService.bulkSchedule(request)

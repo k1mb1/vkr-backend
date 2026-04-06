@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.Bulk;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateDecayFactorRequest;
@@ -43,7 +43,7 @@ public interface LessonApi {
     @Operation(summary = "Bulk-schedule recurring lessons")
     @PostMapping("/bulk-schedule")
     ResponseEntity<List<LessonResponse>> bulkSchedule(
-        @RequestBody @Valid Bulk request
+        @RequestBody @Valid BulkScheduleRequest request
     );
 
     @Operation(summary = "Update lesson decay factor")
