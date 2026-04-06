@@ -7,4 +7,10 @@ public record StudentSubjectSubgroupsResponse(
     UUID subjectId,
     String subjectName,
     List<SubjectSubgroupStudentsResponse> subgroups
-) {}
+) {
+    public record SubjectSubgroupStudentsResponse(
+        UUID id,
+        String name,
+        List<String> studentNames
+    ) {}
+}
