@@ -2,7 +2,6 @@ package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.StudentAttendanceEntity;
-import com.github.k1mb1.vkr_backend.domain.student_grades.StudentGradeEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import jakarta.persistence.*;
@@ -67,15 +66,6 @@ public class LessonEntity extends BaseEntity {
     )
     @Builder.Default
     Set<StudentAttendanceEntity> attendances = new HashSet<>();
-
-    @OneToMany(
-        mappedBy = "lesson",
-        fetch = FetchType.LAZY,
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
-    @Builder.Default
-    Set<StudentGradeEntity> grades = new HashSet<>();
 
     /**
      * Decay coefficient for the whole lesson [0..1].
