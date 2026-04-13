@@ -26,17 +26,13 @@ public class SubjectService {
     final TeacherRepository teacherRepository;
     final StudentGroupRepository studentGroupRepository;
 
-    public List<SubjectResponse> findAllByTeacherId(UUID teacherId) {
-        return subjectRepository
-            .findAllByTeachers_IdAndArchivedFalse(teacherId)
-            .stream()
-            .map(subjectMapper::toResponse)
-            .toList();
+    public List<SubjectResponse> findAllByTeacherId(UUID teacherId, Boolean archived) {
+        return findAllByFilter(new SubjectFilter(teacherId, archived));
     }
 
-    public List<SubjectResponse> findAllArchivedByTeacherId(UUID teacherId) {
+    private List<SubjectResponse> findAllByFilter(SubjectFilter filter) {
         return subjectRepository
-            .findAllByTeachers_IdAndArchivedTrue(teacherId)
+            .findAll(filter.toSpecification())
             .stream()
             .map(subjectMapper::toResponse)
             .toList();

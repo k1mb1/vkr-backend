@@ -1,6 +1,5 @@
 package com.github.k1mb1.vkr_backend.domain.subjects;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
@@ -13,10 +12,6 @@ public interface SubjectRepository
         JpaRepository<SubjectEntity, UUID>,
         JpaSpecificationExecutor<SubjectEntity>
 {
-    List<SubjectEntity> findAllByTeachers_IdAndArchivedFalse(UUID teacherId);
-
-    List<SubjectEntity> findAllByTeachers_IdAndArchivedTrue(UUID teacherId);
-
     @Query(
         """
         SELECT DISTINCT s FROM SubjectEntity s

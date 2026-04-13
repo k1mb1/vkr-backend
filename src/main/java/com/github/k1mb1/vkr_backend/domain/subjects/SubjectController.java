@@ -23,10 +23,11 @@ public class SubjectController implements SubjectApi {
 
     @Override
     public ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
-            UUID teacherId
+            UUID teacherId,
+            Boolean archived
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
-                subjectService.findAllByTeacherId(teacherId)
+                subjectService.findAllByTeacherId(teacherId, archived)
         );
     }
 
@@ -36,15 +37,6 @@ public class SubjectController implements SubjectApi {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 subjectService.create(request)
-        );
-    }
-
-    @Override
-    public ResponseEntity<List<SubjectResponse>> findAllArchivedByTeacherId(
-            UUID teacherId
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-                subjectService.findAllArchivedByTeacherId(teacherId)
         );
     }
 

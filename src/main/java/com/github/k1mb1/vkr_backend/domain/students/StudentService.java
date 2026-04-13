@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.domain.students;
 import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
 
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
-import com.github.k1mb1.vkr_backend.domain.students.responses.SubjectSubgroupStudentsResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Comparator;
@@ -47,7 +46,7 @@ public class StudentService {
 			.entrySet()
 			.stream()
 			.map(entry ->
-				new SubjectSubgroupStudentsResponse(
+				new StudentSubjectSubgroupsResponse.SubjectSubgroupStudentsResponse(
 					entry.getKey().getId(),
 					entry.getKey().getName(),
 					entry
@@ -57,7 +56,7 @@ public class StudentService {
 						.toList()
 				)
 			)
-			.sorted(Comparator.comparing(SubjectSubgroupStudentsResponse::name))
+			.sorted(Comparator.comparing(StudentSubjectSubgroupsResponse.SubjectSubgroupStudentsResponse::name))
 			.toList();
 
 		return new StudentSubjectSubgroupsResponse(

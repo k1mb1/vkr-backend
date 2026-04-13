@@ -19,18 +19,12 @@ import org.springframework.web.bind.annotation.*;
 )
 @Tag(name = "Subjects", description = "Subject management")
 public interface SubjectApi {
-    @Operation(summary = "List all subjects by teacher")
+    @Operation(summary = "List subjects by teacher")
     @GetMapping("/teachers/{teacherId}")
     @PreAuthorize("@securityService.isSameUser(#teacherId)")
     ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
-        @PathVariable UUID teacherId
-    );
-
-    @Operation(summary = "List archived subjects by teacher")
-    @GetMapping("/teachers/{teacherId}/archived")
-    @PreAuthorize("@securityService.isSameUser(#teacherId)")
-    ResponseEntity<List<SubjectResponse>> findAllArchivedByTeacherId(
-        @PathVariable UUID teacherId
+        @PathVariable UUID teacherId,
+        @RequestParam(defaultValue = "false") Boolean archived
     );
 
     @Operation(summary = "Create subject")
