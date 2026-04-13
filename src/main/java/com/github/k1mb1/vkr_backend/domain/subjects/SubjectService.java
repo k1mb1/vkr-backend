@@ -26,11 +26,7 @@ public class SubjectService {
     final TeacherRepository teacherRepository;
     final StudentGroupRepository studentGroupRepository;
 
-    public List<SubjectResponse> findAllByTeacherId(UUID teacherId, Boolean archived) {
-        return findAllByFilter(new SubjectFilter(teacherId, archived));
-    }
-
-    private List<SubjectResponse> findAllByFilter(SubjectFilter filter) {
+    public List<SubjectResponse> findAllByFilter(SubjectFilter filter) {
         return subjectRepository
             .findAll(filter.toSpecification())
             .stream()

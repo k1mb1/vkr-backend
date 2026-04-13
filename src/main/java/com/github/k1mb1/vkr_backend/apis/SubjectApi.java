@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
+import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,7 +26,9 @@ public interface SubjectApi {
     @PreAuthorize("@securityService.isSameUser(#teacherId)")
     ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
         @PathVariable UUID teacherId,
-        @RequestParam(defaultValue = "false") Boolean archived
+        @ParameterObject
+        @ModelAttribute
+        FindSubjectsFilter filter
     );
 
     @Operation(summary = "Create subject")

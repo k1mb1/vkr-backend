@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.subjects;
 
 import com.github.k1mb1.vkr_backend.apis.SubjectApi;
+import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
@@ -24,10 +25,15 @@ public class SubjectController implements SubjectApi {
     @Override
     public ResponseEntity<List<SubjectResponse>> findAllByTeacherId(
             UUID teacherId,
-            Boolean archived
+            FindSubjectsFilter filter
     ) {
+        var subjectFilter = SubjectFilter.builder()
+                .teacherId(teacherId)
+                .archived(filter.archived() == null ? false : filter.archived())
+                .build();
+
         return ResponseEntity.status(HttpStatus.OK).body(
-                subjectService.findAllByTeacherId(teacherId, archived)
+                subjectService.findAllByFilter(subjectFilter)
         );
     }
 
