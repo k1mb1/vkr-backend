@@ -9,6 +9,7 @@ import lombok.Builder;
 public record StudentGroupResponse(
     UUID id,
     String name,
+    List<GroupSubjectResponse> subjects,
     /**
      * Students assigned directly to the main group (no subgroup).
      * Empty when the group has subgroups.

@@ -7,7 +7,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,16 +30,22 @@ public interface StudentGroupRepository
         Pageable pageable
     );
 
+    Optional<StudentGroupEntity> findByIdAndParentGroupIsNull(UUID id);
+
+    Page<StudentGroupEntity> findAllByParentGroup_Id(UUID parentGroupId, Pageable pageable);
+
     @Query(
         """
         SELECT DISTINCT g FROM StudentGroupEntity g
-        LEFT JOIN FETCH g.students
+        LEFT JOIN FETCH g.students gs
+        LEFT JOIN FETCH gs.subjects gss
         LEFT JOIN FETCH g.subgroups sg
-        LEFT JOIN FETCH sg.students
+        LEFT JOIN FETCH sg.students sgs
+        LEFT JOIN FETCH sgs.subjects sgss
         WHERE g.id = :id AND g.parentGroup IS NULL
         """
     )
-    Optional<StudentGroupEntity> findWithSubgroupsAndStudentsById(
+    Optional<StudentGroupEntity> findWithSubgroupsStudentsAndSubjectsById(
         @Param("id") UUID id
     );
 }

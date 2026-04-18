@@ -1,9 +1,12 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
 import com.github.k1mb1.vkr_backend.apis.StudentGroupApi;
+import com.github.k1mb1.vkr_backend.domain.student_groups.filters.FindGroupsFilter;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
+import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,10 +23,13 @@ public class StudentGroupController implements StudentGroupApi {
 
     @Override
     public ResponseEntity<Page<StudentGroupPageResponse>> findAll(
+        FindGroupsFilter filter,
         Pageable pageable
     ) {
+        var groupFilter = StudentGroupFilter.builder().name(filter.name()).build();
+
         return ResponseEntity.status(HttpStatus.OK).body(
-            studentGroupService.findAll(pageable)
+            studentGroupService.findAll(groupFilter, pageable)
         );
     }
 
@@ -42,6 +48,26 @@ public class StudentGroupController implements StudentGroupApi {
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
             studentGroupService.findGroupWithSubgroups(groupId)
+        );
+    }
+
+    @Override
+    public ResponseEntity<Page<SubgroupResponse>> findSubgroups(
+        UUID groupId,
+        Pageable pageable
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            studentGroupService.findSubgroups(groupId, pageable)
+        );
+    }
+
+    @Override
+    public ResponseEntity<StudentGroupResponse> update(
+        UUID groupId,
+        UpdateGroupRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            studentGroupService.update(groupId, request)
         );
     }
 }

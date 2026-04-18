@@ -64,7 +64,7 @@ public class SubjectService {
             );
 
         var group = studentGroupRepository
-            .findWithSubgroupsAndStudentsById(groupId)
+            .findWithSubgroupsStudentsAndSubjectsById(groupId)
             .orElseThrow(() ->
                 new EntityNotFoundException(
                     NOT_FOUND_MESSAGE.formatted("Main group", groupId)

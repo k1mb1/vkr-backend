@@ -1,8 +1,11 @@
 package com.github.k1mb1.vkr_backend.apis;
 
+import com.github.k1mb1.vkr_backend.domain.student_groups.filters.FindGroupsFilter;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
+import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +26,7 @@ public interface StudentGroupApi {
     @Operation(summary = "List all groups")
     @GetMapping
     ResponseEntity<Page<StudentGroupPageResponse>> findAll(
+        @ParameterObject @ModelAttribute FindGroupsFilter filter,
         @ParameterObject Pageable pageable
     );
 
@@ -46,5 +50,19 @@ public interface StudentGroupApi {
     @GetMapping("/{groupId}")
     ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(
         @PathVariable UUID groupId
+    );
+
+    @Operation(summary = "List group subgroups")
+    @GetMapping("/{groupId}/subgroups")
+    ResponseEntity<Page<SubgroupResponse>> findSubgroups(
+        @PathVariable UUID groupId,
+        @ParameterObject Pageable pageable
+    );
+
+    @Operation(summary = "Rename group")
+    @PutMapping("/{groupId}")
+    ResponseEntity<StudentGroupResponse> update(
+        @PathVariable UUID groupId,
+        @RequestBody @Valid UpdateGroupRequest request
     );
 }
