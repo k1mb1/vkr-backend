@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_grades;
 
 import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
-import com.github.k1mb1.vkr_backend.domain.lessons.LessonTaskEntity;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import jakarta.persistence.*;
 import java.time.Instant;

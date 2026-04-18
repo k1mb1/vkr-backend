@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.domain.lessons;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks;
 
 import java.util.List;
 import java.util.UUID;

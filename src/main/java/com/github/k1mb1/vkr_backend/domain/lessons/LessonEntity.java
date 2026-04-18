@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskEntity;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.StudentAttendanceEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;

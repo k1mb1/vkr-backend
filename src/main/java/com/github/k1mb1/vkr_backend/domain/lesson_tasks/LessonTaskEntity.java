@@ -1,6 +1,7 @@
-package com.github.k1mb1.vkr_backend.domain.lessons;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks;
 
 import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
+import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;

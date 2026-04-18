@@ -1,8 +1,9 @@
-package com.github.k1mb1.vkr_backend.domain.lessons;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateTaskRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateTaskRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.responses.TaskResponse;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.CreateTaskRequest;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.UpdateTaskRequest;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
+import com.github.k1mb1.vkr_backend.domain.lessons.LessonRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.UUID;

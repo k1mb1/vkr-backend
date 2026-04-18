@@ -1,6 +1,6 @@
-package com.github.k1mb1.vkr_backend.domain.lessons.responses;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.PenaltyMode;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;

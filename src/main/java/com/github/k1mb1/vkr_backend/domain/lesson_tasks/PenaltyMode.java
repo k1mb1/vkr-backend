@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.domain.lessons;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks;
 
 /**
  * How the displacement coefficient is computed for tasks that have been

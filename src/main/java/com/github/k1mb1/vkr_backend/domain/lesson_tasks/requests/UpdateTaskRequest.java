@@ -1,6 +1,6 @@
-package com.github.k1mb1.vkr_backend.domain.lessons.requests;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.PenaltyMode;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.Instant;

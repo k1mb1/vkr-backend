@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_grades;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.LessonTaskRepository;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskRepository;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;

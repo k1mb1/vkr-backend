@@ -1,9 +1,9 @@
-package com.github.k1mb1.vkr_backend.domain.lessons;
+package com.github.k1mb1.vkr_backend.domain.lesson_tasks;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateTaskRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.responses.TaskResponse;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.CreateTaskRequest;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
 import org.mapstruct.*;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = SPRING)
