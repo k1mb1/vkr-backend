@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.domain.student_groups;
 
 import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
 
+import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupSubjectResponse;
@@ -125,20 +126,6 @@ public class StudentGroupService {
         );
     }
 
-    public Page<SubgroupResponse> findSubgroups(UUID groupId, Pageable pageable) {
-        getMainGroupById(groupId);
-
-        return groupRepository
-            .findAllByParentGroup_Id(groupId, pageable)
-            .map(subgroup ->
-                new SubgroupResponse(
-                    subgroup.getId(),
-                    subgroup.getName(),
-                    mapStudents(subgroup.getStudents())
-                )
-            );
-    }
-
     @Transactional
     public StudentGroupResponse update(UUID groupId, UpdateGroupRequest request) {
         var group = getMainGroupById(groupId);
@@ -185,7 +172,7 @@ public class StudentGroupService {
             )
             .collect(
                 Collectors.toMap(
-                    subject -> subject.getId(),
+                        BaseEntity::getId,
                     subject -> new GroupSubjectResponse(
                         subject.getId(),
                         subject.getName()

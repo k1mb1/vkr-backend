@@ -35,10 +35,6 @@ public class StudentService {
 			.map(studentMapper::toResponse);
 	}
 
-	public StudentResponse findById(UUID studentId) {
-		return studentMapper.toResponse(getStudentById(studentId));
-	}
-
 	@Transactional
 	public StudentResponse update(UUID studentId, UpdateStudentRequest request) {
 		var student = getStudentById(studentId);
@@ -63,54 +59,6 @@ public class StudentService {
 	public void delete(UUID studentId) {
 		var student = getStudentById(studentId);
 		studentRepository.delete(student);
-	}
-
-	public StudentSubjectSubgroupsResponse findBySubjectIdWithSubgroups(
-		UUID subjectId
-	) {
-		var subject = subjectRepository
-			.findByIdWithStudentsAndGroups(subjectId)
-			.orElseThrow(() ->
-				new EntityNotFoundException(
-					NOT_FOUND_MESSAGE.formatted("Subject", subjectId)
-				)
-			);
-
-		var subgroupResponses = subject
-			.getStudents()
-			.stream()
-			.filter(student -> student.getGroup() != null)
-			.filter(student -> student.getGroup().getParentGroup() != null)
-			.collect(
-				java.util.stream.Collectors.groupingBy(
-					StudentEntity::getGroup,
-					java.util.stream.Collectors.mapping(
-						StudentEntity::getUsername,
-						java.util.stream.Collectors.toList()
-					)
-				)
-			)
-			.entrySet()
-			.stream()
-			.map(entry ->
-				new StudentSubjectSubgroupsResponse.SubjectSubgroupStudentsResponse(
-					entry.getKey().getId(),
-					entry.getKey().getName(),
-					entry
-						.getValue()
-						.stream()
-						.sorted(String::compareTo)
-						.toList()
-				)
-			)
-			.sorted(Comparator.comparing(StudentSubjectSubgroupsResponse.SubjectSubgroupStudentsResponse::name))
-			.toList();
-
-		return new StudentSubjectSubgroupsResponse(
-			subject.getId(),
-			subject.getName(),
-			subgroupResponses
-		);
 	}
 
 	private StudentEntity getStudentById(UUID studentId) {

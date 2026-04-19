@@ -14,20 +14,4 @@ public interface StudentRepository
     extends
         JpaRepository<StudentEntity, UUID>,
         JpaSpecificationExecutor<StudentEntity>
-{
-    List<StudentEntity> findAllByUsernameIn(List<String> usernames);
-
-    List<StudentEntity> findAllBySubjects_Id(UUID subjectId);
-
-    Page<StudentEntity> findAllBySubjects_Id(UUID subjectId, Pageable pageable);
-
-    /** Batch-update group for a set of students — single UPDATE query. */
-    @Modifying
-    @Query("UPDATE StudentEntity s SET s.group = :group WHERE s.id IN :ids")
-    void updateGroupForIds(
-        @Param(
-            "group"
-        ) com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupEntity group,
-        @Param("ids") List<UUID> ids
-    );
-}
+{}

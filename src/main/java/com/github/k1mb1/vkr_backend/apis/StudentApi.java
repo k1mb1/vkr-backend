@@ -34,10 +34,6 @@ public interface StudentApi {
         @ParameterObject Pageable pageable
     );
 
-    @Operation(summary = "Get student by id")
-    @GetMapping("/{studentId}")
-    ResponseEntity<StudentResponse> findById(@PathVariable UUID studentId);
-
     @Operation(summary = "Update student")
     @PutMapping("/{studentId}")
     ResponseEntity<StudentResponse> update(
@@ -48,13 +44,4 @@ public interface StudentApi {
     @Operation(summary = "Delete student")
     @DeleteMapping("/{studentId}")
     ResponseEntity<Void> delete(@PathVariable UUID studentId);
-
-    @Operation(
-        summary = "Get subject subgroups with student names",
-        description = "Returns only subgroups enrolled in the subject and names of students in each subgroup."
-    )
-    @GetMapping("/subjects/{subjectId}")
-    ResponseEntity<StudentSubjectSubgroupsResponse> findBySubjectIdWithSubgroups(
-        @PathVariable UUID subjectId
-    );
 }

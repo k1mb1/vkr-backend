@@ -51,18 +51,4 @@ public interface StudentGroupApi {
     ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(
         @PathVariable UUID groupId
     );
-
-    @Operation(summary = "List group subgroups")
-    @GetMapping("/{groupId}/subgroups")
-    ResponseEntity<Page<SubgroupResponse>> findSubgroups(
-        @PathVariable UUID groupId,
-        @ParameterObject Pageable pageable
-    );
-
-    @Operation(summary = "Rename group")
-    @PutMapping("/{groupId}")
-    ResponseEntity<StudentGroupResponse> update(
-        @PathVariable UUID groupId,
-        @RequestBody @Valid UpdateGroupRequest request
-    );
 }

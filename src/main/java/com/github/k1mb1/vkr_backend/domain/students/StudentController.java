@@ -5,7 +5,9 @@ import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
+
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,33 +23,26 @@ public class StudentController implements StudentApi {
 
     @Override
     public ResponseEntity<Page<StudentResponse>> findAll(
-        FindStudentsFilter filter,
-        Pageable pageable
+            FindStudentsFilter filter,
+            Pageable pageable
     ) {
         var studentFilter = StudentFilter.builder()
-            .username(filter.username())
-            .groupId(filter.groupId())
-            .build();
+                .username(filter.username())
+                .groupId(filter.groupId())
+                .build();
 
         return ResponseEntity.status(HttpStatus.OK).body(
-            studentService.findAllByFilter(studentFilter, pageable)
-        );
-    }
-
-    @Override
-    public ResponseEntity<StudentResponse> findById(UUID studentId) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            studentService.findById(studentId)
+                studentService.findAllByFilter(studentFilter, pageable)
         );
     }
 
     @Override
     public ResponseEntity<StudentResponse> update(
-        UUID studentId,
-        UpdateStudentRequest request
+            UUID studentId,
+            UpdateStudentRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
-            studentService.update(studentId, request)
+                studentService.update(studentId, request)
         );
     }
 
@@ -55,14 +50,5 @@ public class StudentController implements StudentApi {
     public ResponseEntity<Void> delete(UUID studentId) {
         studentService.delete(studentId);
         return ResponseEntity.noContent().build();
-    }
-
-    @Override
-    public ResponseEntity<StudentSubjectSubgroupsResponse> findBySubjectIdWithSubgroups(
-        UUID subjectId
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            studentService.findBySubjectIdWithSubgroups(subjectId)
-        );
     }
 }

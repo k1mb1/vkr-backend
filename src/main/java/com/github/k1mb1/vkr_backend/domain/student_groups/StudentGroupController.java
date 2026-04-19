@@ -50,24 +50,4 @@ public class StudentGroupController implements StudentGroupApi {
             studentGroupService.findGroupWithSubgroups(groupId)
         );
     }
-
-    @Override
-    public ResponseEntity<Page<SubgroupResponse>> findSubgroups(
-        UUID groupId,
-        Pageable pageable
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            studentGroupService.findSubgroups(groupId, pageable)
-        );
-    }
-
-    @Override
-    public ResponseEntity<StudentGroupResponse> update(
-        UUID groupId,
-        UpdateGroupRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            studentGroupService.update(groupId, request)
-        );
-    }
 }

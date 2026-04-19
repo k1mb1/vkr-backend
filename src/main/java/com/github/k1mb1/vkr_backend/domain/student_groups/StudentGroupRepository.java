@@ -15,24 +15,7 @@ public interface StudentGroupRepository
         JpaRepository<StudentGroupEntity, UUID>,
         JpaSpecificationExecutor<StudentGroupEntity>
 {
-    @Query(
-        value = """
-        SELECT new com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse(
-            g.id, g.name,
-            (SELECT COUNT(sg) FROM StudentGroupEntity sg WHERE sg.parentGroup = g)
-        )
-        FROM StudentGroupEntity g
-        WHERE g.parentGroup IS NULL
-        """,
-        countQuery = "SELECT COUNT(g) FROM StudentGroupEntity g WHERE g.parentGroup IS NULL"
-    )
-    Page<StudentGroupPageResponse> findAllMainGroupsWithStudentCount(
-        Pageable pageable
-    );
-
     Optional<StudentGroupEntity> findByIdAndParentGroupIsNull(UUID id);
-
-    Page<StudentGroupEntity> findAllByParentGroup_Id(UUID parentGroupId, Pageable pageable);
 
     @Query(
         """
