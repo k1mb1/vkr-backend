@@ -21,6 +21,23 @@ public class StudentGroupEntity extends BaseEntity {
     @ToString.Include
     String name;
 
+    /**
+     * Parent group reference. NULL = this is a main group.
+     * Non-null = this entity is a subgroup of the referenced group.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_group_id")
+    StudentGroupEntity parentGroup;
+
+    @OneToMany(
+        mappedBy = "parentGroup",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @Builder.Default
+    Set<StudentGroupEntity> subgroups = new HashSet<>();
+
     @OneToMany(
         mappedBy = "group",
         fetch = FetchType.LAZY,

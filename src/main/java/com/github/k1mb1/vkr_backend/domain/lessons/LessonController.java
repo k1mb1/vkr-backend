@@ -1,9 +1,10 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.apis.LessonApi;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateDecayFactorRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import java.util.List;
 import java.util.UUID;
@@ -44,18 +45,19 @@ public class LessonController implements LessonApi {
     }
 
     @Override
-    public ResponseEntity<LessonResponse> update(
-        UUID id,
-        UpdateLessonRequest request
+    public ResponseEntity<List<LessonResponse>> bulkSchedule(
+        BulkScheduleRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            lessonService.update(id, request)
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonService.bulkSchedule(request)
         );
     }
 
     @Override
-    public ResponseEntity<Void> delete(UUID id) {
-        lessonService.delete(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    public ResponseEntity<LessonResponse> updateDecayFactor(
+        UUID id,
+        UpdateDecayFactorRequest request
+    ) {
+        return ResponseEntity.ok(lessonService.updateDecayFactor(id, request));
     }
 }

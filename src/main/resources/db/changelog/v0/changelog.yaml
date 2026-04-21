@@ -5,3 +5,13 @@ databaseChangeLog:
       file: db/changelog/v0/20260215214957-initial-tables.sql
   - include:
       file: db/changelog/v0/20260324172624_add_archiving.sql
+  - include:
+      file: db/changelog/v0/20260328120000-add-subgroups.sql
+  - include:
+      file: db/changelog/v0/20260404000000-add-lesson-tasks.sql
+  - include:
+      file: db/changelog/v0/20260404120000-add-task-mandatory-deadline-status.sql
+  - include:
+      file: db/changelog/v0/20260405000000-drop-student-grades.sql
+  - include:
+      file: db/changelog/v0/20260418130000-add-not-null-core-columns.sql

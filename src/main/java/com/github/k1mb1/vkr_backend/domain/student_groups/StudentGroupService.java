@@ -1,8 +1,23 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
+import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
+
+import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
+import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
+import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupSubjectResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
+import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
+import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +28,182 @@ public class StudentGroupService {
 
     final StudentGroupRepository groupRepository;
 
-    public StudentGroupEntity findEntityById(UUID id) {
+    public Page<StudentGroupPageResponse> findAll(
+        StudentGroupFilter filter,
+        Pageable pageable
+    ) {
         return groupRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException("Group not found: " + id)
+            .findAll(filter.toSpecification(), pageable)
+            .map(group ->
+                new StudentGroupPageResponse(
+                    group.getId(),
+                    group.getName(),
+                    group.getSubgroups().size()
+                )
             );
+    }
+
+    @Transactional
+    public StudentGroupResponse create(CreateGroupRequest request) {
+        var mainGroup = StudentGroupEntity.builder()
+            .name(request.groupName())
+            .build();
+
+        if (request.studentNames().size() > 1) {
+            var orderedSubgroups = new ArrayList<StudentGroupEntity>(
+                request.studentNames().size()
+            );
+            for (int i = 0; i < request.studentNames().size(); i++) {
+                var sg = StudentGroupEntity.builder()
+                    .name(request.groupName() + "/" + (i + 1))
+                    .parentGroup(mainGroup)
+                    .build();
+                orderedSubgroups.add(sg);
+                mainGroup.getSubgroups().add(sg);
+            }
+
+            for (int i = 0; i < request.studentNames().size(); i++) {
+                var subgroup = orderedSubgroups.get(i);
+                var studentNames = request.studentNames().get(i);
+
+                for (String name : studentNames) {
+                    var student = StudentEntity.builder()
+                        .username(name)
+                        .group(subgroup)
+                        .build();
+
+                    subgroup.getStudents().add(student);
+                }
+            }
+
+            return mapToStudGroup(groupRepository.save(mainGroup));
+        }
+
+        for (String name : request.studentNames().getFirst()) {
+            var student = StudentEntity.builder()
+                .username(name)
+                .group(mainGroup)
+                .build();
+
+            mainGroup.getStudents().add(student);
+        }
+
+        return mapToStudGroup(groupRepository.save(mainGroup));
+    }
+
+    public StudentGroupResponse findGroupWithSubgroups(UUID id) {
+        var group = groupRepository
+            .findWithSubgroupsStudentsAndSubjectsById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Main group", id)
+                )
+            );
+
+        var subgroups = group
+            .getSubgroups()
+            .stream()
+            .sorted(Comparator.comparing(StudentGroupEntity::getName))
+            .map(sg ->
+                new SubgroupResponse(
+                    sg.getId(),
+                    sg.getName(),
+                    mapStudents(sg.getStudents())
+                )
+            )
+            .toList();
+
+        var directStudents = subgroups.isEmpty()
+            ? mapStudents(group.getStudents())
+            : List.<StudentEntryResponse>of();
+
+        return new StudentGroupResponse(
+            group.getId(),
+            group.getName(),
+            mapSubjects(group),
+            directStudents,
+            subgroups
+        );
+    }
+
+    @Transactional
+    public StudentGroupResponse update(UUID groupId, UpdateGroupRequest request) {
+        var group = getMainGroupById(groupId);
+        group.setName(request.name());
+        return mapToStudGroup(groupRepository.save(group));
+    }
+
+    private List<StudentEntryResponse> mapStudents(
+        Collection<StudentEntity> students
+    ) {
+        return students
+            .stream()
+            .sorted(Comparator.comparing(StudentEntity::getUsername))
+            .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
+            .toList();
+    }
+
+    private List<SubgroupResponse> mapSubGroups(
+        Collection<StudentGroupEntity> subgroups
+    ) {
+        return subgroups
+            .stream()
+            .map(s ->
+                SubgroupResponse.builder()
+                    .id(s.getId())
+                    .name(s.getName())
+                    .students(mapStudents(s.getStudents()))
+                    .build()
+            )
+            .toList();
+    }
+
+    private List<GroupSubjectResponse> mapSubjects(StudentGroupEntity group) {
+        return Stream.concat(
+                group
+                    .getStudents()
+                    .stream()
+                    .flatMap(student -> student.getSubjects().stream()),
+                group
+                    .getSubgroups()
+                    .stream()
+                    .flatMap(subgroup -> subgroup.getStudents().stream())
+                    .flatMap(student -> student.getSubjects().stream())
+            )
+            .collect(
+                Collectors.toMap(
+                        BaseEntity::getId,
+                    subject -> new GroupSubjectResponse(
+                        subject.getId(),
+                        subject.getName()
+                    ),
+                    (left, right) -> left,
+                    LinkedHashMap::new
+                )
+            )
+            .values()
+            .stream()
+            .sorted(Comparator.comparing(GroupSubjectResponse::name))
+            .toList();
+    }
+
+    private StudentGroupEntity getMainGroupById(UUID id) {
+        return groupRepository
+            .findByIdAndParentGroupIsNull(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Main group", id)
+                )
+            );
+    }
+
+    private StudentGroupResponse mapToStudGroup(StudentGroupEntity entity) {
+        return StudentGroupResponse.builder()
+            .id(entity.getId())
+            .name(entity.getName())
+            .subjects(mapSubjects(entity))
+            .students(mapStudents(entity.getStudents()))
+            .subgroups(mapSubGroups(entity.getSubgroups()))
+            .build();
     }
 }

@@ -1,5 +1,12 @@
 package com.github.k1mb1.vkr_backend.domain.subjects.requests;
 
 import java.time.Instant;
+import lombok.Builder;
 
-public record UpdateSubjectRequest(String name, String description, Boolean archived, Instant archivedAt) {}
+@Builder
+public record UpdateSubjectRequest(
+    String name,
+    String description,
+    Boolean archived,
+    Instant archivedAt
+) {}

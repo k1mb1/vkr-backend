@@ -7,6 +7,9 @@ services:
       POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
     volumes:
       - db_data:/var/lib/postgresql/data
 volumes:
