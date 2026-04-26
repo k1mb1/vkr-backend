@@ -13,8 +13,6 @@ public interface LessonRepository
         JpaRepository<LessonEntity, UUID>,
         JpaSpecificationExecutor<LessonEntity>
 {
-    List<LessonEntity> findAllBySubject_Id(UUID subjectId);
-
     /**
      * Used during bulk-schedule to detect duplicates.
      */

@@ -15,3 +15,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260405000000-drop-student-grades.sql
   - include:
       file: db/changelog/v0/20260418130000-add-not-null-core-columns.sql
+  - include:
+      file: db/changelog/v0/20260424000000-lesson-issuance-penalty-refactor.sql

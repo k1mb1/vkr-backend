@@ -1,25 +1,19 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
+import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping(
     value = "/api/students",
@@ -27,11 +21,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 )
 @Tag(name = "Students", description = "Student management")
 public interface StudentApi {
+
     @Operation(summary = "List students")
     @GetMapping
     ResponseEntity<Page<StudentResponse>> findAll(
         @ParameterObject @ModelAttribute FindStudentsFilter filter,
         @ParameterObject Pageable pageable
+    );
+
+    @Operation(summary = "Create student")
+    @PostMapping
+    ResponseEntity<StudentResponse> create(
+        @RequestBody @Valid CreateStudentRequest request
     );
 
     @Operation(summary = "Update student")

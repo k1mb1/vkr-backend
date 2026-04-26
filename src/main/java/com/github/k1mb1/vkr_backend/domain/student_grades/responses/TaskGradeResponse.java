@@ -20,6 +20,7 @@ import java.util.UUID;
 public record TaskGradeResponse(
     UUID id,
     UUID taskId,
+    UUID lessonId,
     UUID studentId,
     Integer value,
     String comment,

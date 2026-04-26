@@ -6,7 +6,6 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRe
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,27 +26,21 @@ public class StudentGroupController implements StudentGroupApi {
         Pageable pageable
     ) {
         var groupFilter = StudentGroupFilter.builder().name(filter.name()).build();
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-            studentGroupService.findAll(groupFilter, pageable)
-        );
+        return ResponseEntity.ok(studentGroupService.findAll(groupFilter, pageable));
     }
 
     @Override
-    public ResponseEntity<StudentGroupResponse> create(
-        CreateGroupRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            studentGroupService.create(request)
-        );
+    public ResponseEntity<StudentGroupResponse> create(CreateGroupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(studentGroupService.create(request));
     }
 
     @Override
-    public ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(
-        UUID groupId
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-            studentGroupService.findGroupWithSubgroups(groupId)
-        );
+    public ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(UUID groupId) {
+        return ResponseEntity.ok(studentGroupService.findGroupWithSubgroups(groupId));
+    }
+
+    @Override
+    public ResponseEntity<StudentGroupResponse> update(UUID groupId, UpdateGroupRequest request) {
+        return ResponseEntity.ok(studentGroupService.update(groupId, request));
     }
 }

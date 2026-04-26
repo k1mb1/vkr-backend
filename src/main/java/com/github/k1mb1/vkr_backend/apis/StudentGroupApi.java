@@ -5,7 +5,6 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRe
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 )
 @Tag(name = "Groups", description = "Student group management")
 public interface StudentGroupApi {
+
     @Operation(summary = "List all groups")
     @GetMapping
     ResponseEntity<Page<StudentGroupPageResponse>> findAll(
@@ -48,7 +48,12 @@ public interface StudentGroupApi {
         description = "Returns the main group with all subgroups. Each subgroup contains its students. Direct students (not in any subgroup) are listed under the main group."
     )
     @GetMapping("/{groupId}")
-    ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(
-        @PathVariable UUID groupId
+    ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(@PathVariable UUID groupId);
+
+    @Operation(summary = "Rename a group")
+    @PatchMapping("/{groupId}")
+    ResponseEntity<StudentGroupResponse> update(
+        @PathVariable UUID groupId,
+        @RequestBody @Valid UpdateGroupRequest request
     );
 }

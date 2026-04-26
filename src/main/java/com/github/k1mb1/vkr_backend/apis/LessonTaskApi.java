@@ -3,6 +3,9 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.CreateTaskRequest;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.UpdateTaskRequest;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,11 +19,9 @@ import org.springframework.web.bind.annotation.*;
     value = "/api/lessons/{lessonId}/tasks",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@Tag(
-    name = "Lesson Tasks",
-    description = "Manage tasks (assignments) within a lesson"
-)
+@Tag(name = "Lesson Tasks", description = "Manage tasks (assignments) within a lesson")
 public interface LessonTaskApi {
+
     @Operation(summary = "List all tasks for a lesson, ordered by position")
     @GetMapping
     ResponseEntity<List<TaskResponse>> findAll(@PathVariable UUID lessonId);
@@ -32,14 +33,6 @@ public interface LessonTaskApi {
         @RequestBody @Valid CreateTaskRequest request
     );
 
-    /**
-     * Partial update.  The teacher uses this to:
-     * <ul>
-     *   <li>advance {@code issuedTaskIndex} when issuing a newer task, which
-     *       triggers recalculation of displacement coefficients on the front-end;</li>
-     *   <li>change {@code penaltyMode} / {@code penaltyStep} for the lesson.</li>
-     * </ul>
-     */
     @Operation(summary = "Update task fields (partial)")
     @PatchMapping("/{taskId}")
     ResponseEntity<TaskResponse> update(
@@ -53,5 +46,28 @@ public interface LessonTaskApi {
     ResponseEntity<Void> delete(
         @PathVariable UUID lessonId,
         @PathVariable UUID taskId
+    );
+
+    @Operation(summary = "All task grades for a lesson grouped by student")
+    @GetMapping("/grades")
+    ResponseEntity<List<StudentTaskGradesResponse>> findGrades(@PathVariable UUID lessonId);
+
+    @Operation(summary = "Upsert a student grade for a task")
+    @PutMapping("/{taskId}/grades")
+    ResponseEntity<TaskGradeResponse> upsertGrade(
+        @PathVariable UUID lessonId,
+        @PathVariable UUID taskId,
+        @RequestBody @Valid UpsertTaskGradeRequest request
+    );
+
+    @Operation(
+        summary = "Bulk upsert grades for a task",
+        description = "Upserts grades for multiple students in a single request. Processes each entry independently; the response preserves input order."
+    )
+    @PutMapping("/{taskId}/grades/bulk")
+    ResponseEntity<List<TaskGradeResponse>> upsertGradesBulk(
+        @PathVariable UUID lessonId,
+        @PathVariable UUID taskId,
+        @RequestBody @Valid List<UpsertTaskGradeRequest> requests
     );
 }

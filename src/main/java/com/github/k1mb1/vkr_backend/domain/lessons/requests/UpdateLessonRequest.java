@@ -5,21 +5,18 @@ import com.github.k1mb1.vkr_backend.domain.lessons.LessonType;
 import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
-public record CreateLessonRequest(
-    @NotBlank String name,
+/**
+ * Partial update request for a lesson. All fields are optional — only non-null
+ * values are applied.
+ */
+public record UpdateLessonRequest(
+    String name,
     OffsetDateTime dateTime,
-    @NotNull LessonType type,
-    @NotNull UUID subjectId,
-    /** Null → defaults to AUTO in the entity. */
+    LessonType type,
     IssuanceMode issuanceMode,
-    /** Null → defaults to NONE (no penalty) in the entity. */
     PenaltyMode penaltyMode,
-    /** Null → defaults to 0.25 in the entity. Ignored when penaltyMode is NONE. */
     @DecimalMin("0.0001") @DecimalMax("1.0") BigDecimal penaltyStep
 ) {}

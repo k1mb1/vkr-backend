@@ -19,8 +19,10 @@ spring:
         format_sql: true
         jdbc:
           batch_size: 50
-        order_inserts: true
-        order_updates: true
+          order_inserts: true
+          order_updates: true
+        cache:
+          use_second_level_cache: false
   security:
     oauth2:
       resourceserver:

@@ -21,6 +21,9 @@ public interface LessonMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "issuanceMode", expression = "java(request.issuanceMode() != null ? request.issuanceMode() : com.github.k1mb1.vkr_backend.domain.lessons.IssuanceMode.AUTO)")
+    @Mapping(target = "penaltyMode", expression = "java(request.penaltyMode() != null ? request.penaltyMode() : com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode.NONE)")
+    @Mapping(target = "penaltyStep", expression = "java(request.penaltyStep() != null ? request.penaltyStep() : new java.math.BigDecimal(\"0.25\"))")
     LessonEntity toEntity(CreateLessonRequest request);
 
     /**

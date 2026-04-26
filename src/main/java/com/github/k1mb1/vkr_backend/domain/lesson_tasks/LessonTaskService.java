@@ -47,10 +47,6 @@ public class LessonTaskService {
 
     /**
      * Partial update: only non-null fields in the request are applied.
-     *
-     * <p>The teacher typically calls this to advance {@code issuedTaskIndex}
-     * when a new task is issued so the front-end can recalculate displacement
-     * coefficients for older tasks.
      */
     @Transactional
     public TaskResponse update(
@@ -68,25 +64,10 @@ public class LessonTaskService {
             );
 
         if (request.title() != null) entity.setTitle(request.title());
-        if (request.description() != null) entity.setDescription(
-            request.description()
-        );
-        if (request.maxPoints() != null) entity.setMaxPoints(
-            request.maxPoints()
-        );
+        if (request.description() != null) entity.setDescription(request.description());
+        if (request.maxPoints() != null) entity.setMaxPoints(request.maxPoints());
         if (request.position() != null) entity.setPosition(request.position());
-        if (request.issuedTaskIndex() != null) entity.setIssuedTaskIndex(
-            request.issuedTaskIndex()
-        );
-        if (request.penaltyMode() != null) entity.setPenaltyMode(
-            request.penaltyMode()
-        );
-        if (request.penaltyStep() != null) entity.setPenaltyStep(
-            request.penaltyStep()
-        );
-        if (request.isMandatory() != null) entity.setMandatory(
-            request.isMandatory()
-        );
+        if (request.isMandatory() != null) entity.setMandatory(request.isMandatory());
         if (request.deadline() != null) entity.setDeadline(request.deadline());
 
         return taskMapper.toResponse(taskRepository.save(entity));

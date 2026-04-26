@@ -2,12 +2,10 @@ package com.github.k1mb1.vkr_backend.domain.students;
 
 import com.github.k1mb1.vkr_backend.apis.StudentApi;
 import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
+import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
-
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,27 +21,24 @@ public class StudentController implements StudentApi {
 
     @Override
     public ResponseEntity<Page<StudentResponse>> findAll(
-            FindStudentsFilter filter,
-            Pageable pageable
+        FindStudentsFilter filter,
+        Pageable pageable
     ) {
         var studentFilter = StudentFilter.builder()
-                .username(filter.username())
-                .groupId(filter.groupId())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-                studentService.findAllByFilter(studentFilter, pageable)
-        );
+            .username(filter.username())
+            .groupId(filter.groupId())
+            .build();
+        return ResponseEntity.ok(studentService.findAllByFilter(studentFilter, pageable));
     }
 
     @Override
-    public ResponseEntity<StudentResponse> update(
-            UUID studentId,
-            UpdateStudentRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(
-                studentService.update(studentId, request)
-        );
+    public ResponseEntity<StudentResponse> create(CreateStudentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(studentService.create(request));
+    }
+
+    @Override
+    public ResponseEntity<StudentResponse> update(UUID studentId, UpdateStudentRequest request) {
+        return ResponseEntity.ok(studentService.update(studentId, request));
     }
 
     @Override

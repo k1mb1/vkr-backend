@@ -69,13 +69,50 @@ public class LessonEntity extends BaseEntity {
     Set<StudentAttendanceEntity> attendances = new HashSet<>();
 
     /**
-     * Decay coefficient for the whole lesson [0..1].
-     * 1.0 = no decay.  The front-end multiplies the summed weighted task scores
-     * by this value when computing a student's contribution from this lesson.
+     * Controls when the lesson becomes accessible to students.
+     * AUTO = automatically when dateTime is reached.
+     * MANUAL = teacher explicitly calls POST /api/lessons/{id}/issue.
+     */
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Builder.Default
+    IssuanceMode issuanceMode = IssuanceMode.AUTO;
+
+    /**
+     * When the lesson was manually issued. Null for AUTO-mode lessons or
+     * MANUAL-mode lessons that have not yet been issued.
+     */
+    @Column(name = "issued_at")
+    Instant issuedAt;
+
+    /**
+     * Position of the task the teacher is currently presenting to students.
+     * Tasks with position < issuedTaskIndex are superseded and receive a
+     * displacement penalty (calculated by the front-end using penaltyMode/penaltyStep).
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    int issuedTaskIndex = 0;
+
+    /**
+     * How the displacement coefficient is computed for superseded tasks.
+     * NONE (default) means no penalty — all tasks keep coefficient 1.0.
+     */
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Builder.Default
+    PenaltyMode penaltyMode = PenaltyMode.NONE;
+
+    /**
+     * Step value for the penalty calculation.
+     * Typical values: 0.25 (SUBTRACT) or 0.5 (MULTIPLY).
+     * Ignored when penaltyMode is NONE.
      */
     @Column(nullable = false, precision = 5, scale = 4)
     @Builder.Default
-    BigDecimal decayFactor = BigDecimal.ONE;
+    BigDecimal penaltyStep = new BigDecimal("0.25");
 
     /**
      * Tasks (assignments) belonging to this lesson, ordered by position.

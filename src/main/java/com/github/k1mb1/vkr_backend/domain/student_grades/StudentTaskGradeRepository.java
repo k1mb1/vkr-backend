@@ -30,8 +30,9 @@ public interface StudentTaskGradeRepository
     @Query("""
         SELECT g FROM StudentTaskGradeEntity g
         JOIN FETCH g.task t
+        JOIN FETCH t.lesson l
         JOIN FETCH g.student s
-        WHERE t.lesson.subject.id = :subjectId
+        WHERE l.subject.id = :subjectId
     """)
     List<StudentTaskGradeEntity> findAllBySubjectId(@Param("subjectId") UUID subjectId);
 }

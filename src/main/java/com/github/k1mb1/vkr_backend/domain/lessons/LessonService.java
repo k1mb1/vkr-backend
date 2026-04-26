@@ -6,6 +6,7 @@ import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
 import jakarta.persistence.EntityNotFoundException;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -25,9 +26,9 @@ public class LessonService {
     final SubjectService subjectService;
     final LessonMapper lessonMapper;
 
-    public List<LessonResponse> findAllBySubjectId(UUID subjectId) {
+    public List<LessonResponse> findAll(LessonFilter filter) {
         return lessonRepository
-            .findAllBySubject_Id(subjectId)
+            .findAll(filter.toSpecification())
             .stream()
             .map(lessonMapper::toResponse)
             .toList();
@@ -74,9 +75,7 @@ public class LessonService {
             .toList();
     }
 
-    /**
-     * Bulk lesson creation from a repeating week pattern.
-     */
+    /** Bulk lesson creation from a repeating week pattern. */
     @Transactional
     public List<LessonResponse> bulkSchedule(BulkScheduleRequest request) {
         var subject = subjectService.getReferenceById(request.subjectId());
@@ -92,23 +91,67 @@ public class LessonService {
             .toList();
     }
 
+    /** Partial update: only non-null fields from the request are applied. */
+    @Transactional
+    public LessonResponse update(UUID id, UpdateLessonRequest request) {
+        var lesson = getById(id);
+        if (request.name()         != null) lesson.setName(request.name());
+        if (request.dateTime()     != null) lesson.setDateTime(request.dateTime());
+        if (request.type()         != null) lesson.setType(request.type());
+        if (request.issuanceMode() != null) lesson.setIssuanceMode(request.issuanceMode());
+        if (request.penaltyMode()  != null) lesson.setPenaltyMode(request.penaltyMode());
+        if (request.penaltyStep()  != null) lesson.setPenaltyStep(request.penaltyStep());
+        return lessonMapper.toResponse(lessonRepository.save(lesson));
+    }
+
+    /** Soft-delete: sets archived=true and records archivedAt. */
+    @Transactional
+    public LessonResponse archive(UUID id) {
+        var lesson = getById(id);
+        lesson.setArchived(true);
+        lesson.setArchivedAt(Instant.now());
+        return lessonMapper.toResponse(lessonRepository.save(lesson));
+    }
+
     @Transactional
     public void delete(UUID id) {
         lessonRepository.deleteById(id);
     }
 
     /**
-     * Updates the decay factor of a lesson.
-     *
-     * <p>The front-end multiplies the weighted sum of all task scores for the
-     * lesson by this value. 1.0 = no decay; 0.5 = all scores halved.
+     * Manually issues a lesson (only valid for MANUAL issuance mode).
+     * Idempotent: if already issued, returns the current state without modification.
      */
     @Transactional
-    public LessonResponse updateDecayFactor(UUID id, UpdateDecayFactorRequest request) {
-        var lesson = lessonRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
-        lesson.setDecayFactor(request.decayFactor());
+    public LessonResponse issueLesson(UUID id) {
+        var lesson = getById(id);
+        if (lesson.getIssuanceMode() == IssuanceMode.AUTO) {
+            throw new IllegalStateException(
+                "Lesson " + id + " uses AUTO issuance mode and cannot be issued manually."
+            );
+        }
+        if (lesson.getIssuedAt() == null) {
+            lesson.setIssuedAt(Instant.now());
+            lessonRepository.save(lesson);
+        }
+        return lessonMapper.toResponse(lesson);
+    }
+
+    /**
+     * Updates the index of the task currently being presented to students.
+     * Tasks with position < issuedTaskIndex are considered superseded and
+     * receive a displacement penalty on the front-end.
+     */
+    @Transactional
+    public LessonResponse updateIssuedTaskIndex(UUID id, UpdateIssuedTaskIndexRequest request) {
+        var lesson = getById(id);
+        lesson.setIssuedTaskIndex(request.issuedTaskIndex());
         return lessonMapper.toResponse(lessonRepository.save(lesson));
+    }
+
+    private LessonEntity getById(UUID id) {
+        return lessonRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
     }
 
     private void createByPattern(
@@ -138,9 +181,7 @@ public class LessonService {
                 if (remaining == 0) break;
 
                 LocalDate lessonDate = currentWeekStart.plusDays(day.getValue() - 1L);
-                if (lessonDate.isBefore(entry.startDate())) {
-                    continue;
-                }
+                if (lessonDate.isBefore(entry.startDate())) continue;
 
                 result.add(LessonEntity.builder()
                     .name(buildLessonName(subject.getName(), entry.type()))
@@ -154,14 +195,7 @@ public class LessonService {
         }
     }
 
-    /**
-     * Builds a human-readable lesson name, e.g. "Математика — Лекция" or
-     * "Математика — Практика (ИСТ-21/1)".
-     */
-    private String buildLessonName(
-        String subjectName,
-        LessonType type
-    ) {
+    private String buildLessonName(String subjectName, LessonType type) {
         String typeName = switch (type) {
             case LECTURE  -> "Лекция";
             case PRACTICE -> "Практика";
