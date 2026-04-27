@@ -3,12 +3,11 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
+import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -50,5 +49,5 @@ public interface StudentApi {
 
     @Operation(summary = "List subjects for a student")
     @GetMapping("/subjects/{id}")
-    ResponseEntity<List<SubjectResponse>> findSubjects(@PathVariable("id") UUID studentId);
+    ResponseEntity<StudentSubjectSubgroupsResponse> findSubjects(@PathVariable("id") UUID id);
 }
