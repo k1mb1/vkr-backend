@@ -54,6 +54,35 @@ public class SubjectService {
     }
 
     @Transactional
+    public SubjectResponse unarchive(UUID id) {
+        var entity = subjectRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", id)
+                )
+            );
+
+        entity.setArchived(false);
+        entity.setArchivedAt(null);
+
+        return subjectMapper.toResponse(subjectRepository.save(entity));
+    }
+
+    @Transactional
+    public void remove(UUID id) {
+        var entity = subjectRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    NOT_FOUND_MESSAGE.formatted("Subject", id)
+                )
+            );
+
+        subjectRepository.delete(entity);
+    }
+
+    @Transactional
     public AttachGroupToSubjectResponse attachGroup(UUID subjectId, UUID groupId) {
         var subject = subjectRepository
             .findById(subjectId)

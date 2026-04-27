@@ -79,4 +79,12 @@ public interface SubjectApi {
     )
     @GetMapping("/{subjectId}/final-grades")
     ResponseEntity<List<FinalGradeResponse>> findFinalGrades(@PathVariable UUID subjectId);
+
+    @Operation(summary = "Unarchive subject")
+    @PatchMapping("/{subjectId}/unarchive")
+    ResponseEntity<SubjectResponse> unarchive(@PathVariable UUID subjectId);
+
+    @Operation(summary = "Remove subject")
+    @DeleteMapping("/{subjectId}")
+    ResponseEntity<Void> remove(@PathVariable UUID subjectId);
 }

@@ -73,4 +73,15 @@ public class SubjectController implements SubjectApi {
     public ResponseEntity<List<FinalGradeResponse>> findFinalGrades(UUID subjectId) {
         return ResponseEntity.ok(gradeService.computeFinalGrades(subjectId));
     }
+
+    @Override
+    public ResponseEntity<SubjectResponse> unarchive(UUID subjectId) {
+        return ResponseEntity.ok(subjectService.unarchive(subjectId));
+    }
+
+    @Override
+    public ResponseEntity<Void> remove(UUID subjectId) {
+        subjectService.remove(subjectId);
+        return ResponseEntity.noContent().build();
+    }
 }
