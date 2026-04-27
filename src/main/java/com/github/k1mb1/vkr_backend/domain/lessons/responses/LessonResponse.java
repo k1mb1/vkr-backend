@@ -39,8 +39,6 @@ public record LessonResponse(
     int issuedTaskIndex,
     PenaltyMode penaltyMode,
     BigDecimal penaltyStep,
-    boolean archived,
-    Instant archivedAt,
     Instant createdAt,
     Instant updatedAt
 ) {}

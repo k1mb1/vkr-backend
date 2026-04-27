@@ -55,9 +55,7 @@ public interface LessonApi {
         @RequestBody @Valid UpdateLessonRequest request
     );
 
-    @Operation(summary = "Archive a lesson (soft-delete)")
-    @PatchMapping("/{id}/archive")
-    ResponseEntity<LessonResponse> archive(@PathVariable UUID id);
+    
 
     @Operation(summary = "Delete a lesson permanently")
     @DeleteMapping("/{id}")

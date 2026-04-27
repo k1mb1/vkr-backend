@@ -33,12 +33,6 @@ public class LessonEntity extends BaseEntity {
 
     OffsetDateTime dateTime;
 
-    @Column(nullable = false)
-    @Builder.Default
-    boolean archived = false;
-
-    @Column(name = "archived_at")
-    Instant archivedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_id", nullable = false)

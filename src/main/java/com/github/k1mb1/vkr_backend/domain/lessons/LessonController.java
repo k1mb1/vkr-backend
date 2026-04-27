@@ -49,10 +49,6 @@ public class LessonController implements LessonApi {
         return ResponseEntity.ok(lessonService.update(id, request));
     }
 
-    @Override
-    public ResponseEntity<LessonResponse> archive(UUID id) {
-        return ResponseEntity.ok(lessonService.archive(id));
-    }
 
     @Override
     public ResponseEntity<Void> delete(UUID id) {

@@ -104,14 +104,7 @@ public class LessonService {
         return lessonMapper.toResponse(lessonRepository.save(lesson));
     }
 
-    /** Soft-delete: sets archived=true and records archivedAt. */
-    @Transactional
-    public LessonResponse archive(UUID id) {
-        var lesson = getById(id);
-        lesson.setArchived(true);
-        lesson.setArchivedAt(Instant.now());
-        return lessonMapper.toResponse(lessonRepository.save(lesson));
-    }
+    
 
     @Transactional
     public void delete(UUID id) {
