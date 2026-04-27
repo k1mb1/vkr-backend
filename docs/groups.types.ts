@@ -13,6 +13,10 @@ export interface CreateGroupRequest {
   studentNames: string[][];
 }
 
+export interface UpdateGroupRequest {
+  name: string;
+}
+
 // ─── Responses ────────────────────────────────────────────────────────────────
 
 export interface GroupSubjectResponse {

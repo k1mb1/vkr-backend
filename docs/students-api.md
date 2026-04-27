@@ -23,6 +23,21 @@ List students with optional filtering and pagination.
 
 ---
 
+## POST `/api/students`
+
+Create a student.
+
+**Body** — `CreateStudentRequest`
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `username` | string | yes | Non-blank |
+| `groupId` | UUID | no | Assign to this group immediately |
+
+**Response `201`** — `StudentResponse`
+
+---
+
 ## PUT `/api/students/{studentId}`
 
 Update a student.
@@ -37,7 +52,7 @@ Update a student.
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `name` | string | no | New display name |
+| `name` | string | no | New display name (returned as `username` in responses) |
 | `groupId` | UUID | no | Move student to this group |
 
 **Response `200`** — `StudentResponse`
@@ -55,6 +70,20 @@ Delete a student.
 | `studentId` | UUID | Student identifier |
 
 **Response `204`** — no content
+
+---
+
+## GET `/api/students/subjects/{id}`
+
+Get a subject with subgroup student lists.
+
+**Path params**
+
+| Param | Type | Description |
+|---|---|---|
+| `id` | UUID | Subject identifier |
+
+**Response `200`** — `StudentSubjectSubgroupsResponse`
 
 ---
 
@@ -76,3 +105,19 @@ Delete a student.
 |---|---|---|
 | `id` | UUID | |
 | `username` | string | |
+
+### `StudentSubjectSubgroupsResponse`
+
+| Field | Type | Notes |
+|---|---|---|
+| `subjectId` | UUID | |
+| `subjectName` | string | |
+| `subgroups` | `SubjectSubgroupStudentsResponse[]` | Sorted by subgroup name |
+
+### `SubjectSubgroupStudentsResponse`
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | Subgroup/group identifier |
+| `name` | string | Subgroup/group name |
+| `studentNames` | `string[]` | Sorted student names |

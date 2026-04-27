@@ -9,6 +9,13 @@ export interface CreateSubjectRequest {
   teacherId: UUID;
 }
 
+export interface UpdateSubjectRequest {
+  name?: string;
+  description?: string;
+  archived?: boolean;
+  archivedAt?: Instant;
+}
+
 // ─── Responses ────────────────────────────────────────────────────────────────
 
 export interface SubjectResponse {
@@ -28,6 +35,14 @@ export interface AttachGroupToSubjectResponse {
   groupName: string;
   addedStudentsCount: number;
   totalStudentsInSubject: number;
+}
+
+export interface FinalGradeResponse {
+  studentId: UUID;
+  username: string;
+  earnedPoints: number;
+  maxPoints: number;
+  percentage: number | null;
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────

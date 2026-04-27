@@ -9,7 +9,7 @@ export type SubmissionStatus = 'NOT_SUBMITTED' | 'SUBMITTED' | 'GRADED' | 'RESUB
 export interface UpsertTaskGradeRequest {
   studentId: UUID;
   /** Points awarded; null = not graded */
-  value?: number;
+  value?: number | null;
   comment?: string;
   status: SubmissionStatus;
   /** Overrides the auto-set submission timestamp when provided */
@@ -21,6 +21,7 @@ export interface UpsertTaskGradeRequest {
 export interface TaskGradeResponse {
   id: UUID;
   taskId: UUID;
+  lessonId: UUID;
   studentId: UUID;
   /** null = not graded */
   value: number | null;
@@ -37,4 +38,15 @@ export interface StudentTaskGradesResponse {
   username: string;
   /** Ordered by task position */
   grades: TaskGradeResponse[];
+}
+
+export interface SubjectLessonTableEntryResponse {
+  lessonId: UUID;
+  lessonName: string;
+  dateTime: string | null;
+}
+
+export interface SubjectGradesTableResponse {
+  lessons: SubjectLessonTableEntryResponse[];
+  students: StudentTaskGradesResponse[];
 }

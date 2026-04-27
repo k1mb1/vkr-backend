@@ -9,12 +9,6 @@ All responses are `application/json`.
 
 List all tasks for a lesson, ordered by `position`.
 
-**Path params**
-
-| Param | Type | Description |
-|---|---|---|
-| `lessonId` | UUID | Lesson identifier |
-
 **Response `200`** — `TaskResponse[]`
 
 ---
@@ -22,12 +16,6 @@ List all tasks for a lesson, ordered by `position`.
 ## POST `/api/lessons/{lessonId}/tasks`
 
 Create a task for a lesson.
-
-**Path params**
-
-| Param | Type | Description |
-|---|---|---|
-| `lessonId` | UUID | Lesson identifier |
 
 **Body** — `CreateTaskRequest`
 
@@ -37,28 +25,18 @@ Create a task for a lesson.
 | `description` | string | no | |
 | `maxPoints` | integer | yes | `>= 1` |
 | `position` | integer | yes | 0-based display position, `>= 0` |
-| `issuedTaskIndex` | integer | yes | Index of the currently-active task, `>= 0` |
-| `penaltyMode` | `PenaltyMode` | yes | `SUBTRACT` \| `MULTIPLY` |
-| `penaltyStep` | number | yes | Range `(0.0001, 1.0]` |
 | `isMandatory` | boolean | yes | Mandatory tasks always count in the total |
 | `deadline` | string | no | ISO 8601 instant |
 
-**Response `200`** — `TaskResponse`
+**Response `201`** — `TaskResponse`
 
 ---
 
 ## PATCH `/api/lessons/{lessonId}/tasks/{taskId}`
 
-Partially update a task.
+Partially update a task. All fields optional.
 
-**Path params**
-
-| Param | Type | Description |
-|---|---|---|
-| `lessonId` | UUID | Lesson identifier |
-| `taskId` | UUID | Task identifier |
-
-**Body** — `UpdateTaskRequest` (all fields optional)
+**Body** — `UpdateTaskRequest`
 
 | Field | Type | Notes |
 |---|---|---|
@@ -66,9 +44,6 @@ Partially update a task.
 | `description` | string | |
 | `maxPoints` | integer | `>= 1` |
 | `position` | integer | `>= 0` |
-| `issuedTaskIndex` | integer | `>= 0` |
-| `penaltyMode` | `PenaltyMode` | |
-| `penaltyStep` | number | Range `(0.0001, 1.0]` |
 | `isMandatory` | boolean | |
 | `deadline` | string | ISO 8601 instant |
 
@@ -80,27 +55,63 @@ Partially update a task.
 
 Delete a task from a lesson.
 
-**Path params**
-
-| Param | Type | Description |
-|---|---|---|
-| `lessonId` | UUID | Lesson identifier |
-| `taskId` | UUID | Task identifier |
-
 **Response `204`** — no content
+
+---
+
+## GET `/api/lessons/{lessonId}/tasks/grades`
+
+Get all task grades for a lesson, grouped by student.
+
+**Response `200`** — `StudentTaskGradesResponse[]`
+
+---
+
+## PUT `/api/lessons/{lessonId}/tasks/{taskId}/grades`
+
+Create or update a student's grade for a specific task (upsert).
+
+**Body** — `UpsertTaskGradeRequest`
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `studentId` | UUID | yes | |
+| `value` | integer \| null | no | Points awarded; `null` = not graded |
+| `comment` | string | no | |
+| `status` | `SubmissionStatus` | yes | |
+| `submittedAt` | Instant | no | ISO 8601 instant; overrides auto-set timestamp |
+
+**Response `200`** — `TaskGradeResponse`
+
+---
+
+## PUT `/api/lessons/{lessonId}/tasks/{taskId}/grades/bulk`
+
+Upsert grades for multiple students in a single request.  
+Entries are processed independently; the response list preserves input order.
+
+**Body** — `UpsertTaskGradeRequest[]`
+
+**Response `200`** — `TaskGradeResponse[]`
 
 ---
 
 ## Types
 
-### `PenaltyMode`
+> Displacement penalty configuration (`issuedTaskIndex`, `penaltyMode`, `penaltyStep`) is stored
+> on the **lesson**, not on individual tasks. Fetch it from `LessonResponse` and compute per task:
+>
+> `d = lesson.issuedTaskIndex - task.position`  
+> `NONE: coeff = 1.0` · `SUBTRACT: coeff = max(0, 1 − penaltyStep × d)` · `MULTIPLY: coeff = penaltyStep ^ d`
 
-Controls how the displacement coefficient is computed when a task is superseded by newer tasks (`d = issuedTaskIndex - position`).
+### `SubmissionStatus`
 
-| Value | Formula |
+| Value | Description |
 |---|---|
-| `SUBTRACT` | `coeff = max(0, 1 − penaltyStep × d)` |
-| `MULTIPLY` | `coeff = penaltyStep ^ d` |
+| `NOT_SUBMITTED` | Student has not submitted |
+| `SUBMITTED` | Submitted, awaiting grading |
+| `GRADED` | Grade assigned |
+| `RESUBMIT` | Teacher requested resubmission |
 
 ### `TaskResponse`
 
@@ -112,10 +123,30 @@ Controls how the displacement coefficient is computed when a task is superseded 
 | `description` | string \| null | |
 | `maxPoints` | number | |
 | `position` | number | 0-based |
-| `issuedTaskIndex` | number | |
-| `penaltyMode` | `PenaltyMode` | |
-| `penaltyStep` | number | Range `(0.0001, 1.0]` |
 | `isMandatory` | boolean | |
-| `deadline` | string \| null | ISO 8601 instant |
-| `createdAt` | string | ISO 8601 instant |
-| `updatedAt` | string | ISO 8601 instant |
+| `deadline` | Instant \| null | ISO 8601 instant |
+| `createdAt` | Instant | ISO 8601 instant |
+| `updatedAt` | Instant | ISO 8601 instant |
+
+### `TaskGradeResponse`
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | |
+| `taskId` | UUID | |
+| `lessonId` | UUID | |
+| `studentId` | UUID | |
+| `value` | number \| null | `null` = not graded |
+| `comment` | string \| null | |
+| `status` | `SubmissionStatus` | |
+| `submittedAt` | Instant \| null | ISO 8601 instant |
+| `createdAt` | Instant | ISO 8601 instant |
+| `updatedAt` | Instant | ISO 8601 instant |
+
+### `StudentTaskGradesResponse`
+
+| Field | Type | Notes |
+|---|---|---|
+| `studentId` | UUID | |
+| `username` | string | |
+| `grades` | `TaskGradeResponse[]` | Ordered by task position |
