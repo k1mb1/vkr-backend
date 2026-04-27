@@ -3,8 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.student_attendances;
 import com.github.k1mb1.vkr_backend.apis.StudentAttendanceApi;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
-import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceTableResponse;
-import java.util.List;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +16,7 @@ public class StudentAttendanceController implements StudentAttendanceApi {
     final StudentAttendanceService attendanceService;
 
     @Override
-    public ResponseEntity<List<StudentAttendanceTableResponse>> findBySubject(UUID subjectId) {
+    public ResponseEntity<SubjectAttendanceTableResponse> findBySubject(UUID subjectId) {
         return ResponseEntity.ok(attendanceService.findBySubjectId(subjectId));
     }
 

@@ -4,8 +4,11 @@ import com.github.k1mb1.vkr_backend.domain.lessons.LessonRepository;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
+import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectLessonTableEntryResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Comparator;
 import java.util.List;
@@ -24,31 +27,51 @@ public class StudentAttendanceService {
     final StudentAttendanceRepository attendanceRepository;
     final StudentRepository studentRepository;
     final LessonRepository lessonRepository;
+    final SubjectRepository subjectRepository;
 
-    public List<StudentAttendanceTableResponse> findBySubjectId(UUID subjectId) {
-        List<StudentAttendanceEntity> rows = attendanceRepository.findAllBySubjectId(subjectId);
+    public SubjectAttendanceTableResponse findBySubjectId(UUID subjectId) {
+        var subject = subjectRepository.findById(subjectId)
+            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
-        Map<UUID, List<StudentAttendanceEntity>> byStudent = rows.stream()
+        Map<UUID, List<StudentAttendanceEntity>> byStudent = attendanceRepository
+            .findAllBySubjectId(subjectId)
+            .stream()
             .collect(Collectors.groupingBy(a -> a.getStudent().getId()));
 
-        return byStudent.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .map(e -> {
-                StudentEntity student = e.getValue().get(0).getStudent();
-                List<AttendanceEntryResponse> entries = e.getValue().stream()
+        var students = subject.getStudents().stream()
+            .sorted(
+                Comparator.comparing(StudentEntity::getUsername)
+                    .thenComparing(StudentEntity::getId)
+            )
+            .map(student -> new StudentAttendanceTableResponse(
+                student.getId(),
+                student.getUsername(),
+                byStudent.getOrDefault(student.getId(), List.of()).stream()
                     .sorted(Comparator.comparing(
                         a -> a.getLesson().getDateTime(),
                         Comparator.nullsLast(Comparator.naturalOrder())
                     ))
                     .map(this::toEntry)
-                    .toList();
-                return new StudentAttendanceTableResponse(
-                    student.getId(),
-                    student.getUsername(),
-                    entries
-                );
-            })
+                    .toList()
+            ))
             .toList();
+
+        var lessons = subject.getLessons().stream()
+            .sorted(
+                Comparator.comparing(
+                    StudentAttendanceService::lessonDateTime,
+                    Comparator.nullsLast(Comparator.naturalOrder())
+                )
+                .thenComparing(l -> l.getId())
+            )
+            .map(lesson -> new SubjectLessonTableEntryResponse(
+                lesson.getId(),
+                lesson.getName(),
+                lesson.getDateTime()
+            ))
+            .toList();
+
+        return new SubjectAttendanceTableResponse(lessons, students);
     }
 
     @Transactional
@@ -84,5 +107,11 @@ public class StudentAttendanceService {
             a.getPresence(),
             a.getNote()
         );
+    }
+
+    private static java.time.OffsetDateTime lessonDateTime(
+        com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity lesson
+    ) {
+        return lesson.getDateTime();
     }
 }

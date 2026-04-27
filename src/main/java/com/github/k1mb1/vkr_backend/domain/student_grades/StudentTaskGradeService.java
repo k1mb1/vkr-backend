@@ -5,11 +5,13 @@ import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskRepository;
 import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.FinalGradeResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectLessonTableEntryResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Instant;
 import java.util.Comparator;
@@ -31,16 +33,51 @@ public class StudentTaskGradeService {
     final StudentRepository studentRepository;
     final SubjectRepository subjectRepository;
 
-    public List<StudentTaskGradesResponse> findGradesBySubjectId(UUID subjectId) {
-        return groupByStudent(
-            gradeRepository.findAllBySubjectId(subjectId),
-            Comparator
-                .comparing(
-                    (StudentTaskGradeEntity g) -> g.getTask().getLesson().getDateTime(),
+    public SubjectGradesTableResponse findGradesBySubjectId(UUID subjectId) {
+        var subject = subjectRepository.findById(subjectId)
+            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
+
+        var rowsByStudent = gradeRepository.findAllBySubjectId(subjectId).stream()
+            .collect(Collectors.groupingBy(g -> g.getStudent().getId()));
+
+        var gradeOrder = Comparator
+            .comparing(
+                (StudentTaskGradeEntity g) -> g.getTask().getLesson().getDateTime(),
+                Comparator.nullsLast(Comparator.naturalOrder())
+            )
+            .thenComparingInt(g -> g.getTask().getPosition());
+
+        var students = subject.getStudents().stream()
+            .sorted(
+                Comparator.comparing(StudentEntity::getUsername)
+                    .thenComparing(StudentEntity::getId)
+            )
+            .map(student -> new StudentTaskGradesResponse(
+                student.getId(),
+                student.getUsername(),
+                rowsByStudent.getOrDefault(student.getId(), List.of()).stream()
+                    .sorted(gradeOrder)
+                    .map(this::toResponse)
+                    .toList()
+            ))
+            .toList();
+
+        var lessons = subject.getLessons().stream()
+            .sorted(
+                Comparator.comparing(
+                    StudentTaskGradeService::lessonDateTime,
                     Comparator.nullsLast(Comparator.naturalOrder())
                 )
-                .thenComparingInt(g -> g.getTask().getPosition())
-        );
+                .thenComparing(l -> l.getId())
+            )
+            .map(lesson -> new SubjectLessonTableEntryResponse(
+                lesson.getId(),
+                lesson.getName(),
+                lesson.getDateTime()
+            ))
+            .toList();
+
+        return new SubjectGradesTableResponse(lessons, students);
     }
 
     public List<StudentTaskGradesResponse> findGradesByLesson(UUID lessonId) {
@@ -209,5 +246,11 @@ public class StudentTaskGradeService {
             g.getCreatedAt(),
             g.getUpdatedAt()
         );
+    }
+
+    private static java.time.OffsetDateTime lessonDateTime(
+        com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity lesson
+    ) {
+        return lesson.getDateTime();
     }
 }

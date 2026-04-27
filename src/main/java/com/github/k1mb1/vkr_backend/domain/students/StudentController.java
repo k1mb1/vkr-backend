@@ -5,6 +5,8 @@ import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -45,5 +47,10 @@ public class StudentController implements StudentApi {
     public ResponseEntity<Void> delete(UUID studentId) {
         studentService.delete(studentId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<List<SubjectResponse>> findSubjects(UUID studentId) {
+        return ResponseEntity.ok(studentService.findSubjectsByStudentId(studentId));
     }
 }

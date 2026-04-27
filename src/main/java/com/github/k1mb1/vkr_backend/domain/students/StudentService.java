@@ -6,8 +6,11 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
+import com.github.k1mb1.vkr_backend.domain.subjects.SubjectMapper;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,7 +26,7 @@ public class StudentService {
     final StudentRepository studentRepository;
     final StudentMapper studentMapper;
     final StudentGroupRepository studentGroupRepository;
-    final SubjectRepository subjectRepository;
+    final SubjectMapper subjectMapper;
 
     public Page<StudentResponse> findAllByFilter(StudentFilter filter, Pageable pageable) {
         return studentRepository
@@ -64,6 +67,15 @@ public class StudentService {
     public void delete(UUID studentId) {
         var student = getStudentById(studentId);
         studentRepository.delete(student);
+    }
+
+    public List<SubjectResponse> findSubjectsByStudentId(UUID studentId) {
+        var student = getStudentById(studentId);
+
+        return student.getSubjects().stream()
+            .sorted(Comparator.comparing(subject -> subject.getName().toLowerCase()))
+            .map(subjectMapper::toResponse)
+            .toList();
     }
 
     private StudentEntity getStudentById(UUID studentId) {

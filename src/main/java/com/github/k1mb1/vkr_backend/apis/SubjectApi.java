@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
@@ -60,7 +60,7 @@ public interface SubjectApi {
 
     @Operation(summary = "Full grades table for a subject grouped by student")
     @GetMapping("/{subjectId}/grades")
-    ResponseEntity<List<StudentTaskGradesResponse>> findGrades(@PathVariable UUID subjectId);
+    ResponseEntity<SubjectGradesTableResponse> findGrades(@PathVariable UUID subjectId);
 
     @Operation(
         summary = "Aggregated final grade per student for a subject",

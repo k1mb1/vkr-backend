@@ -2,11 +2,10 @@ package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
-import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.StudentAttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,7 @@ public interface StudentAttendanceApi {
 
     @Operation(summary = "Full attendance table for a subject grouped by student")
     @GetMapping("/subjects/{subjectId}/attendance")
-    ResponseEntity<List<StudentAttendanceTableResponse>> findBySubject(
+    ResponseEntity<SubjectAttendanceTableResponse> findBySubject(
         @PathVariable UUID subjectId
     );
 
