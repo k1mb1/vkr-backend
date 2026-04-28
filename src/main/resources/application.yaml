@@ -8,9 +8,6 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
   jpa:
     open-in-view: false
     hibernate:
