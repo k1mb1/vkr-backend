@@ -19,3 +19,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260424000000-lesson-issuance-penalty-refactor.sql
   - include:
       file: db/changelog/v0/20260427091500-remove-lesson-archiving.sql
+  - include:
+      file: db/changelog/v0/20260429110000-add-late-presence-type.sql

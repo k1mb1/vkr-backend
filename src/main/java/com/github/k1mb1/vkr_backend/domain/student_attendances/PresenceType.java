@@ -4,4 +4,5 @@ public enum PresenceType {
     NONE,
     PRESENT,
     NOT_PRESENT,
+    LATE,
 }
