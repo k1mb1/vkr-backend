@@ -9,7 +9,6 @@ import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectReques
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.FinalGradeResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +30,9 @@ public class SubjectController implements SubjectApi {
     ) {
         var subjectFilter = SubjectFilter.builder()
             .teacherId(teacherId)
-            .archived(filter.archived() == null ? false : filter.archived())
+            .archived(filter.archived() != null && filter.archived())
             .build();
-        return ResponseEntity.ok(subjectService.findAllByFilter(subjectFilter));
+        return ResponseEntity.ok(subjectService.findAll(subjectFilter));
     }
 
     @Override
@@ -44,16 +43,6 @@ public class SubjectController implements SubjectApi {
     @Override
     public ResponseEntity<SubjectResponse> update(UUID subjectId, UpdateSubjectRequest request) {
         return ResponseEntity.ok(subjectService.update(subjectId, request));
-    }
-
-    @Override
-    public ResponseEntity<SubjectResponse> archive(UUID subjectId) {
-        return ResponseEntity.ok(
-            subjectService.update(
-                subjectId,
-                UpdateSubjectRequest.builder().archived(true).archivedAt(Instant.now()).build()
-            )
-        );
     }
 
     @Override
@@ -72,11 +61,6 @@ public class SubjectController implements SubjectApi {
     @Override
     public ResponseEntity<List<FinalGradeResponse>> findFinalGrades(UUID subjectId) {
         return ResponseEntity.ok(gradeService.computeFinalGrades(subjectId));
-    }
-
-    @Override
-    public ResponseEntity<SubjectResponse> unarchive(UUID subjectId) {
-        return ResponseEntity.ok(subjectService.unarchive(subjectId));
     }
 
     @Override

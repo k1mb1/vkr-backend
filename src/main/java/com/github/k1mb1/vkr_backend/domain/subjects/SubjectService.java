@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
 
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
-import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
@@ -26,7 +25,7 @@ public class SubjectService {
     final TeacherRepository teacherRepository;
     final StudentGroupRepository studentGroupRepository;
 
-    public List<SubjectResponse> findAllByFilter(SubjectFilter filter) {
+    public List<SubjectResponse> findAll(SubjectFilter filter) {
         return subjectRepository
             .findAll(filter.toSpecification())
             .stream()
@@ -50,22 +49,6 @@ public class SubjectService {
     public SubjectResponse update(UUID id, UpdateSubjectRequest request) {
         var entity = subjectRepository.getReferenceById(id);
         subjectMapper.update(entity, request);
-        return subjectMapper.toResponse(subjectRepository.save(entity));
-    }
-
-    @Transactional
-    public SubjectResponse unarchive(UUID id) {
-        var entity = subjectRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    NOT_FOUND_MESSAGE.formatted("Subject", id)
-                )
-            );
-
-        entity.setArchived(false);
-        entity.setArchivedAt(null);
-
         return subjectMapper.toResponse(subjectRepository.save(entity));
     }
 
@@ -100,33 +83,13 @@ public class SubjectService {
                 )
             );
 
-        int addedStudentsCount = 0;
-
-        for (var student : group.getStudents()) {
-            addedStudentsCount += attachStudent(subject, student);
-        }
-
-        for (var subgroup : group.getSubgroups()) {
-            for (var student : subgroup.getStudents()) {
-                addedStudentsCount += attachStudent(subject, student);
-            }
-        }
-
         var savedSubject = subjectRepository.save(subject);
 
         return new AttachGroupToSubjectResponse(
             savedSubject.getId(),
             savedSubject.getName(),
             group.getId(),
-            group.getName(),
-            addedStudentsCount,
-            savedSubject.getStudents().size()
+            group.getName()
         );
-    }
-
-    private int attachStudent(SubjectEntity subject, StudentEntity student) {
-        boolean added = subject.getStudents().add(student);
-        student.getSubjects().add(subject);
-        return added ? 1 : 0;
     }
 }

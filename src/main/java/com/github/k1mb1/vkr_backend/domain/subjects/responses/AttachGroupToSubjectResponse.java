@@ -6,7 +6,5 @@ public record AttachGroupToSubjectResponse(
     UUID subjectId,
     String subjectName,
     UUID groupId,
-    String groupName,
-    int addedStudentsCount,
-    int totalStudentsInSubject
+    String groupName
 ) {}

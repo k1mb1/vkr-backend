@@ -47,10 +47,6 @@ public interface SubjectApi {
         @RequestBody @Valid UpdateSubjectRequest request
     );
 
-    @Operation(summary = "Archive subject")
-    @PatchMapping("/{subjectId}/archive")
-    ResponseEntity<SubjectResponse> archive(@PathVariable UUID subjectId);
-
     @Operation(summary = "Attach full group to subject")
     @PostMapping("/{subjectId}/groups/{groupId}")
     ResponseEntity<AttachGroupToSubjectResponse> attachGroup(
@@ -79,10 +75,6 @@ public interface SubjectApi {
     )
     @GetMapping("/{subjectId}/final-grades")
     ResponseEntity<List<FinalGradeResponse>> findFinalGrades(@PathVariable UUID subjectId);
-
-    @Operation(summary = "Unarchive subject")
-    @PatchMapping("/{subjectId}/unarchive")
-    ResponseEntity<SubjectResponse> unarchive(@PathVariable UUID subjectId);
 
     @Operation(summary = "Remove subject")
     @DeleteMapping("/{subjectId}")

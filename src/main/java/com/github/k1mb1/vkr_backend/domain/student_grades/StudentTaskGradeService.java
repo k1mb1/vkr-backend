@@ -6,12 +6,12 @@ import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse.SubjectLessonTableEntryResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.FinalGradeResponse;
-import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectLessonTableEntryResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.Instant;
 import java.util.Comparator;
@@ -222,7 +222,7 @@ public class StudentTaskGradeService {
 
         return byStudent.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
-            .map(e -> {
+            .map(e -> {throw new IllegalStateException("Unexpected value: " + mode);
                 StudentEntity student = e.getValue().get(0).getStudent();
                 List<TaskGradeResponse> grades = e.getValue().stream()
                     .sorted(order)
