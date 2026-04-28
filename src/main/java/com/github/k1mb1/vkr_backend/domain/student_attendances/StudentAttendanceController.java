@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_attendances;
 
 import com.github.k1mb1.vkr_backend.apis.StudentAttendanceApi;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.filters.FindAttendanceFilter;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
@@ -18,8 +19,11 @@ public class StudentAttendanceController implements StudentAttendanceApi {
     final StudentAttendanceService attendanceService;
 
     @Override
-    public ResponseEntity<SubjectAttendanceTableResponse> findBySubject(UUID subjectId) {
-        return ResponseEntity.ok(attendanceService.findBySubjectId(subjectId));
+    public ResponseEntity<SubjectAttendanceTableResponse> findBySubject(
+        UUID subjectId,
+        FindAttendanceFilter filter
+    ) {
+        return ResponseEntity.ok(attendanceService.findBySubjectId(subjectId, filter));
     }
 
     @Override

@@ -1,7 +1,9 @@
 package com.github.k1mb1.vkr_backend.domain.student_attendances;
 
-import com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity;
+import com.github.k1mb1.vkr_backend.domain.lessons.LessonFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonRepository;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.filters.AttendanceFilter;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.filters.FindAttendanceFilter;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
@@ -14,6 +16,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.Comparator;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,21 +30,31 @@ public class StudentAttendanceService {
     final LessonRepository lessonRepository;
     final SubjectRepository subjectRepository;
 
-    public SubjectAttendanceTableResponse findBySubjectId(UUID subjectId) {
+    public SubjectAttendanceTableResponse findBySubjectId(UUID subjectId, FindAttendanceFilter filter) {
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
-        var lessons = subject.getLessons().stream()
-            .sorted(Comparator.comparing(LessonEntity::getDateTime, Comparator.nullsLast(Comparator.naturalOrder())))
-            .map(l -> new SubjectAttendanceTableResponse.SubjectLessonTableEntryResponse(l.getId(), l.getName(), l.getDateTime()))
+        var lessonFilter = LessonFilter.builder()
+            .subjectId(subjectId)
+            .lessonType(filter.lessonType())
+            .groupId(filter.groupId())
+            .build();
+
+        var lessons = lessonRepository.findAll(lessonFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "dateTime"))
+            .stream()
+            .map(l -> new SubjectAttendanceTableResponse.SubjectLessonTableEntryResponse(
+                l.getId(),
+                l.getName(),
+                l.getDateTime(),
+                l.getType(),
+                l.getGroup() != null ? l.getGroup().getId() : null
+            ))
             .toList();
 
-        var students = subject.getStudents().stream()
-            .sorted(Comparator.comparing(StudentEntity::getUsername).thenComparing(StudentEntity::getId))
-            .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
-            .toList();
+        var attendanceFilter = new AttendanceFilter(subjectId, filter.lessonType(), filter.groupId());
 
-        var attendances = attendanceRepository.findAllBySubjectId(subjectId).stream()
+        var attendances = attendanceRepository.findAll(attendanceFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "lesson.dateTime"))
+            .stream()
             .map(a -> new AttendanceCellResponse(
                 a.getId(),
                 a.getLesson().getId(),
@@ -49,6 +62,11 @@ public class StudentAttendanceService {
                 a.getPresence(),
                 a.getNote()
             ))
+            .toList();
+
+        var students = subject.getStudents().stream()
+            .sorted(Comparator.comparing(StudentEntity::getUsername).thenComparing(StudentEntity::getId))
+            .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
             .toList();
 
         return new SubjectAttendanceTableResponse(lessons, students, attendances);

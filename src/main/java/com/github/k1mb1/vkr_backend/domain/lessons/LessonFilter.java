@@ -6,17 +6,33 @@ import org.springframework.data.jpa.domain.Specification;
 
 @Builder
 public record LessonFilter(
-    UUID subjectId
+    UUID subjectId,
+    LessonType lessonType,
+    UUID groupId
 ) {
 
     public Specification<LessonEntity> toSpecification() {
-        return Specification.where(subjectIdSpec());
+        return Specification.where(subjectIdSpec()).and(lessonTypeSpec()).and(groupIdSpec());
     }
 
     private Specification<LessonEntity> subjectIdSpec() {
         return (root, query, cb) ->
             subjectId != null
                 ? cb.equal(root.get("subject").get("id"), subjectId)
+                : null;
+    }
+
+    private Specification<LessonEntity> lessonTypeSpec() {
+        return (root, query, cb) ->
+            lessonType != null
+                ? cb.equal(root.get("type"), lessonType)
+                : null;
+    }
+
+    private Specification<LessonEntity> groupIdSpec() {
+        return (root, query, cb) ->
+            groupId != null
+                ? cb.equal(root.get("group").get("id"), groupId)
                 : null;
     }
 }

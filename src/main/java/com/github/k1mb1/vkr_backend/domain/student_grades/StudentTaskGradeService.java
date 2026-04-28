@@ -2,7 +2,10 @@ package com.github.k1mb1.vkr_backend.domain.student_grades;
 
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskEntity;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskRepository;
+import com.github.k1mb1.vkr_backend.domain.lessons.LessonFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
+import com.github.k1mb1.vkr_backend.domain.student_grades.filters.FindGradesFilter;
+import com.github.k1mb1.vkr_backend.domain.student_grades.filters.GradeFilter;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeCellResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
@@ -21,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,44 +34,44 @@ import org.springframework.transaction.annotation.Transactional;
 public class StudentTaskGradeService {
 
     final StudentTaskGradeRepository gradeRepository;
+    final com.github.k1mb1.vkr_backend.domain.lessons.LessonRepository lessonRepository;
     final LessonTaskRepository taskRepository;
     final StudentRepository studentRepository;
     final SubjectRepository subjectRepository;
 
-    public SubjectGradesTableResponse findGradesBySubjectId(UUID subjectId) {
+    public SubjectGradesTableResponse findGradesBySubjectId(UUID subjectId, FindGradesFilter filter) {
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
-        var lessons = subject.getLessons().stream()
-            .sorted(
-                Comparator.comparing(
-                    StudentTaskGradeService::lessonDateTime,
-                    Comparator.nullsLast(Comparator.naturalOrder())
-                )
-                .thenComparing(l -> l.getId())
-            )
+        var lessonFilter = LessonFilter.builder()
+            .subjectId(subjectId)
+            .lessonType(filter.lessonType())
+            .groupId(filter.groupId())
+            .build();
+
+        var lessons = lessonRepository.findAll(lessonFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "dateTime"))
+            .stream()
             .map(lesson -> new SubjectGradesTableResponse.SubjectLessonTableEntryResponse(
                 lesson.getId(),
                 lesson.getName(),
-                lesson.getDateTime()
+                lesson.getDateTime(),
+                lesson.getType(),
+                lesson.getGroup() != null ? lesson.getGroup().getId() : null
             ))
+            .toList();
+
+        var gradeFilter = new GradeFilter(subjectId, filter.lessonType(), filter.groupId());
+        var gradeOrder = Sort.by(Sort.Direction.ASC, "task.lesson.dateTime")
+            .and(Sort.by(Sort.Direction.ASC, "task.position"));
+
+        var grades = gradeRepository.findAll(gradeFilter.toSpecification(), gradeOrder)
+            .stream()
+            .map(this::toCellResponse)
             .toList();
 
         var students = subject.getStudents().stream()
             .sorted(Comparator.comparing(StudentEntity::getUsername).thenComparing(StudentEntity::getId))
             .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
-            .toList();
-
-        var gradeOrder = Comparator
-            .comparing(
-                (StudentTaskGradeEntity g) -> g.getTask().getLesson().getDateTime(),
-                Comparator.nullsLast(Comparator.naturalOrder())
-            )
-            .thenComparingInt(g -> g.getTask().getPosition());
-
-        var grades = gradeRepository.findAllBySubjectId(subjectId).stream()
-            .sorted(gradeOrder)
-            .map(this::toCellResponse)
             .toList();
 
         return new SubjectGradesTableResponse(lessons, students, grades);
@@ -245,11 +249,5 @@ public class StudentTaskGradeService {
             g.getCreatedAt(),
             g.getUpdatedAt()
         );
-    }
-
-    private static java.time.OffsetDateTime lessonDateTime(
-        com.github.k1mb1.vkr_backend.domain.lessons.LessonEntity lesson
-    ) {
-        return lesson.getDateTime();
     }
 }

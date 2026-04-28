@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_grades.responses;
 
+import com.github.k1mb1.vkr_backend.domain.lessons.LessonType;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -20,6 +21,8 @@ public record SubjectGradesTableResponse(
     public record SubjectLessonTableEntryResponse(
         UUID lessonId,
         String lessonName,
-        OffsetDateTime dateTime
+        OffsetDateTime dateTime,
+        LessonType type,
+        UUID groupId
     ) {}
 }

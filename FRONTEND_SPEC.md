@@ -163,7 +163,13 @@
 `GET /api/subjects/{subjectId}/grades` возвращает:
 ```typescript
 {
-  lessons: Array<{ lessonId: UUID, lessonName: string, dateTime: string | null }>
+  lessons: Array<{
+    lessonId: UUID
+    lessonName: string
+    dateTime: string | null
+    type: "LECTURE" | "PRACTICE" | "NONE"
+    groupId: UUID | null     // null для лекций или если группа не назначена
+  }>
   students: Array<{ id: UUID, username: string }>
   grades: Array<{
     id: UUID
@@ -179,6 +185,11 @@
   }>   // отсортированы по дате занятия, потом по position задания
 }
 ```
+
+**Query params:**
+- `lessonType=LECTURE` — только лекции
+- `lessonType=PRACTICE` — только практики
+- `groupId=UUID` — фильтр по конкретной подгруппе
 
 Фронт строит таблицу, матча `grades` по `studentId` (строка) и `taskId` → `lessonId` (колонка/группа колонок).
 
@@ -215,7 +226,13 @@ effectiveMax    = task.maxPoints * coeff
 `GET /api/subjects/{subjectId}/attendance` возвращает:
 ```typescript
 {
-  lessons: Array<{ lessonId: UUID, lessonName: string, dateTime: string | null }>
+  lessons: Array<{
+    lessonId: UUID
+    lessonName: string
+    dateTime: string | null
+    type: "LECTURE" | "PRACTICE" | "NONE"
+    groupId: UUID | null
+  }>
   students: Array<{ id: UUID, username: string }>
   attendances: Array<{
     attendanceId: UUID
@@ -226,6 +243,11 @@ effectiveMax    = task.maxPoints * coeff
   }>
 }
 ```
+
+**Query params:**
+- `lessonType=LECTURE` — только лекции
+- `lessonType=PRACTICE` — только практики
+- `groupId=UUID` — фильтр по подгруппе
 
 Фронт строит таблицу, матча `attendances` по `studentId` (строка) и `lessonId` (колонка).
 
