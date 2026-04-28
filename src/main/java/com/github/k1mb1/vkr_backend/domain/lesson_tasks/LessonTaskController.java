@@ -6,7 +6,7 @@ import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.UpdateTaskReque
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.StudentTaskGradeService;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +52,7 @@ public class LessonTaskController implements LessonTaskApi {
     }
 
     @Override
-    public ResponseEntity<List<StudentTaskGradesResponse>> findGrades(UUID lessonId) {
+    public ResponseEntity<LessonGradesTableResponse> findGrades(UUID lessonId) {
         return ResponseEntity.ok(gradeService.findGradesByLesson(lessonId));
     }
 

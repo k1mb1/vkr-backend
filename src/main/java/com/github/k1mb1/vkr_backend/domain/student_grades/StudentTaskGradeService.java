@@ -4,12 +4,13 @@ import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskEntity;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskRepository;
 import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeCellResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse.SubjectLessonTableEntryResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
+import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.FinalGradeResponse;
 import jakarta.persistence.EntityNotFoundException;
@@ -37,31 +38,6 @@ public class StudentTaskGradeService {
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
-        var rowsByStudent = gradeRepository.findAllBySubjectId(subjectId).stream()
-            .collect(Collectors.groupingBy(g -> g.getStudent().getId()));
-
-        var gradeOrder = Comparator
-            .comparing(
-                (StudentTaskGradeEntity g) -> g.getTask().getLesson().getDateTime(),
-                Comparator.nullsLast(Comparator.naturalOrder())
-            )
-            .thenComparingInt(g -> g.getTask().getPosition());
-
-        var students = subject.getStudents().stream()
-            .sorted(
-                Comparator.comparing(StudentEntity::getUsername)
-                    .thenComparing(StudentEntity::getId)
-            )
-            .map(student -> new StudentTaskGradesResponse(
-                student.getId(),
-                student.getUsername(),
-                rowsByStudent.getOrDefault(student.getId(), List.of()).stream()
-                    .sorted(gradeOrder)
-                    .map(this::toResponse)
-                    .toList()
-            ))
-            .toList();
-
         var lessons = subject.getLessons().stream()
             .sorted(
                 Comparator.comparing(
@@ -70,21 +46,49 @@ public class StudentTaskGradeService {
                 )
                 .thenComparing(l -> l.getId())
             )
-            .map(lesson -> new SubjectLessonTableEntryResponse(
+            .map(lesson -> new SubjectGradesTableResponse.SubjectLessonTableEntryResponse(
                 lesson.getId(),
                 lesson.getName(),
                 lesson.getDateTime()
             ))
             .toList();
 
-        return new SubjectGradesTableResponse(lessons, students);
+        var students = subject.getStudents().stream()
+            .sorted(Comparator.comparing(StudentEntity::getUsername).thenComparing(StudentEntity::getId))
+            .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
+            .toList();
+
+        var gradeOrder = Comparator
+            .comparing(
+                (StudentTaskGradeEntity g) -> g.getTask().getLesson().getDateTime(),
+                Comparator.nullsLast(Comparator.naturalOrder())
+            )
+            .thenComparingInt(g -> g.getTask().getPosition());
+
+        var grades = gradeRepository.findAllBySubjectId(subjectId).stream()
+            .sorted(gradeOrder)
+            .map(this::toCellResponse)
+            .toList();
+
+        return new SubjectGradesTableResponse(lessons, students, grades);
     }
 
-    public List<StudentTaskGradesResponse> findGradesByLesson(UUID lessonId) {
-        return groupByStudent(
-            gradeRepository.findAllByLessonId(lessonId),
-            Comparator.comparingInt(g -> g.getTask().getPosition())
-        );
+    public LessonGradesTableResponse findGradesByLesson(UUID lessonId) {
+        var rows = gradeRepository.findAllByLessonId(lessonId);
+
+        var students = rows.stream()
+            .map(StudentTaskGradeEntity::getStudent)
+            .distinct()
+            .sorted(Comparator.comparing(StudentEntity::getUsername).thenComparing(StudentEntity::getId))
+            .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
+            .toList();
+
+        var grades = rows.stream()
+            .sorted(Comparator.comparingInt(g -> g.getTask().getPosition()))
+            .map(this::toCellResponse)
+            .toList();
+
+        return new LessonGradesTableResponse(students, grades);
     }
 
     /**
@@ -213,24 +217,19 @@ public class StudentTaskGradeService {
         };
     }
 
-    private List<StudentTaskGradesResponse> groupByStudent(
-        List<StudentTaskGradeEntity> rows,
-        Comparator<StudentTaskGradeEntity> order
-    ) {
-        Map<UUID, List<StudentTaskGradeEntity>> byStudent = rows.stream()
-            .collect(Collectors.groupingBy(g -> g.getStudent().getId()));
-
-        return byStudent.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .map(e -> {
-                StudentEntity student = e.getValue().get(0).getStudent();
-                List<TaskGradeResponse> grades = e.getValue().stream()
-                    .sorted(order)
-                    .map(this::toResponse)
-                    .toList();
-                return new StudentTaskGradesResponse(student.getId(), student.getUsername(), grades);
-            })
-            .toList();
+    private GradeCellResponse toCellResponse(StudentTaskGradeEntity g) {
+        return new GradeCellResponse(
+            g.getId(),
+            g.getTask().getId(),
+            g.getTask().getLesson().getId(),
+            g.getStudent().getId(),
+            g.getValue(),
+            g.getComment(),
+            g.getStatus(),
+            g.getSubmittedAt(),
+            g.getCreatedAt(),
+            g.getUpdatedAt()
+        );
     }
 
     private TaskGradeResponse toResponse(StudentTaskGradeEntity g) {

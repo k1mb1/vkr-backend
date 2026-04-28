@@ -4,7 +4,8 @@ import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.CreateTaskReque
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.UpdateTaskRequest;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.StudentTaskGradesResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeCellResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,7 +51,7 @@ public interface LessonTaskApi {
 
     @Operation(summary = "All task grades for a lesson grouped by student")
     @GetMapping("/grades")
-    ResponseEntity<List<StudentTaskGradesResponse>> findGrades(@PathVariable UUID lessonId);
+    ResponseEntity<LessonGradesTableResponse> findGrades(@PathVariable UUID lessonId);
 
     @Operation(summary = "Upsert a student grade for a task")
     @PutMapping("/{taskId}/grades")

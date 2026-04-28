@@ -164,13 +164,23 @@
 ```typescript
 {
   lessons: Array<{ lessonId: UUID, lessonName: string, dateTime: string | null }>
-  students: Array<{
+  students: Array<{ id: UUID, username: string }>
+  grades: Array<{
+    id: UUID
+    taskId: UUID
+    lessonId: UUID
     studentId: UUID
-    username: string
-    grades: TaskGradeResponse[]   // отсортированы по дате занятия, потом по position задания
-  }>
+    value: number | null
+    comment: string | null
+    status: "NOT_SUBMITTED" | "SUBMITTED" | "GRADED" | "RESUBMIT"
+    submittedAt: string | null
+    createdAt: string
+    updatedAt: string
+  }>   // отсортированы по дате занятия, потом по position задания
 }
 ```
+
+Фронт строит таблицу, матча `grades` по `studentId` (строка) и `taskId` → `lessonId` (колонка/группа колонок).
 
 Фронт должен построить таблицу: строки = студенты, колонки = задания (сгруппированные по занятиям).
 
@@ -206,13 +216,18 @@ effectiveMax    = task.maxPoints * coeff
 ```typescript
 {
   lessons: Array<{ lessonId: UUID, lessonName: string, dateTime: string | null }>
-  students: Array<{
+  students: Array<{ id: UUID, username: string }>
+  attendances: Array<{
+    attendanceId: UUID
+    lessonId: UUID
     studentId: UUID
-    username: string
-    attendances: AttendanceEntryResponse[]
+    presence: "NONE" | "PRESENT" | "NOT_PRESENT"
+    note: string | null
   }>
 }
 ```
+
+Фронт строит таблицу, матча `attendances` по `studentId` (строка) и `lessonId` (колонка).
 
 ---
 
@@ -313,7 +328,7 @@ effectiveMax    = task.maxPoints * coeff
 | POST | `/api/lessons/{lessonId}/tasks` | Создать задание |
 | PATCH | `/api/lessons/{lessonId}/tasks/{taskId}` | Обновить задание (частичное) |
 | DELETE | `/api/lessons/{lessonId}/tasks/{taskId}` | Удалить задание |
-| GET | `/api/lessons/{lessonId}/tasks/grades` | Оценки занятия, сгруппированные по студентам |
+| GET | `/api/lessons/{lessonId}/tasks/grades` | Оценки занятия (плоская таблица) |
 | PUT | `/api/lessons/{lessonId}/tasks/{taskId}/grades` | Создать/обновить оценку студента |
 | PUT | `/api/lessons/{lessonId}/tasks/{taskId}/grades/bulk` | Массовый upsert оценок |
 
@@ -346,6 +361,29 @@ effectiveMax    = task.maxPoints * coeff
   { "studentId": "UUID", "value": 8, "status": "GRADED" },
   { "studentId": "UUID", "value": 5, "status": "GRADED" }
 ]
+```
+
+**GET `/api/lessons/{lessonId}/tasks/grades` response:**
+```json
+{
+  "students": [
+    { "id": "UUID", "username": "string" }
+  ],
+  "grades": [
+    {
+      "id": "UUID",
+      "taskId": "UUID",
+      "lessonId": "UUID",
+      "studentId": "UUID",
+      "value": 8,
+      "comment": null,
+      "status": "GRADED",
+      "submittedAt": "2026-09-10T12:00:00Z",
+      "createdAt": "2026-09-01T10:00:00Z",
+      "updatedAt": "2026-09-10T12:00:00Z"
+    }
+  ]
+}
 ```
 
 ---
