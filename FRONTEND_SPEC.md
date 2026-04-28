@@ -442,24 +442,51 @@ effectiveMax    = task.maxPoints * coeff
 
 **POST /api/groups body:**
 
-Один список → студенты напрямую в группе (без подгрупп):
+Все студенты в главной группе (без подгрупп):
 ```json
 {
   "groupName": "ИСТ-21",
-  "studentNames": [["Иванов И.И.", "Петров П.П.", "Сидоров С.С."]]
-}
-```
-
-Несколько списков → авто-создаются подгруппы "ИСТ-21/1", "ИСТ-21/2":
-```json
-{
-  "groupName": "ИСТ-21",
-  "studentNames": [
-    ["Иванов И.И.", "Петров П.П."],
-    ["Сидоров С.С.", "Козлов К.К."]
+  "students": [
+    { "username": "Иванов И.И.", "subgroupIndex": null },
+    { "username": "Петров П.П.", "subgroupIndex": null },
+    { "username": "Сидоров С.С.", "subgroupIndex": null }
   ]
 }
 ```
+
+С подгруппами (`subgroupIndex` = 0 → "ИСТ-21/1", 1 → "ИСТ-21/2"):
+```json
+{
+  "groupName": "ИСТ-21",
+  "students": [
+    { "username": "Иванов И.И.", "subgroupIndex": 0 },
+    { "username": "Петров П.П.", "subgroupIndex": 0 },
+    { "username": "Сидоров С.С.", "subgroupIndex": 1 },
+    { "username": "Козлов К.К.", "subgroupIndex": 1 }
+  ]
+}
+```
+
+**GET /api/groups/{groupId} response:**
+```json
+{
+  "id": "UUID",
+  "name": "ИСТ-21",
+  "subgroups": [
+    { "id": "UUID", "name": "ИСТ-21/1" },
+    { "id": "UUID", "name": "ИСТ-21/2" }
+  ],
+  "students": [
+    { "id": "UUID", "username": "Иванов И.И.", "subgroupId": "UUID" },
+    { "id": "UUID", "username": "Петров П.П.", "subgroupId": "UUID" },
+    { "id": "UUID", "username": "Сидоров С.С.", "subgroupId": "UUID" },
+    { "id": "UUID", "username": "Козлов К.К.", "subgroupId": "UUID" },
+    { "id": "UUID", "username": "Попов П.П.", "subgroupId": null }
+  ]
+}
+```
+
+Фронт строит дерево, матча `students` по `subgroupId` против массива `subgroups`.
 
 ---
 

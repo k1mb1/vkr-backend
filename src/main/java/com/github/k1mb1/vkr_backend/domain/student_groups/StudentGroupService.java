@@ -2,14 +2,14 @@ package com.github.k1mb1.vkr_backend.domain.student_groups;
 
 import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_MESSAGE;
 
-import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
+import com.github.k1mb1.vkr_backend.domain.student_groups.requests.StudentGroupMemberRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
+import com.github.k1mb1.vkr_backend.domain.students.responses.StudentGroupMemberResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -46,46 +46,60 @@ public class StudentGroupService {
             .name(request.groupName())
             .build();
 
-        if (request.studentNames().size() > 1) {
-            var orderedSubgroups = new ArrayList<StudentGroupEntity>(
-                request.studentNames().size()
-            );
-            for (int i = 0; i < request.studentNames().size(); i++) {
-                var sg = StudentGroupEntity.builder()
-                    .name(request.groupName() + "/" + (i + 1))
-                    .parentGroup(mainGroup)
+        var distinctIndices = request.students().stream()
+            .map(StudentGroupMemberRequest::subgroupIndex)
+            .filter(Objects::nonNull)
+            .distinct()
+            .sorted()
+            .toList();
+
+        if (distinctIndices.isEmpty()) {
+            for (var member : request.students()) {
+                var student = StudentEntity.builder()
+                    .username(member.username())
+                    .group(mainGroup)
                     .build();
-                orderedSubgroups.add(sg);
-                mainGroup.getSubgroups().add(sg);
+                mainGroup.getStudents().add(student);
             }
-
-            for (int i = 0; i < request.studentNames().size(); i++) {
-                var subgroup = orderedSubgroups.get(i);
-                var studentNames = request.studentNames().get(i);
-
-                for (String name : studentNames) {
-                    var student = StudentEntity.builder()
-                        .username(name)
-                        .group(subgroup)
-                        .build();
-
-                    subgroup.getStudents().add(student);
-                }
-            }
-
-            return mapToStudGroup(groupRepository.save(mainGroup));
+            return mapToGroupResponse(groupRepository.save(mainGroup));
         }
 
-        for (String name : request.studentNames().getFirst()) {
+        var subgroups = new ArrayList<StudentGroupEntity>();
+        for (int index : distinctIndices) {
+            var sg = StudentGroupEntity.builder()
+                .name(request.groupName() + "/" + (index + 1))
+                .parentGroup(mainGroup)
+                .build();
+            subgroups.add(sg);
+            mainGroup.getSubgroups().add(sg);
+        }
+
+        Map<Integer, StudentGroupEntity> indexToSubgroup = new HashMap<>();
+        for (int i = 0; i < distinctIndices.size(); i++) {
+            indexToSubgroup.put(distinctIndices.get(i), subgroups.get(i));
+        }
+
+        for (var member : request.students()) {
             var student = StudentEntity.builder()
-                .username(name)
-                .group(mainGroup)
+                .username(member.username())
                 .build();
 
-            mainGroup.getStudents().add(student);
+            if (member.subgroupIndex() == null) {
+                student.setGroup(mainGroup);
+                mainGroup.getStudents().add(student);
+            } else {
+                var subgroup = indexToSubgroup.get(member.subgroupIndex());
+                if (subgroup == null) {
+                    throw new IllegalArgumentException(
+                        "Invalid subgroupIndex: " + member.subgroupIndex()
+                    );
+                }
+                student.setGroup(subgroup);
+                subgroup.getStudents().add(student);
+            }
         }
 
-        return mapToStudGroup(groupRepository.save(mainGroup));
+        return mapToGroupResponse(groupRepository.save(mainGroup));
     }
 
     public StudentGroupResponse findGroupWithSubgroups(UUID id) {
@@ -97,68 +111,20 @@ public class StudentGroupService {
                 )
             );
 
-        var subgroups = group
-            .getSubgroups()
-            .stream()
-            .sorted(Comparator.comparing(StudentGroupEntity::getName))
-            .map(sg ->
-                new SubgroupResponse(
-                    sg.getId(),
-                    sg.getName(),
-                    mapStudents(sg.getStudents())
-                )
-            )
-            .toList();
-
-        var directStudents = subgroups.isEmpty()
-            ? mapStudents(group.getStudents())
-            : List.<StudentEntryResponse>of();
-
-        return new StudentGroupResponse(
-            group.getId(),
-            group.getName(),
-            directStudents,
-            subgroups
-        );
+        return mapToGroupResponse(group);
     }
 
     @Transactional
     public StudentGroupResponse update(UUID groupId, UpdateGroupRequest request) {
         var group = getMainGroupById(groupId);
         group.setName(request.name());
-        return mapToStudGroup(groupRepository.save(group));
+        return mapToGroupResponse(groupRepository.save(group));
     }
 
     @Transactional
     public void delete(UUID groupId) {
         var group = getMainGroupById(groupId);
         groupRepository.delete(group);
-    }
-
-    private List<StudentEntryResponse> mapStudents(
-        Collection<StudentEntity> students
-    ) {
-        return students
-            .stream()
-            .sorted(Comparator.comparing(StudentEntity::getUsername))
-            .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
-            .toList();
-    }
-
-    private List<SubgroupResponse> mapSubGroups(
-        Collection<StudentGroupEntity> subgroups
-    ) {
-        return subgroups
-            .stream()
-            .sorted(Comparator.comparing(StudentGroupEntity::getName))
-            .map(s ->
-                SubgroupResponse.builder()
-                    .id(s.getId())
-                    .name(s.getName())
-                    .students(mapStudents(s.getStudents()))
-                    .build()
-            )
-            .toList();
     }
 
     private StudentGroupEntity getMainGroupById(UUID id) {
@@ -171,12 +137,31 @@ public class StudentGroupService {
             );
     }
 
-    private StudentGroupResponse mapToStudGroup(StudentGroupEntity entity) {
+    private StudentGroupResponse mapToGroupResponse(StudentGroupEntity entity) {
+        var subgroups = entity.getSubgroups().stream()
+            .sorted(Comparator.comparing(StudentGroupEntity::getName))
+            .map(sg -> new SubgroupResponse(sg.getId(), sg.getName()))
+            .toList();
+
+        var students = new ArrayList<StudentGroupMemberResponse>();
+
+        entity.getStudents().stream()
+            .sorted(Comparator.comparing(StudentEntity::getUsername))
+            .map(s -> new StudentGroupMemberResponse(s.getId(), s.getUsername(), null))
+            .forEach(students::add);
+
+        entity.getSubgroups().forEach(sg ->
+            sg.getStudents().stream()
+                .sorted(Comparator.comparing(StudentEntity::getUsername))
+                .map(s -> new StudentGroupMemberResponse(s.getId(), s.getUsername(), sg.getId()))
+                .forEach(students::add)
+        );
+
         return StudentGroupResponse.builder()
             .id(entity.getId())
             .name(entity.getName())
-            .students(mapStudents(entity.getStudents()))
-            .subgroups(mapSubGroups(entity.getSubgroups()))
+            .subgroups(subgroups)
+            .students(students)
             .build();
     }
 }
