@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.teachers;
 
-import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateOrUpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class TeacherService {
     @Transactional
     public TeacherResponse createOrUpdate(
         UUID id,
-        UpdateTeacherRequest request
+        CreateOrUpdateTeacherRequest request
     ) {
         return teacherRepository
             .findById(id)

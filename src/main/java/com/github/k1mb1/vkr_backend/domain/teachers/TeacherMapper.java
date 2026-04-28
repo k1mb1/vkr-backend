@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.teachers;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectMapper;
-import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateOrUpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import java.util.UUID;
 import org.mapstruct.*;
@@ -18,12 +18,12 @@ public interface TeacherMapper {
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "subjects", ignore = true)
-    TeacherEntity toEntity(UUID id, UpdateTeacherRequest request);
+    TeacherEntity toEntity(UUID id, CreateOrUpdateTeacherRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "subjects", ignore = true)
     void update(
         @MappingTarget TeacherEntity entity,
-        UpdateTeacherRequest request
+        CreateOrUpdateTeacherRequest request
     );
 }
