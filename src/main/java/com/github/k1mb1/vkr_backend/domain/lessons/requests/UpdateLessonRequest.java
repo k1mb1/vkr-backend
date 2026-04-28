@@ -7,6 +7,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Partial update request for a lesson. All fields are optional — only non-null
@@ -16,6 +17,7 @@ public record UpdateLessonRequest(
     String name,
     OffsetDateTime dateTime,
     LessonType type,
+    UUID groupId,
     IssuanceMode issuanceMode,
     PenaltyMode penaltyMode,
     @DecimalMin("0.0001") @DecimalMax("1.0") BigDecimal penaltyStep

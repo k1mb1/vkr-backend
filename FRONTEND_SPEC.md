@@ -296,7 +296,7 @@ effectiveMax    = task.maxPoints * coeff
 ### Lessons
 | Метод | URL | Описание |
 |-------|-----|----------|
-| GET | `/api/lessons?subjectId={id}` | Список занятий предмета |
+| GET | `/api/lessons?subjectId={id}` | Список занятий предмета (Pageable) |
 | POST | `/api/lessons` | Создать одно занятие |
 | POST | `/api/lessons/bulk-schedule` | Массово создать занятия по недельному расписанию |
 | PATCH | `/api/lessons/{id}` | Обновить занятие (частичное) |
@@ -311,9 +311,23 @@ effectiveMax    = task.maxPoints * coeff
   "dateTime": "2026-09-01T10:00:00+03:00",
   "type": "LECTURE | PRACTICE | NONE",
   "subjectId": "UUID",
+  "groupId": "UUID | null",                // null = занятие для всей группы (лекция)
   "issuanceMode": "AUTO | MANUAL",       // default: AUTO
   "penaltyMode": "NONE | SUBTRACT | MULTIPLY", // default: NONE
   "penaltyStep": 0.25                     // default: 0.25
+}
+```
+
+**PATCH /api/lessons/{id} body** (все поля опциональны):
+```json
+{
+  "name": "string",
+  "dateTime": "2026-09-01T10:00:00+03:00",
+  "type": "LECTURE | PRACTICE | NONE",
+  "groupId": "UUID | null",
+  "issuanceMode": "AUTO | MANUAL",
+  "penaltyMode": "NONE | SUBTRACT | MULTIPLY",
+  "penaltyStep": 0.25
 }
 ```
 
@@ -575,6 +589,7 @@ Backend возвращает:
   status: number
   message: string
   timestamp: string
+  details: string | null   // дополнительная техническая информация (опционально)
 }
 ```
 

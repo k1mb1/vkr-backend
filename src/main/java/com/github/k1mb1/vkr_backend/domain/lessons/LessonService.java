@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.*;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectEntity;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectService;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,6 +26,7 @@ public class LessonService {
 
     final LessonRepository lessonRepository;
     final SubjectService subjectService;
+    final StudentGroupRepository groupRepository;
     final LessonMapper lessonMapper;
 
     public Page<LessonResponse> findAll(LessonFilter filter, Pageable pageable) {
@@ -36,12 +38,20 @@ public class LessonService {
     @Transactional
     public LessonResponse create(CreateLessonRequest request) {
         var subject = subjectService.getReferenceById(request.subjectId());
-        var entity = lessonMapper
+        var builder = lessonMapper
             .toEntity(request)
             .toBuilder()
-            .subject(subject)
-            .build();
-        return lessonMapper.toResponse(lessonRepository.save(entity));
+            .subject(subject);
+
+        if (request.groupId() != null) {
+            var group = groupRepository.findById(request.groupId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                    "Group not found: " + request.groupId()
+                ));
+            builder.group(group);
+        }
+
+        return lessonMapper.toResponse(lessonRepository.save(builder.build()));
     }
 
     /** Bulk lesson creation from a repeating week pattern. */
@@ -75,6 +85,15 @@ public class LessonService {
     public LessonResponse update(UUID id, UpdateLessonRequest request) {
         var lesson = getById(id);
         lessonMapper.update(lesson, request);
+
+        if (request.groupId() != null) {
+            var group = groupRepository.findById(request.groupId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                    "Group not found: " + request.groupId()
+                ));
+            lesson.setGroup(group);
+        }
+
         return lessonMapper.toResponse(lessonRepository.save(lesson));
     }
 

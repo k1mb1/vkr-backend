@@ -16,6 +16,8 @@ public record CreateLessonRequest(
     OffsetDateTime dateTime,
     @NotNull LessonType type,
     @NotNull UUID subjectId,
+    /** Null → the lesson has no group (whole-cohort / lecture). */
+    UUID groupId,
     /** Null → defaults to AUTO in the entity. */
     IssuanceMode issuanceMode,
     /** Null → defaults to NONE (no penalty) in the entity. */
