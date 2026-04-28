@@ -150,6 +150,7 @@ public class StudentGroupService {
     ) {
         return subgroups
             .stream()
+            .sorted(Comparator.comparing(StudentGroupEntity::getName))
             .map(s ->
                 SubgroupResponse.builder()
                     .id(s.getId())

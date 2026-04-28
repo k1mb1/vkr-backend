@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
+import com.github.k1mb1.vkr_backend.domain.students.StudentFilter;
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
@@ -25,7 +25,7 @@ public interface StudentApi {
     @Operation(summary = "List students")
     @GetMapping
     ResponseEntity<Page<StudentResponse>> findAll(
-        @ParameterObject @ModelAttribute FindStudentsFilter filter,
+        @ParameterObject @ModelAttribute StudentFilter filter,
         @ParameterObject Pageable pageable
     );
 

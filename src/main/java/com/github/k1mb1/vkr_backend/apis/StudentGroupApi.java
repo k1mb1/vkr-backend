@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.student_groups.filters.FindGroupsFilter;
+import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupFilter;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
@@ -26,7 +26,7 @@ public interface StudentGroupApi {
     @Operation(summary = "List all groups")
     @GetMapping
     ResponseEntity<Page<StudentGroupPageResponse>> findAll(
-        @ParameterObject @ModelAttribute FindGroupsFilter filter,
+        @ParameterObject @ModelAttribute StudentGroupFilter filter,
         @ParameterObject Pageable pageable
     );
 

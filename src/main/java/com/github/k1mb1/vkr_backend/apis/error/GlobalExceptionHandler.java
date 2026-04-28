@@ -32,11 +32,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorDto> handleValidation(MethodArgumentNotValidException ex) {
         String details = ex.getBindingResult().getFieldErrors().stream()
-            .map(FieldError::getField)
-            .map(field -> {
-                String msg = ex.getBindingResult().getFieldError(field).getDefaultMessage();
-                return field + ": " + msg;
-            })
+            .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .collect(Collectors.joining("; "));
         return ResponseEntity.status(BAD_REQUEST).body(
             ErrorDto.of(VALIDATION_FAILED, BAD_REQUEST, details)
@@ -56,6 +52,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorDto> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Illegal argument: {}", ex.getMessage());
+        return ResponseEntity.status(BAD_REQUEST).body(
+            ErrorDto.of(ex.getMessage(), BAD_REQUEST)
+        );
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorDto> handleIllegalState(IllegalStateException ex) {
+        log.warn("Illegal state: {}", ex.getMessage());
         return ResponseEntity.status(BAD_REQUEST).body(
             ErrorDto.of(ex.getMessage(), BAD_REQUEST)
         );

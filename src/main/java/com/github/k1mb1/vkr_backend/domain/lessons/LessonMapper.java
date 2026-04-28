@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.lessons;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
+import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import org.mapstruct.*;
 
@@ -25,6 +26,16 @@ public interface LessonMapper {
     @Mapping(target = "penaltyMode", expression = "java(request.penaltyMode() != null ? request.penaltyMode() : com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode.NONE)")
     @Mapping(target = "penaltyStep", expression = "java(request.penaltyStep() != null ? request.penaltyStep() : new java.math.BigDecimal(\"0.25\"))")
     LessonEntity toEntity(CreateLessonRequest request);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "subject", ignore = true)
+    @Mapping(target = "tasks", ignore = true)
+    @Mapping(target = "group", ignore = true)
+    @Mapping(target = "attendances", ignore = true)
+    void update(@MappingTarget LessonEntity entity, UpdateLessonRequest request);
 
     /**
      * Extracts the subgroup ordinal from the group name.

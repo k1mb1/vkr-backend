@@ -1,7 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
 import com.github.k1mb1.vkr_backend.apis.StudentGroupApi;
-import com.github.k1mb1.vkr_backend.domain.student_groups.filters.FindGroupsFilter;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
@@ -12,21 +11,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 public class StudentGroupController implements StudentGroupApi {
 
     final StudentGroupService studentGroupService;
 
     @Override
     public ResponseEntity<Page<StudentGroupPageResponse>> findAll(
-        FindGroupsFilter filter,
+        StudentGroupFilter filter,
         Pageable pageable
     ) {
-        var groupFilter = StudentGroupFilter.builder().name(filter.name()).build();
-        return ResponseEntity.ok(studentGroupService.findAll(groupFilter, pageable));
+        return ResponseEntity.ok(studentGroupService.findAll(filter, pageable));
     }
 
     @Override

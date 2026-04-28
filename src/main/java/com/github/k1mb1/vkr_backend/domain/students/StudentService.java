@@ -54,6 +54,8 @@ public class StudentService {
                     NOT_FOUND_MESSAGE.formatted("Group", request.groupId())
                 ));
             student.setGroup(group);
+        } else {
+            student.setGroup(null);
         }
         return studentMapper.toResponse(studentRepository.save(student));
     }

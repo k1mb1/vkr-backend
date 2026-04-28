@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_grades.requests;
 
 import com.github.k1mb1.vkr_backend.domain.student_grades.SubmissionStatus;
+import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,7 +18,7 @@ import java.util.UUID;
  *                    When null and status is SUBMITTED, the service sets it to now().
  */
 public record UpsertTaskGradeRequest(
-    UUID studentId,
+    @NotNull UUID studentId,
     Integer value,
     String comment,
     SubmissionStatus status,

@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +27,10 @@ public class LessonService {
     final SubjectService subjectService;
     final LessonMapper lessonMapper;
 
-    public List<LessonResponse> findAll(LessonFilter filter) {
+    public Page<LessonResponse> findAll(LessonFilter filter, Pageable pageable) {
         return lessonRepository
-            .findAll(filter.toSpecification())
-            .stream()
-            .map(lessonMapper::toResponse)
-            .toList();
+            .findAll(filter.toSpecification(), pageable)
+            .map(lessonMapper::toResponse);
     }
 
     @Transactional
@@ -54,7 +54,17 @@ public class LessonService {
             createByPattern(entry, subject, entities);
         }
 
-        return lessonRepository.saveAll(entities)
+        // Deduplicate against existing lessons
+        var unique = entities.stream()
+            .filter(e -> !lessonRepository.existsBySubject_IdAndDateTimeAndTypeAndGroup_Id(
+                subject.getId(),
+                e.getDateTime(),
+                e.getType(),
+                e.getGroup() != null ? e.getGroup().getId() : null
+            ))
+            .toList();
+
+        return lessonRepository.saveAll(unique)
             .stream()
             .map(lessonMapper::toResponse)
             .toList();
@@ -64,16 +74,9 @@ public class LessonService {
     @Transactional
     public LessonResponse update(UUID id, UpdateLessonRequest request) {
         var lesson = getById(id);
-        if (request.name()         != null) lesson.setName(request.name());
-        if (request.dateTime()     != null) lesson.setDateTime(request.dateTime());
-        if (request.type()         != null) lesson.setType(request.type());
-        if (request.issuanceMode() != null) lesson.setIssuanceMode(request.issuanceMode());
-        if (request.penaltyMode()  != null) lesson.setPenaltyMode(request.penaltyMode());
-        if (request.penaltyStep()  != null) lesson.setPenaltyStep(request.penaltyStep());
+        lessonMapper.update(lesson, request);
         return lessonMapper.toResponse(lessonRepository.save(lesson));
     }
-
-    
 
     @Transactional
     public void delete(UUID id) {

@@ -14,10 +14,12 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 public class SubjectController implements SubjectApi {
 
     final SubjectService subjectService;
@@ -28,11 +30,8 @@ public class SubjectController implements SubjectApi {
         UUID teacherId,
         FindSubjectsFilter filter
     ) {
-        var subjectFilter = SubjectFilter.builder()
-            .teacherId(teacherId)
-            .archived(filter.archived() != null && filter.archived())
-            .build();
-        return ResponseEntity.ok(subjectService.findAll(subjectFilter));
+        var spec = filter.toServiceFilter(teacherId);
+        return ResponseEntity.ok(subjectService.findAll(spec));
     }
 
     @Override

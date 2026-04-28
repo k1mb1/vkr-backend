@@ -55,29 +55,21 @@ public class LessonTaskService {
         UpdateTaskRequest request
     ) {
         var entity = taskRepository
-            .findById(taskId)
-            .filter(t -> t.getLesson().getId().equals(lessonId))
+            .findByIdAndLesson_Id(taskId, lessonId)
             .orElseThrow(() ->
                 new EntityNotFoundException(
                     "Task " + taskId + " not found in lesson " + lessonId
                 )
             );
 
-        if (request.title() != null) entity.setTitle(request.title());
-        if (request.description() != null) entity.setDescription(request.description());
-        if (request.maxPoints() != null) entity.setMaxPoints(request.maxPoints());
-        if (request.position() != null) entity.setPosition(request.position());
-        if (request.isMandatory() != null) entity.setMandatory(request.isMandatory());
-        if (request.deadline() != null) entity.setDeadline(request.deadline());
-
+        taskMapper.update(entity, request);
         return taskMapper.toResponse(taskRepository.save(entity));
     }
 
     @Transactional
     public void delete(UUID lessonId, UUID taskId) {
         var entity = taskRepository
-            .findById(taskId)
-            .filter(t -> t.getLesson().getId().equals(lessonId))
+            .findByIdAndLesson_Id(taskId, lessonId)
             .orElseThrow(() ->
                 new EntityNotFoundException(
                     "Task " + taskId + " not found in lesson " + lessonId

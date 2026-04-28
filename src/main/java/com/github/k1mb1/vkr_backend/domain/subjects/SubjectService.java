@@ -10,8 +10,11 @@ import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +28,9 @@ public class SubjectService {
     final TeacherRepository teacherRepository;
     final StudentGroupRepository studentGroupRepository;
 
-    public List<SubjectResponse> findAll(SubjectFilter filter) {
+    public List<SubjectResponse> findAll(Specification<SubjectEntity> spec) {
         return subjectRepository
-            .findAll(filter.toSpecification())
+            .findAll(spec)
             .stream()
             .map(subjectMapper::toResponse)
             .toList();
@@ -83,8 +86,18 @@ public class SubjectService {
                 )
             );
 
-        subject.getStudents().addAll(group.getStudents());
-        group.getSubgroups().forEach(sg -> subject.getStudents().addAll(sg.getStudents()));
+        Set<UUID> existingStudentIds = subject.getStudents().stream()
+            .map(s -> s.getId())
+            .collect(Collectors.toSet());
+
+        group.getStudents().stream()
+            .filter(s -> !existingStudentIds.contains(s.getId()))
+            .forEach(subject.getStudents()::add);
+
+        group.getSubgroups().stream()
+            .flatMap(sg -> sg.getStudents().stream())
+            .filter(s -> !existingStudentIds.contains(s.getId()))
+            .forEach(subject.getStudents()::add);
 
         var savedSubject = subjectRepository.save(subject);
 

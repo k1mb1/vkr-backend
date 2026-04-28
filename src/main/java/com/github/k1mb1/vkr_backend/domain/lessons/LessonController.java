@@ -1,7 +1,6 @@
 package com.github.k1mb1.vkr_backend.domain.lessons;
 
 import com.github.k1mb1.vkr_backend.apis.LessonApi;
-import com.github.k1mb1.vkr_backend.domain.lessons.filters.FindLessonsFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateIssuedTaskIndexRequest;
@@ -10,22 +9,23 @@ import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 public class LessonController implements LessonApi {
 
     final LessonService lessonService;
 
     @Override
-    public ResponseEntity<List<LessonResponse>> findAll(FindLessonsFilter filter) {
-        var lessonFilter = LessonFilter.builder()
-            .subjectId(filter.subjectId())
-            .build();
-        return ResponseEntity.ok(lessonService.findAll(lessonFilter));
+    public ResponseEntity<Page<LessonResponse>> findAll(LessonFilter filter, Pageable pageable) {
+        return ResponseEntity.ok(lessonService.findAll(filter, pageable));
     }
 
     @Override
@@ -42,7 +42,6 @@ public class LessonController implements LessonApi {
     public ResponseEntity<LessonResponse> update(UUID id, UpdateLessonRequest request) {
         return ResponseEntity.ok(lessonService.update(id, request));
     }
-
 
     @Override
     public ResponseEntity<Void> delete(UUID id) {

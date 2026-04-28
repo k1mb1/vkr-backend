@@ -5,9 +5,8 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 
 public record ErrorDto(
-    int code,
+    int status,
     String message,
-    HttpStatus status,
     Instant timestamp,
     String details
 ) {
@@ -18,7 +17,6 @@ public record ErrorDto(
         return new ErrorDto(
             status.value(),
             message,
-            status,
             Instant.now(),
             null
         );
@@ -27,12 +25,11 @@ public record ErrorDto(
     public static ErrorDto of(
         @NonNull String message,
         @NonNull HttpStatus status,
-        @NonNull String details
+        String details
     ) {
         return new ErrorDto(
             status.value(),
             message,
-            status,
             Instant.now(),
             details
         );

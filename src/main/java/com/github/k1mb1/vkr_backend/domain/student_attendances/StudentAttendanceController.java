@@ -7,10 +7,12 @@ import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.Subject
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@Validated
 public class StudentAttendanceController implements StudentAttendanceApi {
 
     final StudentAttendanceService attendanceService;

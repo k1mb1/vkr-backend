@@ -10,6 +10,7 @@ import org.mapstruct.*;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = SPRING)
 public interface StudentMapper {
     @Mapping(source = "group.id", target = "groupId")
+    @Mapping(source = "group.name", target = "groupName")
     StudentResponse toResponse(StudentEntity entity);
 
     @Mapping(target = "id", ignore = true)
