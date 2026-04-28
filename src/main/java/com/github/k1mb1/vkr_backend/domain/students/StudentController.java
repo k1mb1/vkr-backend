@@ -4,7 +4,6 @@ import com.github.k1mb1.vkr_backend.apis.StudentApi;
 import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +45,5 @@ public class StudentController implements StudentApi {
     public ResponseEntity<Void> delete(UUID studentId) {
         studentService.delete(studentId);
         return ResponseEntity.noContent().build();
-    }
-
-    @Override
-    public ResponseEntity<StudentSubjectSubgroupsResponse> findSubjects(UUID id) {
-        return ResponseEntity.ok(studentService.findSubjectSubgroups(id));
     }
 }

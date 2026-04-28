@@ -120,7 +120,6 @@ public class StudentGroupService {
         return new StudentGroupResponse(
             group.getId(),
             group.getName(),
-            mapSubjects(group),
             directStudents,
             subgroups
         );
@@ -158,35 +157,6 @@ public class StudentGroupService {
             .toList();
     }
 
-    private List<GroupSubjectResponse> mapSubjects(StudentGroupEntity group) {
-        return Stream.concat(
-                group
-                    .getStudents()
-                    .stream()
-                    .flatMap(student -> student.getSubjects().stream()),
-                group
-                    .getSubgroups()
-                    .stream()
-                    .flatMap(subgroup -> subgroup.getStudents().stream())
-                    .flatMap(student -> student.getSubjects().stream())
-            )
-            .collect(
-                Collectors.toMap(
-                        BaseEntity::getId,
-                    subject -> new GroupSubjectResponse(
-                        subject.getId(),
-                        subject.getName()
-                    ),
-                    (left, right) -> left,
-                    LinkedHashMap::new
-                )
-            )
-            .values()
-            .stream()
-            .sorted(Comparator.comparing(GroupSubjectResponse::name))
-            .toList();
-    }
-
     private StudentGroupEntity getMainGroupById(UUID id) {
         return groupRepository
             .findByIdAndParentGroupIsNull(id)
@@ -201,7 +171,6 @@ public class StudentGroupService {
         return StudentGroupResponse.builder()
             .id(entity.getId())
             .name(entity.getName())
-            .subjects(mapSubjects(entity))
             .students(mapStudents(entity.getStudents()))
             .subgroups(mapSubGroups(entity.getSubgroups()))
             .build();

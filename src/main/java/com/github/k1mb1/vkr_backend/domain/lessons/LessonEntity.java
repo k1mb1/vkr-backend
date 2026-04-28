@@ -44,11 +44,6 @@ public class LessonEntity extends BaseEntity {
     @Builder.Default
     LessonType type = LessonType.NONE;
 
-    /**
-     * Target group or subgroup for this lesson.
-     * NULL = lesson is for all students enrolled in the subject (e.g. a lecture for everyone).
-     * Non-null = lesson is restricted to students belonging to this group/subgroup.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     StudentGroupEntity group;
@@ -62,21 +57,13 @@ public class LessonEntity extends BaseEntity {
     @Builder.Default
     Set<StudentAttendanceEntity> attendances = new HashSet<>();
 
-    /**
-     * Controls when the lesson becomes accessible to students.
-     * AUTO = automatically when dateTime is reached.
-     * MANUAL = teacher explicitly calls POST /api/lessons/{id}/issue.
-     */
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     IssuanceMode issuanceMode = IssuanceMode.AUTO;
 
-    /**
-     * When the lesson was manually issued. Null for AUTO-mode lessons or
-     * MANUAL-mode lessons that have not yet been issued.
-     */
+
     @Column(name = "issued_at")
     Instant issuedAt;
 
@@ -108,9 +95,6 @@ public class LessonEntity extends BaseEntity {
     @Builder.Default
     BigDecimal penaltyStep = new BigDecimal("0.25");
 
-    /**
-     * Tasks (assignments) belonging to this lesson, ordered by position.
-     */
     @OneToMany(
         mappedBy = "lesson",
         fetch = FetchType.LAZY,

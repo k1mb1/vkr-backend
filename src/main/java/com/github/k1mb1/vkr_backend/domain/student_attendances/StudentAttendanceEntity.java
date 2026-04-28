@@ -26,8 +26,8 @@ public class StudentAttendanceEntity extends BaseEntity {
     @JoinColumn(name = "student_id", nullable = false)
     StudentEntity student;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "presence", nullable = false)
+    @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
     PresenceType presence = PresenceType.NONE;

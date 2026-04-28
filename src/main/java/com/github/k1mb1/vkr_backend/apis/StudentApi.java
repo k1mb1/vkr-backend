@@ -46,8 +46,4 @@ public interface StudentApi {
     @Operation(summary = "Delete student")
     @DeleteMapping("/{studentId}")
     ResponseEntity<Void> delete(@PathVariable UUID studentId);
-
-    @Operation(summary = "List subjects for a student")
-    @GetMapping("/subjects/{id}")
-    ResponseEntity<StudentSubjectSubgroupsResponse> findSubjects(@PathVariable("id") UUID id);
 }

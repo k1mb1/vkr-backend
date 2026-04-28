@@ -6,14 +6,9 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -69,45 +64,6 @@ public class StudentService {
     public void delete(UUID studentId) {
         var student = getStudentById(studentId);
         studentRepository.delete(student);
-    }
-
-    public StudentSubjectSubgroupsResponse findSubjectSubgroups(UUID subjectId) {
-        var subject = subjectRepository.findByIdWithStudentsAndGroups(subjectId)
-            .orElseThrow(() -> new EntityNotFoundException(
-                NOT_FOUND_MESSAGE.formatted("Subject", subjectId)
-            ));
-
-        var groupedStudents = subject.getStudents().stream()
-            .filter(student -> student.getGroup() != null)
-            .collect(Collectors.groupingBy(
-                student -> student.getGroup(),
-                LinkedHashMap::new,
-                Collectors.mapping(student -> student.getUsername(), Collectors.toList())
-            ));
-
-        var subgroups = groupedStudents.entrySet().stream()
-            .map(entry -> {
-                var studentNames = entry.getValue().stream()
-                    .sorted(String.CASE_INSENSITIVE_ORDER)
-                    .toList();
-
-                return new StudentSubjectSubgroupsResponse.SubjectSubgroupStudentsResponse(
-                    entry.getKey().getId(),
-                    entry.getKey().getName(),
-                    studentNames
-                );
-            })
-            .sorted(Comparator.comparing(
-                StudentSubjectSubgroupsResponse.SubjectSubgroupStudentsResponse::name,
-                String.CASE_INSENSITIVE_ORDER
-            ))
-            .toList();
-
-        return new StudentSubjectSubgroupsResponse(
-            subject.getId(),
-            subject.getName(),
-            subgroups
-        );
     }
 
     private StudentEntity getStudentById(UUID studentId) {
