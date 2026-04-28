@@ -5,7 +5,6 @@ import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_ME
 import com.github.k1mb1.vkr_backend.domain.based.BaseEntity;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupSubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
@@ -13,8 +12,6 @@ import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -130,6 +127,12 @@ public class StudentGroupService {
         var group = getMainGroupById(groupId);
         group.setName(request.name());
         return mapToStudGroup(groupRepository.save(group));
+    }
+
+    @Transactional
+    public void delete(UUID groupId) {
+        var group = getMainGroupById(groupId);
+        groupRepository.delete(group);
     }
 
     private List<StudentEntryResponse> mapStudents(

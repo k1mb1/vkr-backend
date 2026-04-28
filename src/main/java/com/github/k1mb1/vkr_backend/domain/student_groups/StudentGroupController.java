@@ -43,4 +43,10 @@ public class StudentGroupController implements StudentGroupApi {
     public ResponseEntity<StudentGroupResponse> update(UUID groupId, UpdateGroupRequest request) {
         return ResponseEntity.ok(studentGroupService.update(groupId, request));
     }
+
+    @Override
+    public ResponseEntity<Void> delete(UUID groupId) {
+        studentGroupService.delete(groupId);
+        return ResponseEntity.noContent().build();
+    }
 }

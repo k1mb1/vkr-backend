@@ -4,7 +4,6 @@ import com.github.k1mb1.vkr_backend.apis.LessonApi;
 import com.github.k1mb1.vkr_backend.domain.lessons.filters.FindLessonsFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateIssuedTaskIndexRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
@@ -32,11 +31,6 @@ public class LessonController implements LessonApi {
     @Override
     public ResponseEntity<LessonResponse> create(CreateLessonRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(lessonService.create(request));
-    }
-
-    @Override
-    public ResponseEntity<List<LessonResponse>> createByType(CreateLessonsByTypeRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonService.createByType(request));
     }
 
     @Override

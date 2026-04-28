@@ -56,4 +56,8 @@ public interface StudentGroupApi {
         @PathVariable UUID groupId,
         @RequestBody @Valid UpdateGroupRequest request
     );
+
+    @Operation(summary = "Delete a group with all its subgroups and students")
+    @DeleteMapping("/{groupId}")
+    ResponseEntity<Void> delete(@PathVariable UUID groupId);
 }

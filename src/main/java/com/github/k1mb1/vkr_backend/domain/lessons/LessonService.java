@@ -8,7 +8,6 @@ import jakarta.persistence.EntityNotFoundException;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,36 +42,6 @@ public class LessonService {
             .subject(subject)
             .build();
         return lessonMapper.toResponse(lessonRepository.save(entity));
-    }
-
-    @Transactional
-    public List<LessonResponse> createByType(CreateLessonsByTypeRequest request) {
-        var subject = subjectService.getReferenceById(request.subjectId());
-        var entities = new ArrayList<LessonEntity>();
-        var baseDateTime = OffsetDateTime.now(ZoneOffset.UTC);
-
-        for (int i = 0; i < request.lectureCount(); i++) {
-            entities.add(LessonEntity.builder()
-                .name(buildLessonName(subject.getName(), LessonType.LECTURE))
-                .dateTime(baseDateTime.plusMinutes(i))
-                .type(LessonType.LECTURE)
-                .subject(subject)
-                .build());
-        }
-
-        for (int i = 0; i < request.practiceCount(); i++) {
-            entities.add(LessonEntity.builder()
-                .name(buildLessonName(subject.getName(), LessonType.PRACTICE))
-                .dateTime(baseDateTime.plusMinutes(request.lectureCount() + i))
-                .type(LessonType.PRACTICE)
-                .subject(subject)
-                .build());
-        }
-
-        return lessonRepository.saveAll(entities)
-            .stream()
-            .map(lessonMapper::toResponse)
-            .toList();
     }
 
     /** Bulk lesson creation from a repeating week pattern. */

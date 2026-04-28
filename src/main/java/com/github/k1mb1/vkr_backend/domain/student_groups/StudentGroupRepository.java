@@ -1,10 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_groups;
 
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
 import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

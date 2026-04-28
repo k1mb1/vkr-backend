@@ -83,6 +83,9 @@ public class SubjectService {
                 )
             );
 
+        subject.getStudents().addAll(group.getStudents());
+        group.getSubgroups().forEach(sg -> subject.getStudents().addAll(sg.getStudents()));
+
         var savedSubject = subjectRepository.save(subject);
 
         return new AttachGroupToSubjectResponse(

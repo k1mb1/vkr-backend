@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.lessons.filters.FindLessonsFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonRequest;
-import com.github.k1mb1.vkr_backend.domain.lessons.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateIssuedTaskIndexRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.domain.lessons.responses.LessonResponse;
@@ -34,12 +33,6 @@ public interface LessonApi {
     @PostMapping
     ResponseEntity<LessonResponse> create(
         @RequestBody @Valid CreateLessonRequest request
-    );
-
-    @Operation(summary = "Create lessons by type counts")
-    @PostMapping("/bulk-by-type")
-    ResponseEntity<List<LessonResponse>> createByType(
-        @RequestBody @Valid CreateLessonsByTypeRequest request
     );
 
     @Operation(summary = "Bulk-schedule recurring lessons")

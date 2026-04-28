@@ -222,7 +222,7 @@ public class StudentTaskGradeService {
 
         return byStudent.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
-            .map(e -> {throw new IllegalStateException("Unexpected value: " + mode);
+            .map(e -> {
                 StudentEntity student = e.getValue().get(0).getStudent();
                 List<TaskGradeResponse> grades = e.getValue().stream()
                     .sorted(order)

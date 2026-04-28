@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.students.filters.FindStudentsFilter;
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
-import com.github.k1mb1.vkr_backend.domain.students.responses.StudentSubjectSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

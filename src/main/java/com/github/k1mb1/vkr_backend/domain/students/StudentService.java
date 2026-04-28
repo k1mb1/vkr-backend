@@ -6,7 +6,6 @@ import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository
 import com.github.k1mb1.vkr_backend.domain.students.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentResponse;
-import com.github.k1mb1.vkr_backend.domain.subjects.SubjectRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,6 @@ public class StudentService {
     final StudentRepository studentRepository;
     final StudentMapper studentMapper;
     final StudentGroupRepository studentGroupRepository;
-    final SubjectRepository subjectRepository;
 
     public Page<StudentResponse> findAllByFilter(StudentFilter filter, Pageable pageable) {
         return studentRepository
