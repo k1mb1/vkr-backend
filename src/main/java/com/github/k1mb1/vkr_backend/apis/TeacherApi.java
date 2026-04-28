@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.apis;
 
-import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateOrUpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +24,6 @@ public interface TeacherApi {
     @PreAuthorize("@securityService.isSameUser(#id)")
     ResponseEntity<TeacherResponse> createOrUpdate(
         @PathVariable UUID id,
-        @RequestBody @Valid UpdateTeacherRequest request
+        @RequestBody @Valid CreateOrUpdateTeacherRequest request
     );
 }

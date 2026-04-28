@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.teachers;
 
 import com.github.k1mb1.vkr_backend.apis.TeacherApi;
-import com.github.k1mb1.vkr_backend.domain.teachers.requests.UpdateTeacherRequest;
+import com.github.k1mb1.vkr_backend.domain.teachers.requests.CreateOrUpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.domain.teachers.responses.TeacherResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +20,7 @@ public class TeacherController implements TeacherApi {
     @Override
     public ResponseEntity<TeacherResponse> createOrUpdate(
         UUID id,
-        UpdateTeacherRequest request
+        CreateOrUpdateTeacherRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
             teacherService.createOrUpdate(id, request)
