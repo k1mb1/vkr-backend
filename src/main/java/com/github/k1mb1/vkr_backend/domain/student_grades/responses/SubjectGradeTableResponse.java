@@ -14,7 +14,7 @@ import java.util.UUID;
  * {@code (taskId, studentId)} against the {@code lessons} (column groups, each
  * with its own {@code tasks} sub-columns) and {@code students} (rows) arrays.
  */
-public record GradesTableResponse(
+public record SubjectGradeTableResponse(
     List<LessonEntryResponse> lessons,
     List<StudentEntryResponse> students,
     List<GradeCellResponse> grades

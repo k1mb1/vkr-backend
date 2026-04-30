@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.student_grades.filters.FindGradesFilter;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradesTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradeTableResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
@@ -57,7 +57,7 @@ public interface SubjectApi {
 
     @Operation(summary = "Full grades table for a subject")
     @GetMapping("/{subjectId}/grades")
-    ResponseEntity<GradesTableResponse> findGrades(
+    ResponseEntity<SubjectGradeTableResponse> findGrades(
         @PathVariable UUID subjectId,
         @ParameterObject @ModelAttribute FindGradesFilter filter
     );

@@ -10,8 +10,8 @@ import com.github.k1mb1.vkr_backend.domain.student_grades.filters.GradeFilter;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeCellResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeTableResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradesTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradeTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradeTableResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
@@ -41,7 +41,7 @@ public class StudentTaskGradeService {
     final StudentRepository studentRepository;
     final SubjectRepository subjectRepository;
 
-    public GradesTableResponse findGradesBySubjectId(UUID subjectId, FindGradesFilter filter) {
+    public SubjectGradeTableResponse findGradesBySubjectId(UUID subjectId, FindGradesFilter filter) {
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
@@ -56,7 +56,7 @@ public class StudentTaskGradeService {
 
         var lessons = lessonRepository.findAll(lessonFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "dateTime"))
             .stream()
-            .map(lesson -> new GradesTableResponse.LessonEntryResponse(
+            .map(lesson -> new SubjectGradeTableResponse.LessonEntryResponse(
                 lesson.getId(),
                 lesson.getName(),
                 lesson.getDateTime(),
@@ -83,10 +83,10 @@ public class StudentTaskGradeService {
             .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
             .toList();
 
-        return new GradesTableResponse(lessons, students, grades);
+        return new SubjectGradeTableResponse(lessons, students, grades);
     }
 
-    public GradeTableResponse findGradesByLesson(UUID lessonId) {
+    public LessonGradeTableResponse findGradesByLesson(UUID lessonId) {
         var rows = gradeRepository.findAllByLessonId(lessonId);
 
         var tasks = taskRepository.findAllByLesson_IdOrderByPositionAsc(lessonId).stream()
@@ -105,7 +105,7 @@ public class StudentTaskGradeService {
             .map(this::toCellResponse)
             .toList();
 
-        return new GradeTableResponse(tasks, students, grades);
+        return new LessonGradeTableResponse(tasks, students, grades);
     }
 
     /**

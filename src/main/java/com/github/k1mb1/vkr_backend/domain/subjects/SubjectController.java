@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 import com.github.k1mb1.vkr_backend.apis.SubjectApi;
 import com.github.k1mb1.vkr_backend.domain.student_grades.StudentTaskGradeService;
 import com.github.k1mb1.vkr_backend.domain.student_grades.filters.FindGradesFilter;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradesTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradeTableResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
@@ -54,7 +54,7 @@ public class SubjectController implements SubjectApi {
     }
 
     @Override
-    public ResponseEntity<GradesTableResponse> findGrades(
+    public ResponseEntity<SubjectGradeTableResponse> findGrades(
         UUID subjectId,
         FindGradesFilter filter
     ) {
