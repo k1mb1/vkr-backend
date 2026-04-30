@@ -8,9 +8,9 @@ import com.github.k1mb1.vkr_backend.domain.student_grades.filters.FindGradesFilt
 import com.github.k1mb1.vkr_backend.domain.student_grades.filters.GradeFilter;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
@@ -39,7 +39,7 @@ public class StudentTaskGradeService {
     final StudentRepository studentRepository;
     final SubjectRepository subjectRepository;
 
-    public SubjectGradesTableResponse findGradesBySubjectId(UUID subjectId, FindGradesFilter filter) {
+    public GradesTableResponse findGradesBySubjectId(UUID subjectId, FindGradesFilter filter) {
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
@@ -51,7 +51,7 @@ public class StudentTaskGradeService {
 
         var lessons = lessonRepository.findAll(lessonFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "dateTime"))
             .stream()
-            .map(lesson -> new SubjectGradesTableResponse.SubjectLessonTableEntryResponse(
+            .map(lesson -> new GradesTableResponse.LessonEntryResponse(
                 lesson.getId(),
                 lesson.getName(),
                 lesson.getDateTime(),
@@ -74,10 +74,10 @@ public class StudentTaskGradeService {
             .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
             .toList();
 
-        return new SubjectGradesTableResponse(lessons, students, grades);
+        return new GradesTableResponse(lessons, students, grades);
     }
 
-    public LessonGradesTableResponse findGradesByLesson(UUID lessonId) {
+    public GradeTableResponse findGradesByLesson(UUID lessonId) {
         var rows = gradeRepository.findAllByLessonId(lessonId);
 
         var students = rows.stream()
@@ -92,7 +92,7 @@ public class StudentTaskGradeService {
             .map(this::toCellResponse)
             .toList();
 
-        return new LessonGradesTableResponse(students, grades);
+        return new GradeTableResponse(students, grades);
     }
 
     /**
@@ -126,7 +126,7 @@ public class StudentTaskGradeService {
     }
 
     @Transactional
-    public TaskGradeResponse upsert(UUID lessonId, UUID taskId, UpsertTaskGradeRequest request) {
+    public GradeResponse upsert(UUID lessonId, UUID taskId, UpsertTaskGradeRequest request) {
         var task = taskRepository.findById(taskId)
             .filter(t -> t.getLesson().getId().equals(lessonId))
             .orElseThrow(() -> new EntityNotFoundException(
@@ -171,7 +171,7 @@ public class StudentTaskGradeService {
     }
 
     @Transactional
-    public List<TaskGradeResponse> upsertBulk(
+    public List<GradeResponse> upsertBulk(
         UUID lessonId,
         UUID taskId,
         List<UpsertTaskGradeRequest> requests
@@ -236,8 +236,8 @@ public class StudentTaskGradeService {
         );
     }
 
-    private TaskGradeResponse toResponse(StudentTaskGradeEntity g) {
-        return new TaskGradeResponse(
+    private GradeResponse toResponse(StudentTaskGradeEntity g) {
+        return new GradeResponse(
             g.getId(),
             g.getTask().getId(),
             g.getTask().getLesson().getId(),

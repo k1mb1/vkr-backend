@@ -4,7 +4,7 @@ import com.github.k1mb1.vkr_backend.apis.StudentAttendanceApi;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.filters.FindAttendanceFilter;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
-import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceTableResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,7 @@ public class StudentAttendanceController implements StudentAttendanceApi {
     final StudentAttendanceService attendanceService;
 
     @Override
-    public ResponseEntity<SubjectAttendanceTableResponse> findBySubject(
+    public ResponseEntity<AttendanceTableResponse> findBySubject(
         UUID subjectId,
         FindAttendanceFilter filter
     ) {

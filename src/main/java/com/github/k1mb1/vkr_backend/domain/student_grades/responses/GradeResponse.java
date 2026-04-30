@@ -17,7 +17,7 @@ import java.util.UUID;
  * @param createdAt   Record creation time.
  * @param updatedAt   Record last-update time.
  */
-public record TaskGradeResponse(
+public record GradeResponse(
     UUID id,
     UUID taskId,
     UUID lessonId,

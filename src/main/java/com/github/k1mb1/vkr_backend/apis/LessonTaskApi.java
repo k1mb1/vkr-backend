@@ -5,8 +5,8 @@ import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.UpdateTaskReque
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -51,11 +51,11 @@ public interface LessonTaskApi {
 
     @Operation(summary = "All task grades for a lesson grouped by student")
     @GetMapping("/grades")
-    ResponseEntity<LessonGradesTableResponse> findGrades(@PathVariable UUID lessonId);
+    ResponseEntity<GradeTableResponse> findGrades(@PathVariable UUID lessonId);
 
     @Operation(summary = "Upsert a student grade for a task")
     @PutMapping("/{taskId}/grades")
-    ResponseEntity<TaskGradeResponse> upsertGrade(
+    ResponseEntity<GradeResponse> upsertGrade(
         @PathVariable UUID lessonId,
         @PathVariable UUID taskId,
         @RequestBody @Valid UpsertTaskGradeRequest request
@@ -66,7 +66,7 @@ public interface LessonTaskApi {
         description = "Upserts grades for multiple students in a single request. Processes each entry independently; the response preserves input order."
     )
     @PutMapping("/{taskId}/grades/bulk")
-    ResponseEntity<List<TaskGradeResponse>> upsertGradesBulk(
+    ResponseEntity<List<GradeResponse>> upsertGradesBulk(
         @PathVariable UUID lessonId,
         @PathVariable UUID taskId,
         @RequestBody @Valid List<UpsertTaskGradeRequest> requests

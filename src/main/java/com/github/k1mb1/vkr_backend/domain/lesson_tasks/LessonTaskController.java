@@ -6,8 +6,8 @@ import com.github.k1mb1.vkr_backend.domain.lesson_tasks.requests.UpdateTaskReque
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.responses.TaskResponse;
 import com.github.k1mb1.vkr_backend.domain.student_grades.StudentTaskGradeService;
 import com.github.k1mb1.vkr_backend.domain.student_grades.requests.UpsertTaskGradeRequest;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.LessonGradesTableResponse;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.TaskGradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradeTableResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -52,12 +52,12 @@ public class LessonTaskController implements LessonTaskApi {
     }
 
     @Override
-    public ResponseEntity<LessonGradesTableResponse> findGrades(UUID lessonId) {
+    public ResponseEntity<GradeTableResponse> findGrades(UUID lessonId) {
         return ResponseEntity.ok(gradeService.findGradesByLesson(lessonId));
     }
 
     @Override
-    public ResponseEntity<TaskGradeResponse> upsertGrade(
+    public ResponseEntity<GradeResponse> upsertGrade(
         UUID lessonId,
         UUID taskId,
         UpsertTaskGradeRequest request
@@ -66,7 +66,7 @@ public class LessonTaskController implements LessonTaskApi {
     }
 
     @Override
-    public ResponseEntity<List<TaskGradeResponse>> upsertGradesBulk(
+    public ResponseEntity<List<GradeResponse>> upsertGradesBulk(
         UUID lessonId,
         UUID taskId,
         List<UpsertTaskGradeRequest> requests

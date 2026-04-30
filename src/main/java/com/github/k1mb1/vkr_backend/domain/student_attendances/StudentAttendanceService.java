@@ -7,7 +7,7 @@ import com.github.k1mb1.vkr_backend.domain.student_attendances.filters.FindAtten
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
-import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceTableResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.StudentRepository;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentEntryResponse;
@@ -30,7 +30,7 @@ public class StudentAttendanceService {
     final LessonRepository lessonRepository;
     final SubjectRepository subjectRepository;
 
-    public SubjectAttendanceTableResponse findBySubjectId(UUID subjectId, FindAttendanceFilter filter) {
+    public AttendanceTableResponse findBySubjectId(UUID subjectId, FindAttendanceFilter filter) {
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + subjectId));
 
@@ -42,7 +42,7 @@ public class StudentAttendanceService {
 
         var lessons = lessonRepository.findAll(lessonFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "dateTime"))
             .stream()
-            .map(l -> new SubjectAttendanceTableResponse.SubjectLessonTableEntryResponse(
+            .map(l -> new AttendanceTableResponse.LessonEntryResponse(
                 l.getId(),
                 l.getName(),
                 l.getDateTime(),
@@ -69,7 +69,7 @@ public class StudentAttendanceService {
             .map(s -> new StudentEntryResponse(s.getId(), s.getUsername()))
             .toList();
 
-        return new SubjectAttendanceTableResponse(lessons, students, attendances);
+        return new AttendanceTableResponse(lessons, students, attendances);
     }
 
     @Transactional

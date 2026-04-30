@@ -5,7 +5,7 @@ import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_ME
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupRepository;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
-import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.GroupAttachmentResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import com.github.k1mb1.vkr_backend.domain.teachers.TeacherRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -69,7 +69,7 @@ public class SubjectService {
     }
 
     @Transactional
-    public AttachGroupToSubjectResponse attachGroup(UUID subjectId, UUID groupId) {
+    public GroupAttachmentResponse attachGroup(UUID subjectId, UUID groupId) {
         var subject = subjectRepository
             .findById(subjectId)
             .orElseThrow(() ->
@@ -101,7 +101,7 @@ public class SubjectService {
 
         var savedSubject = subjectRepository.save(subject);
 
-        return new AttachGroupToSubjectResponse(
+        return new GroupAttachmentResponse(
             savedSubject.getId(),
             savedSubject.getName(),
             group.getId(),

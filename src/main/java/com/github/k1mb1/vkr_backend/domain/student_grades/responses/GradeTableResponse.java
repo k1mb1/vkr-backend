@@ -9,7 +9,7 @@ import java.util.List;
  * <p>Front-end matches {@code grades} via {@code (taskId, studentId)} against
  * the {@code students} array (rows).
  */
-public record LessonGradesTableResponse(
+public record GradeTableResponse(
     List<StudentEntryResponse> students,
     List<GradeCellResponse> grades
 ) {}

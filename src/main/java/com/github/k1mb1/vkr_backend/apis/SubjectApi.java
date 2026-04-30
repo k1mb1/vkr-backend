@@ -1,11 +1,11 @@
 package com.github.k1mb1.vkr_backend.apis;
 
 import com.github.k1mb1.vkr_backend.domain.student_grades.filters.FindGradesFilter;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
-import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.GroupAttachmentResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.FinalGradeResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,14 +50,14 @@ public interface SubjectApi {
 
     @Operation(summary = "Attach full group to subject")
     @PostMapping("/{subjectId}/groups/{groupId}")
-    ResponseEntity<AttachGroupToSubjectResponse> attachGroup(
+    ResponseEntity<GroupAttachmentResponse> attachGroup(
         @PathVariable UUID subjectId,
         @PathVariable UUID groupId
     );
 
     @Operation(summary = "Full grades table for a subject")
     @GetMapping("/{subjectId}/grades")
-    ResponseEntity<SubjectGradesTableResponse> findGrades(
+    ResponseEntity<GradesTableResponse> findGrades(
         @PathVariable UUID subjectId,
         @ParameterObject @ModelAttribute FindGradesFilter filter
     );

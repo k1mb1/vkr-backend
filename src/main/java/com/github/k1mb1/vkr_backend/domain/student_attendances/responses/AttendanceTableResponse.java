@@ -13,12 +13,12 @@ import java.util.UUID;
  * {@code (lessonId, studentId)} against the {@code lessons} (columns)
  * and {@code students} (rows) arrays.
  */
-public record SubjectAttendanceTableResponse(
-    List<SubjectLessonTableEntryResponse> lessons,
+public record AttendanceTableResponse(
+    List<LessonEntryResponse> lessons,
     List<StudentEntryResponse> students,
     List<AttendanceCellResponse> attendances
 ) {
-    public record SubjectLessonTableEntryResponse(
+    public record LessonEntryResponse(
         UUID lessonId,
         String lessonName,
         OffsetDateTime dateTime,

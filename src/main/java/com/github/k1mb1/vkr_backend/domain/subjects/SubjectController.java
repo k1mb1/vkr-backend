@@ -3,11 +3,11 @@ package com.github.k1mb1.vkr_backend.domain.subjects;
 import com.github.k1mb1.vkr_backend.apis.SubjectApi;
 import com.github.k1mb1.vkr_backend.domain.student_grades.StudentTaskGradeService;
 import com.github.k1mb1.vkr_backend.domain.student_grades.filters.FindGradesFilter;
-import com.github.k1mb1.vkr_backend.domain.student_grades.responses.SubjectGradesTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_grades.responses.GradesTableResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.filters.FindSubjectsFilter;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.domain.subjects.requests.UpdateSubjectRequest;
-import com.github.k1mb1.vkr_backend.domain.subjects.responses.AttachGroupToSubjectResponse;
+import com.github.k1mb1.vkr_backend.domain.subjects.responses.GroupAttachmentResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.FinalGradeResponse;
 import com.github.k1mb1.vkr_backend.domain.subjects.responses.SubjectResponse;
 import java.util.List;
@@ -46,7 +46,7 @@ public class SubjectController implements SubjectApi {
     }
 
     @Override
-    public ResponseEntity<AttachGroupToSubjectResponse> attachGroup(
+    public ResponseEntity<GroupAttachmentResponse> attachGroup(
         UUID subjectId,
         UUID groupId
     ) {
@@ -54,7 +54,7 @@ public class SubjectController implements SubjectApi {
     }
 
     @Override
-    public ResponseEntity<SubjectGradesTableResponse> findGrades(
+    public ResponseEntity<GradesTableResponse> findGrades(
         UUID subjectId,
         FindGradesFilter filter
     ) {

@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.filters.FindAttendanceFilter;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceEntryResponse;
-import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.SubjectAttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.domain.student_attendances.responses.AttendanceTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ public interface StudentAttendanceApi {
 
     @Operation(summary = "Full attendance table for a subject")
     @GetMapping("/subjects/{subjectId}/attendance")
-    ResponseEntity<SubjectAttendanceTableResponse> findBySubject(
+    ResponseEntity<AttendanceTableResponse> findBySubject(
         @PathVariable UUID subjectId,
         @ParameterObject @ModelAttribute FindAttendanceFilter filter
     );
