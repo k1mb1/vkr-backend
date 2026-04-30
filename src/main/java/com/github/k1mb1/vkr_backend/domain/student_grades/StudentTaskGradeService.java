@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.domain.student_grades;
 
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskEntity;
+import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskMapper;
 import com.github.k1mb1.vkr_backend.domain.lesson_tasks.LessonTaskRepository;
 import com.github.k1mb1.vkr_backend.domain.lessons.LessonFilter;
 import com.github.k1mb1.vkr_backend.domain.lessons.PenaltyMode;
@@ -36,6 +37,7 @@ public class StudentTaskGradeService {
     final StudentTaskGradeRepository gradeRepository;
     final com.github.k1mb1.vkr_backend.domain.lessons.LessonRepository lessonRepository;
     final LessonTaskRepository taskRepository;
+    final LessonTaskMapper taskMapper;
     final StudentRepository studentRepository;
     final SubjectRepository subjectRepository;
 
@@ -49,6 +51,9 @@ public class StudentTaskGradeService {
             .groupId(filter.groupId())
             .build();
 
+        var tasksByLesson = taskRepository.findAllBySubjectId(subjectId).stream()
+            .collect(Collectors.groupingBy(t -> t.getLesson().getId()));
+
         var lessons = lessonRepository.findAll(lessonFilter.toSpecification(), Sort.by(Sort.Direction.ASC, "dateTime"))
             .stream()
             .map(lesson -> new GradesTableResponse.LessonEntryResponse(
@@ -56,7 +61,11 @@ public class StudentTaskGradeService {
                 lesson.getName(),
                 lesson.getDateTime(),
                 lesson.getType(),
-                lesson.getGroup() != null ? lesson.getGroup().getId() : null
+                lesson.getGroup() != null ? lesson.getGroup().getId() : null,
+                tasksByLesson.getOrDefault(lesson.getId(), List.of()).stream()
+                    .sorted(Comparator.comparingInt(LessonTaskEntity::getPosition))
+                    .map(taskMapper::toResponse)
+                    .toList()
             ))
             .toList();
 
@@ -80,6 +89,10 @@ public class StudentTaskGradeService {
     public GradeTableResponse findGradesByLesson(UUID lessonId) {
         var rows = gradeRepository.findAllByLessonId(lessonId);
 
+        var tasks = taskRepository.findAllByLesson_IdOrderByPositionAsc(lessonId).stream()
+            .map(taskMapper::toResponse)
+            .toList();
+
         var students = rows.stream()
             .map(StudentTaskGradeEntity::getStudent)
             .distinct()
@@ -92,7 +105,7 @@ public class StudentTaskGradeService {
             .map(this::toCellResponse)
             .toList();
 
-        return new GradeTableResponse(students, grades);
+        return new GradeTableResponse(tasks, students, grades);
     }
 
     /**
