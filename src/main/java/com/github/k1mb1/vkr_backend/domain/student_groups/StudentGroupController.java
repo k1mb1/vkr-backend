@@ -3,8 +3,8 @@ package com.github.k1mb1.vkr_backend.domain.student_groups;
 import com.github.k1mb1.vkr_backend.apis.StudentGroupApi;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupPageResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +22,7 @@ public class StudentGroupController implements StudentGroupApi {
     final StudentGroupService studentGroupService;
 
     @Override
-    public ResponseEntity<Page<StudentGroupPageResponse>> findAll(
+    public ResponseEntity<Page<GroupPageResponse>> findAll(
         StudentGroupFilter filter,
         Pageable pageable
     ) {
@@ -30,17 +30,17 @@ public class StudentGroupController implements StudentGroupApi {
     }
 
     @Override
-    public ResponseEntity<StudentGroupResponse> create(CreateGroupRequest request) {
+    public ResponseEntity<GroupResponse> create(CreateGroupRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(studentGroupService.create(request));
     }
 
     @Override
-    public ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(UUID groupId) {
+    public ResponseEntity<GroupResponse> findGroupWithSubgroups(UUID groupId) {
         return ResponseEntity.ok(studentGroupService.findGroupWithSubgroups(groupId));
     }
 
     @Override
-    public ResponseEntity<StudentGroupResponse> update(UUID groupId, UpdateGroupRequest request) {
+    public ResponseEntity<GroupResponse> update(UUID groupId, UpdateGroupRequest request) {
         return ResponseEntity.ok(studentGroupService.update(groupId, request));
     }
 

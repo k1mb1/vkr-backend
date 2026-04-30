@@ -5,8 +5,8 @@ import static com.github.k1mb1.vkr_backend.apis.error.ErrorMessages.NOT_FOUND_ME
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.StudentGroupMemberRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupPageResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupResponse;
 import com.github.k1mb1.vkr_backend.domain.student_groups.responses.SubgroupResponse;
 import com.github.k1mb1.vkr_backend.domain.students.StudentEntity;
 import com.github.k1mb1.vkr_backend.domain.students.responses.StudentGroupMemberResponse;
@@ -25,14 +25,14 @@ public class StudentGroupService {
 
     final StudentGroupRepository groupRepository;
 
-    public Page<StudentGroupPageResponse> findAll(
+    public Page<GroupPageResponse> findAll(
         StudentGroupFilter filter,
         Pageable pageable
     ) {
         return groupRepository
             .findAll(filter.toSpecification(), pageable)
             .map(group ->
-                new StudentGroupPageResponse(
+                new GroupPageResponse(
                     group.getId(),
                     group.getName(),
                     group.getSubgroups().size()
@@ -41,7 +41,7 @@ public class StudentGroupService {
     }
 
     @Transactional
-    public StudentGroupResponse create(CreateGroupRequest request) {
+    public GroupResponse create(CreateGroupRequest request) {
         var mainGroup = StudentGroupEntity.builder()
             .name(request.groupName())
             .build();
@@ -102,7 +102,7 @@ public class StudentGroupService {
         return mapToGroupResponse(groupRepository.save(mainGroup));
     }
 
-    public StudentGroupResponse findGroupWithSubgroups(UUID id) {
+    public GroupResponse findGroupWithSubgroups(UUID id) {
         var group = groupRepository
             .findWithSubgroupsStudentsAndSubjectsById(id)
             .orElseThrow(() ->
@@ -115,7 +115,7 @@ public class StudentGroupService {
     }
 
     @Transactional
-    public StudentGroupResponse update(UUID groupId, UpdateGroupRequest request) {
+    public GroupResponse update(UUID groupId, UpdateGroupRequest request) {
         var group = getMainGroupById(groupId);
         group.setName(request.name());
         return mapToGroupResponse(groupRepository.save(group));
@@ -137,7 +137,7 @@ public class StudentGroupService {
             );
     }
 
-    private StudentGroupResponse mapToGroupResponse(StudentGroupEntity entity) {
+    private GroupResponse mapToGroupResponse(StudentGroupEntity entity) {
         var subgroups = entity.getSubgroups().stream()
             .sorted(Comparator.comparing(StudentGroupEntity::getName))
             .map(sg -> new SubgroupResponse(sg.getId(), sg.getName()))
@@ -157,7 +157,7 @@ public class StudentGroupService {
                 .forEach(students::add)
         );
 
-        return StudentGroupResponse.builder()
+        return GroupResponse.builder()
             .id(entity.getId())
             .name(entity.getName())
             .subgroups(subgroups)

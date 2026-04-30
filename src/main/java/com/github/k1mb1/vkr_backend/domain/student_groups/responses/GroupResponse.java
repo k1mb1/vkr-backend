@@ -12,7 +12,7 @@ import lombok.Builder;
  * {@code subgroupId} against the {@code subgroups} array.
  */
 @Builder
-public record StudentGroupResponse(
+public record GroupResponse(
     UUID id,
     String name,
     List<SubgroupResponse> subgroups,

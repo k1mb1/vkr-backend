@@ -3,8 +3,8 @@ package com.github.k1mb1.vkr_backend.apis;
 import com.github.k1mb1.vkr_backend.domain.student_groups.StudentGroupFilter;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.domain.student_groups.requests.UpdateGroupRequest;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupPageResponse;
-import com.github.k1mb1.vkr_backend.domain.student_groups.responses.StudentGroupResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupPageResponse;
+import com.github.k1mb1.vkr_backend.domain.student_groups.responses.GroupResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ public interface StudentGroupApi {
 
     @Operation(summary = "List all groups")
     @GetMapping
-    ResponseEntity<Page<StudentGroupPageResponse>> findAll(
+    ResponseEntity<Page<GroupPageResponse>> findAll(
         @ParameterObject @ModelAttribute StudentGroupFilter filter,
         @ParameterObject Pageable pageable
     );
@@ -39,7 +39,7 @@ public interface StudentGroupApi {
         """
     )
     @PostMapping
-    ResponseEntity<StudentGroupResponse> create(
+    ResponseEntity<GroupResponse> create(
         @RequestBody @Valid CreateGroupRequest request
     );
 
@@ -48,11 +48,11 @@ public interface StudentGroupApi {
         description = "Returns the main group with all subgroups. Each subgroup contains its students. Direct students (not in any subgroup) are listed under the main group."
     )
     @GetMapping("/{groupId}")
-    ResponseEntity<StudentGroupResponse> findGroupWithSubgroups(@PathVariable UUID groupId);
+    ResponseEntity<GroupResponse> findGroupWithSubgroups(@PathVariable UUID groupId);
 
     @Operation(summary = "Rename a group")
     @PatchMapping("/{groupId}")
-    ResponseEntity<StudentGroupResponse> update(
+    ResponseEntity<GroupResponse> update(
         @PathVariable UUID groupId,
         @RequestBody @Valid UpdateGroupRequest request
     );
