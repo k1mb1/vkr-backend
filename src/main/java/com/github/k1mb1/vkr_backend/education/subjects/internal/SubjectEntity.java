@@ -33,13 +33,13 @@ public class SubjectEntity extends BaseEntity {
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "subject_teacher", joinColumns = @JoinColumn(name = "subject_id"))
-    @Column(name = "teacher_id")
+    @Column(name = "teacher_id", nullable = false)
     @Builder.Default
     Set<UUID> teacherIds = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "subject_student", joinColumns = @JoinColumn(name = "subject_id"))
-    @Column(name = "student_id")
+    @Column(name = "student_id", nullable = false)
     @Builder.Default
     Set<UUID> studentIds = new HashSet<>();
 }
