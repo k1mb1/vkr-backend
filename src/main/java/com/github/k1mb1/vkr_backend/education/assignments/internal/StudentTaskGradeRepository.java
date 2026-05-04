@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface StudentTaskGradeRepository extends JpaRepository<StudentTaskGradeEntity, UUID> {
+public interface StudentTaskGradeRepository extends JpaRepository<StudentTaskGradeEntity, UUID>, JpaSpecificationExecutor<StudentTaskGradeEntity> {
     Optional<StudentTaskGradeEntity> findByTask_IdAndStudentId(UUID taskId, UUID studentId);
     List<StudentTaskGradeEntity> findAllByTask_IdIn(Collection<UUID> taskIds);
     @Query("SELECT g FROM StudentTaskGradeEntity g WHERE g.task.lessonId = :lessonId")

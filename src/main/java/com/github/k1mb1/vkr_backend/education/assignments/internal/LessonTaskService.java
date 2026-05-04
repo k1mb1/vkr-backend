@@ -2,8 +2,10 @@ package com.github.k1mb1.vkr_backend.education.assignments.internal;
 
 import com.github.k1mb1.vkr_backend.education.assignments.api.requests.*;
 import com.github.k1mb1.vkr_backend.education.assignments.api.responses.TaskResponse;
+import com.github.k1mb1.vkr_backend.education.assignments.api.TaskFilter;
 import com.github.k1mb1.vkr_backend.education.lessons.api.LessonQueryFacade;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,13 @@ public class LessonTaskService {
 
     public List<TaskResponse> findAllByLesson(UUID lessonId) {
         return taskRepository.findAllByLessonIdOrderByPositionAsc(lessonId).stream().map(taskMapper::toResponse).toList();
+    }
+
+    public List<TaskResponse> findAll(UUID lessonId, TaskFilter filter) {
+        return taskRepository.findAll(filter.toSpecification(lessonId)).stream()
+            .sorted(Comparator.comparingInt(LessonTaskEntity::getPosition))
+            .map(taskMapper::toResponse)
+            .toList();
     }
 
     @Transactional

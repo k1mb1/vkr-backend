@@ -23,27 +23,27 @@ class StudentGroupController implements StudentGroupApi {
 
     @Override
     public ResponseEntity<Page<GroupPageResponse>> findAll(StudentGroupFilter filter, Pageable pageable) {
-        return ResponseEntity.ok(studentGroupService.findAll(filter, pageable));
+        return new ResponseEntity<>(studentGroupService.findAll(filter, pageable), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<GroupResponse> create(CreateGroupRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(studentGroupService.create(request));
+        return new ResponseEntity<>(studentGroupService.create(request), HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<GroupResponse> findGroupWithSubgroups(UUID groupId) {
-        return ResponseEntity.ok(studentGroupService.findGroupWithSubgroups(groupId));
+        return new ResponseEntity<>(studentGroupService.findGroupWithSubgroups(groupId), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<GroupResponse> update(UUID groupId, UpdateGroupRequest request) {
-        return ResponseEntity.ok(studentGroupService.update(groupId, request));
+        return new ResponseEntity<>(studentGroupService.update(groupId, request), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<Void> delete(UUID groupId) {
         studentGroupService.delete(groupId);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

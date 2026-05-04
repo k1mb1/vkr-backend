@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.education.assignments.internal;
 
+import com.github.k1mb1.vkr_backend.education.assignments.api.GradeFilter;
 import com.github.k1mb1.vkr_backend.education.assignments.api.SubmissionStatus;
 import com.github.k1mb1.vkr_backend.education.assignments.api.requests.UpsertTaskGradeRequest;
 import com.github.k1mb1.vkr_backend.education.assignments.api.responses.*;
@@ -14,6 +15,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,6 +107,13 @@ public class StudentTaskGradeService {
                 Double pct = max > 0 ? earned / max * 100.0 : null;
                 return new FinalGradeResponse(student.id(), student.username(), earned, max, pct);
             }).toList();
+    }
+
+    public Page<GradeResponse> findGrades(UUID taskId, GradeFilter filter, Pageable pageable) {
+        return gradeRepository.findAll(filter.toSpecification(taskId), pageable)
+            .map(g -> new GradeResponse(g.getId(), g.getTask().getId(), g.getTask().getLessonId(),
+                g.getStudentId(), g.getValue(), g.getComment(), g.getStatus(), g.getSubmittedAt(),
+                g.getCreatedAt(), g.getUpdatedAt()));
     }
 
     @Transactional

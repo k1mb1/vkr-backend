@@ -22,37 +22,37 @@ class LessonController implements LessonApi {
 
     @Override
     public ResponseEntity<Page<LessonResponse>> findAll(LessonFilterRequest filter, Pageable pageable) {
-        return ResponseEntity.ok(lessonService.findAll(filter, pageable));
+        return new ResponseEntity<>(lessonService.findAll(filter, pageable), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<LessonResponse> create(CreateLessonRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonService.create(request));
+        return new ResponseEntity<>(lessonService.create(request), HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<List<LessonResponse>> bulkSchedule(BulkScheduleRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonService.bulkSchedule(request));
+        return new ResponseEntity<>(lessonService.bulkSchedule(request), HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<LessonResponse> update(UUID id, UpdateLessonRequest request) {
-        return ResponseEntity.ok(lessonService.update(id, request));
+        return new ResponseEntity<>(lessonService.update(id, request), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<LessonResponse> issue(UUID id) {
-        return ResponseEntity.ok(lessonService.issueLesson(id));
+        return new ResponseEntity<>(lessonService.issueLesson(id), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<LessonResponse> updateIssuedTaskIndex(UUID id, UpdateIssuedTaskIndexRequest request) {
-        return ResponseEntity.ok(lessonService.updateIssuedTaskIndex(id, request));
+        return new ResponseEntity<>(lessonService.updateIssuedTaskIndex(id, request), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<Void> delete(UUID id) {
         lessonService.delete(id);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

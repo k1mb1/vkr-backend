@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -24,7 +25,7 @@ class StudentAttendanceController {
         @PathVariable UUID subjectId,
         @ParameterObject @ModelAttribute FindAttendanceFilter filter
     ) {
-        return ResponseEntity.ok(attendanceService.findBySubjectId(subjectId, filter));
+        return new ResponseEntity<>(attendanceService.findBySubjectId(subjectId, filter), HttpStatus.OK);
     }
 
     @PutMapping("/lessons/{lessonId}/attendance")
@@ -32,6 +33,6 @@ class StudentAttendanceController {
         @PathVariable UUID lessonId,
         @RequestBody @Valid UpsertAttendanceRequest request
     ) {
-        return ResponseEntity.ok(attendanceService.upsert(lessonId, request));
+        return new ResponseEntity<>(attendanceService.upsert(lessonId, request), HttpStatus.OK);
     }
 }

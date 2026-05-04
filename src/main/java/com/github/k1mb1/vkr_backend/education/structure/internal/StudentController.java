@@ -22,22 +22,22 @@ class StudentController implements StudentApi {
 
     @Override
     public ResponseEntity<Page<StudentResponse>> findAll(StudentFilter filter, Pageable pageable) {
-        return ResponseEntity.ok(studentService.findAllByFilter(filter, pageable));
+        return new ResponseEntity<>(studentService.findAllByFilter(filter, pageable), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<StudentResponse> create(CreateStudentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(studentService.create(request));
+        return new ResponseEntity<>(studentService.create(request), HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<StudentResponse> update(UUID studentId, UpdateStudentRequest request) {
-        return ResponseEntity.ok(studentService.update(studentId, request));
+        return new ResponseEntity<>(studentService.update(studentId, request), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<Void> delete(UUID studentId) {
         studentService.delete(studentId);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

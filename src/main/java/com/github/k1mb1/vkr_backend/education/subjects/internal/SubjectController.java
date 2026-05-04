@@ -22,27 +22,27 @@ class SubjectController implements SubjectApi {
 
     @Override
     public ResponseEntity<List<SubjectResponse>> findAllByTeacherId(UUID teacherId, FindSubjectsFilter filter) {
-        return ResponseEntity.ok(subjectService.findAll(filter.toServiceFilter(teacherId)));
+        return new ResponseEntity<>(subjectService.findAll(filter.toServiceFilter(teacherId)), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<SubjectResponse> create(CreateSubjectRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(subjectService.create(request));
+        return new ResponseEntity<>(subjectService.create(request), HttpStatus.CREATED);
     }
 
     @Override
     public ResponseEntity<SubjectResponse> update(UUID subjectId, UpdateSubjectRequest request) {
-        return ResponseEntity.ok(subjectService.update(subjectId, request));
+        return new ResponseEntity<>(subjectService.update(subjectId, request), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<GroupAttachmentResponse> attachGroup(UUID subjectId, UUID groupId) {
-        return ResponseEntity.ok(subjectService.attachGroup(subjectId, groupId));
+        return new ResponseEntity<>(subjectService.attachGroup(subjectId, groupId), HttpStatus.OK);
     }
 
     @Override
     public ResponseEntity<Void> remove(UUID subjectId) {
         subjectService.remove(subjectId);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
