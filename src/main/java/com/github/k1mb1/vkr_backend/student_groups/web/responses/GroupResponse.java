@@ -2,13 +2,13 @@ package com.github.k1mb1.vkr_backend.student_groups.web.responses;
 
 import lombok.Builder;
 
+import java.util.List;
 import java.util.UUID;
 
 @Builder
-public record StudentGroupListDto(
+public record GroupResponse(
         UUID id,
         String name,
-        int subgroupCount,
-        int totalStudentCount
-) {
-}
+        List<SubgroupResponse> subgroups,
+        List<StudentGroupMemberResponse> students
+) {}

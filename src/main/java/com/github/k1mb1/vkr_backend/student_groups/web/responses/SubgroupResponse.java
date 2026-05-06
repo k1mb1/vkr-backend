@@ -5,10 +5,7 @@ import lombok.Builder;
 import java.util.UUID;
 
 @Builder
-public record StudentGroupListDto(
+public record SubgroupResponse(
         UUID id,
-        String name,
-        int subgroupCount,
-        int totalStudentCount
-) {
-}
+        String name
+) {}
