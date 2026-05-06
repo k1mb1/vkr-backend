@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.student_groups.StudentGroupsApi;
 import com.github.k1mb1.vkr_backend.student_groups.domain.StudentGroup;
 import com.github.k1mb1.vkr_backend.student_groups.web.filters.StudentGroupFilterRequest;
 import com.github.k1mb1.vkr_backend.student_groups.web.requests.CreateGroupRequest;
+import com.github.k1mb1.vkr_backend.student_groups.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.GroupResponse;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.SubgroupResponse;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.StudentGroupMemberResponse;
@@ -21,6 +22,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -58,6 +60,83 @@ class StudentGroupsService implements StudentGroupsApi {
                 .name(request.groupName())
                 .build();
 
+        fillGroupFromRequest(group, request);
+
+        return toGroupResponse(groupRepository.save(group));
+    }
+
+    @Override
+    @Transactional
+        public GroupResponse patch(UUID id, UpdateGroupRequest request) {
+        var group = groupRepository.findWithSubgroupsAndStudentsById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Group not found: " + id));
+
+        group.setName(request.groupName());
+
+                Map<UUID, StudentGroup> subgroupsById = group.getSubgroups().stream()
+                                .collect(java.util.stream.Collectors.toMap(StudentGroup::getId, subgroup -> subgroup));
+                Map<UUID, Student> existingStudentsById = collectStudentsById(group);
+
+        group.getStudents().clear();
+                group.getSubgroups().forEach(subgroup -> subgroup.getStudents().clear());
+
+                for (UpdateGroupRequest.StudentPatchRequest studentRequest : request.students()) {
+                        Student student = resolveOrCreateStudent(existingStudentsById, studentRequest);
+                        StudentGroup targetGroup = resolveTargetGroup(group, subgroupsById, studentRequest.subgroupId());
+
+                        student.setUsername(studentRequest.username());
+                        student.setGroup(targetGroup);
+                        targetGroup.getStudents().add(student);
+                }
+
+        return toGroupResponse(group);
+    }
+
+        private Map<UUID, Student> collectStudentsById(StudentGroup group) {
+                Map<UUID, Student> studentsById = new HashMap<>();
+                group.getStudents().stream()
+                                .filter(student -> student.getId() != null)
+                                .forEach(student -> studentsById.put(student.getId(), student));
+                group.getSubgroups().forEach(subgroup -> subgroup.getStudents().stream()
+                                .filter(student -> student.getId() != null)
+                                .forEach(student -> studentsById.put(student.getId(), student)));
+                return studentsById;
+        }
+
+        private Student resolveOrCreateStudent(
+                        Map<UUID, Student> existingStudentsById,
+                        UpdateGroupRequest.StudentPatchRequest studentRequest
+        ) {
+                if (studentRequest.id() == null) {
+                        return Student.builder()
+                                        .username(studentRequest.username())
+                                        .build();
+                }
+
+                Student student = existingStudentsById.get(studentRequest.id());
+                if (Objects.isNull(student)) {
+                        throw new EntityNotFoundException("Student not found in group: " + studentRequest.id());
+                }
+                return student;
+        }
+
+        private StudentGroup resolveTargetGroup(
+                        StudentGroup group,
+                        Map<UUID, StudentGroup> subgroupsById,
+                        UUID subgroupId
+        ) {
+                if (subgroupId == null) {
+                        return group;
+                }
+
+                StudentGroup subgroup = subgroupsById.get(subgroupId);
+                if (Objects.isNull(subgroup)) {
+                        throw new EntityNotFoundException("Subgroup not found in group: " + subgroupId);
+                }
+                return subgroup;
+        }
+
+    private void fillGroupFromRequest(StudentGroup group, CreateGroupRequest request) {
         Map<Integer, StudentGroup> subgroupsByIndex = new HashMap<>();
 
         for (CreateGroupRequest.StudentGroupMemberRequest studentRequest : request.students()) {
@@ -72,8 +151,6 @@ class StudentGroupsService implements StudentGroupsApi {
                     .build();
             targetGroup.getStudents().add(student);
         }
-
-        return toGroupResponse(groupRepository.save(group));
     }
 
     private StudentGroup createSubgroup(StudentGroup parentGroup, int subgroupIndex) {

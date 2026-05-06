@@ -4,6 +4,7 @@ package com.github.k1mb1.vkr_backend.student_groups.web;
 import com.github.k1mb1.vkr_backend.student_groups.StudentGroupsApi;
 import com.github.k1mb1.vkr_backend.student_groups.web.filters.StudentGroupFilterRequest;
 import com.github.k1mb1.vkr_backend.student_groups.web.requests.CreateGroupRequest;
+import com.github.k1mb1.vkr_backend.student_groups.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.GroupResponse;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.StudentGroupListDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,7 +41,7 @@ public class StudentsGroupController {
 
     @Operation(summary = "List all groups")
     @GetMapping
-    ResponseEntity<Page<StudentGroupListDto>> findAll(
+    public ResponseEntity<Page<StudentGroupListDto>> findAll(
             @ParameterObject @ModelAttribute StudentGroupFilterRequest filter,
             @ParameterObject Pageable pageable
     ){
@@ -48,13 +50,22 @@ public class StudentsGroupController {
 
     @Operation(summary = "Get group by id")
     @GetMapping("/{id}")
-    ResponseEntity<GroupResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.status(HttpStatus.OK).body(studentGroupsApi.findById(id));
+    public ResponseEntity<GroupResponse> findById(@PathVariable UUID id) {
+        return ResponseEntity.ok(studentGroupsApi.findById(id));
     }
 
     @Operation(summary = "Create group with students")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<GroupResponse> create(@Valid @RequestBody CreateGroupRequest request) {
+    public ResponseEntity<GroupResponse> create(@Valid @RequestBody CreateGroupRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(studentGroupsApi.create(request));
+    }
+
+    @Operation(summary = "Patch group")
+    @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<GroupResponse> patch(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateGroupRequest request
+    ) {
+        return ResponseEntity.ok(studentGroupsApi.patch(id, request));
     }
 }

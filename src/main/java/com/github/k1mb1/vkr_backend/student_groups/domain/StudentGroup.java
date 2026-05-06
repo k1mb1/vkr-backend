@@ -54,4 +54,6 @@ public class StudentGroup extends BaseEntity {
 
     @Formula("(select count(*) from students s left join student_groups sg on s.group_id = sg.id where s.group_id = id or sg.parent_group_id = id)")
     int totalStudentCount;
+
+    //TODO Formula вызывается при каждом обращении к сущности, даже если не нужно получать эти поля. Возможно стоит убрать их из сущности и делать отдельными запросами при необходимости.
 }
