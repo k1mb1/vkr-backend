@@ -28,11 +28,17 @@ public class SecurityConfig {
         "/v3/api-docs",
     };
 
+    private final JwtAuthConverter jwtAuthConverter;
+
     @Value("${app.cors.allowed-origins}")
     String[] allowedOrigins;
 
+    public SecurityConfig(JwtAuthConverter jwtAuthConverter) {
+        this.jwtAuthConverter = jwtAuthConverter;
+    }
+
     @Bean
-    public SecurityFilterChain filterChain(final HttpSecurity http) {
+    public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
@@ -48,7 +54,7 @@ public class SecurityConfig {
             )
             .oauth2ResourceServer(oauth2ResourceServer ->
                 oauth2ResourceServer.jwt(jwt ->
-                    jwt.jwtAuthenticationConverter(new JwtAuthConverter())
+                    jwt.jwtAuthenticationConverter(jwtAuthConverter)
                 )
             )
             .build();

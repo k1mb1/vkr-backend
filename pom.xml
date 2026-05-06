@@ -14,6 +14,7 @@
     <name>vkr-backend</name>
     <description>Demo project for Spring Boot</description>
     <properties>
+        <springdoc.version>3.0.2</springdoc.version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
         <java.version>21</java.version>
     </properties>
@@ -70,7 +71,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.2</version>
+            <version>${springdoc.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -118,6 +119,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>process-aot</id>
+                        <goals>
+                            <goal>process-aot</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <excludes>
                         <exclude>
