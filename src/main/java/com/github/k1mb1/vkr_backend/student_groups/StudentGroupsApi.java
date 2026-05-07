@@ -20,4 +20,5 @@ public interface StudentGroupsApi {
 
 	GroupResponse patch(UUID id, UpdateGroupRequest request);
 
+	void delete(UUID id);
 }

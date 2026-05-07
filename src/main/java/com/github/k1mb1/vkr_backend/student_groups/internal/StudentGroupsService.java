@@ -92,6 +92,19 @@ class StudentGroupsService implements StudentGroupsApi {
         return toGroupResponse(group);
     }
 
+        @Override
+        @Transactional
+        public void delete(UUID id) {
+                StudentGroup group = groupRepository.findById(id)
+                                .orElseThrow(() -> new EntityNotFoundException("Group not found: " + id));
+
+                if (group.getParentGroup() != null) {
+                        throw new IllegalStateException("Only root group can be deleted");
+                }
+
+                groupRepository.delete(group);
+        }
+
         private Map<UUID, Student> collectStudentsById(StudentGroup group) {
                 Map<UUID, Student> studentsById = new HashMap<>();
                 group.getStudents().stream()

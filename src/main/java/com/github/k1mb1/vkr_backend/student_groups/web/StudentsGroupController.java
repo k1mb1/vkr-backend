@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,7 +52,7 @@ public class StudentsGroupController {
     @Operation(summary = "Get group by id")
     @GetMapping("/{id}")
     public ResponseEntity<GroupResponse> findById(@PathVariable UUID id) {
-        return ResponseEntity.ok(studentGroupsApi.findById(id));
+        return ResponseEntity.status(HttpStatus.OK).body(studentGroupsApi.findById(id));
     }
 
     @Operation(summary = "Create group with students")
@@ -66,6 +67,13 @@ public class StudentsGroupController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateGroupRequest request
     ) {
-        return ResponseEntity.ok(studentGroupsApi.patch(id, request));
+        return ResponseEntity.status(HttpStatus.OK).body(studentGroupsApi.patch(id, request));
+    }
+
+    @Operation(summary = "Delete group")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        studentGroupsApi.delete(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
