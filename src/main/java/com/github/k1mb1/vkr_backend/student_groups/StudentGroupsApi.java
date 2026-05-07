@@ -5,20 +5,21 @@ import com.github.k1mb1.vkr_backend.student_groups.web.requests.CreateGroupReque
 import com.github.k1mb1.vkr_backend.student_groups.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.GroupResponse;
 import com.github.k1mb1.vkr_backend.student_groups.web.responses.StudentGroupListDto;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.UUID;
-
 public interface StudentGroupsApi {
+    Page<StudentGroupListDto> findAll(
+        StudentGroupFilterRequest filter,
+        Pageable pageable
+    );
 
-	Page<StudentGroupListDto> findAll(StudentGroupFilterRequest filter, Pageable pageable);
+    GroupResponse findById(UUID id);
 
-	GroupResponse findById(UUID id);
+    GroupResponse create(CreateGroupRequest request);
 
-	GroupResponse create(CreateGroupRequest request);
+    GroupResponse patch(UUID id, UpdateGroupRequest request);
 
-	GroupResponse patch(UUID id, UpdateGroupRequest request);
-
-	void delete(UUID id);
+    void delete(UUID id);
 }

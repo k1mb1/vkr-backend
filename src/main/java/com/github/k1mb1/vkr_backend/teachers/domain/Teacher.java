@@ -1,14 +1,11 @@
 package com.github.k1mb1.vkr_backend.teachers.domain;
 
-
 import com.github.k1mb1.vkr_backend.common.domain.Auditable;
 import jakarta.persistence.*;
+import java.util.UUID;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.HashSet;
-import java.util.UUID;
 
 @Entity
 @Table(name = "teachers")
@@ -33,8 +30,8 @@ public class Teacher extends Auditable {
     @ToString.Include
     String email;
 
-//TODO
-//    @ManyToMany(mappedBy = "teachers", fetch = FetchType.LAZY)
-//    @Builder.Default
-//    Set<SubjectEntity> subjects = new HashSet<>();
+    //TODO
+    //    @ManyToMany(mappedBy = "teachers", fetch = FetchType.LAZY)
+    //    @Builder.Default
+    //    Set<SubjectEntity> subjects = new HashSet<>();
 }

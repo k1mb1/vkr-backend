@@ -14,12 +14,7 @@ public record ErrorDto(
         @NonNull String message,
         @NonNull HttpStatus status
     ) {
-        return new ErrorDto(
-            status.value(),
-            message,
-            Instant.now(),
-            null
-        );
+        return new ErrorDto(status.value(), message, Instant.now(), null);
     }
 
     public static ErrorDto of(
@@ -27,11 +22,6 @@ public record ErrorDto(
         @NonNull HttpStatus status,
         String details
     ) {
-        return new ErrorDto(
-            status.value(),
-            message,
-            Instant.now(),
-            details
-        );
+        return new ErrorDto(status.value(), message, Instant.now(), details);
     }
 }

@@ -22,7 +22,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorDto> handleEntityNotFound(EntityNotFoundException ex) {
+    public ResponseEntity<ErrorDto> handleEntityNotFound(
+        EntityNotFoundException ex
+    ) {
         log.warn("Entity not found: {}", ex.getMessage());
         return ResponseEntity.status(NOT_FOUND).body(
             ErrorDto.of(ex.getMessage(), NOT_FOUND)
@@ -30,8 +32,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorDto> handleValidation(MethodArgumentNotValidException ex) {
-        String details = ex.getBindingResult().getFieldErrors().stream()
+    public ResponseEntity<ErrorDto> handleValidation(
+        MethodArgumentNotValidException ex
+    ) {
+        String details = ex
+            .getBindingResult()
+            .getFieldErrors()
+            .stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .collect(Collectors.joining("; "));
         return ResponseEntity.status(BAD_REQUEST).body(
@@ -40,8 +47,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorDto> handleConstraintViolation(ConstraintViolationException ex) {
-        String details = ex.getConstraintViolations().stream()
+    public ResponseEntity<ErrorDto> handleConstraintViolation(
+        ConstraintViolationException ex
+    ) {
+        String details = ex
+            .getConstraintViolations()
+            .stream()
             .map(v -> v.getPropertyPath() + ": " + v.getMessage())
             .collect(Collectors.joining("; "));
         return ResponseEntity.status(BAD_REQUEST).body(
@@ -50,7 +61,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorDto> handleIllegalArgument(IllegalArgumentException ex) {
+    public ResponseEntity<ErrorDto> handleIllegalArgument(
+        IllegalArgumentException ex
+    ) {
         log.warn("Illegal argument: {}", ex.getMessage());
         return ResponseEntity.status(BAD_REQUEST).body(
             ErrorDto.of(ex.getMessage(), BAD_REQUEST)
@@ -58,7 +71,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorDto> handleIllegalState(IllegalStateException ex) {
+    public ResponseEntity<ErrorDto> handleIllegalState(
+        IllegalStateException ex
+    ) {
         log.warn("Illegal state: {}", ex.getMessage());
         return ResponseEntity.status(BAD_REQUEST).body(
             ErrorDto.of(ex.getMessage(), BAD_REQUEST)
@@ -66,7 +81,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorDto> handleUnreadableBody(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorDto> handleUnreadableBody(
+        HttpMessageNotReadableException ex
+    ) {
         log.warn("Unreadable request body: {}", ex.getMessage());
         return ResponseEntity.status(BAD_REQUEST).body(
             ErrorDto.of(MALFORMED_BODY, BAD_REQUEST)
@@ -74,18 +91,27 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorDto> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String details = ex.getRequiredType() != null
-            ? "expected: " + ex.getRequiredType().getSimpleName()
-            : null;
+    public ResponseEntity<ErrorDto> handleTypeMismatch(
+        MethodArgumentTypeMismatchException ex
+    ) {
+        String details =
+            ex.getRequiredType() != null
+                ? "expected: " + ex.getRequiredType().getSimpleName()
+                : null;
         String message = INVALID_PARAM.formatted(ex.getName());
         return details != null
-            ? ResponseEntity.status(BAD_REQUEST).body(ErrorDto.of(message, BAD_REQUEST, details))
-            : ResponseEntity.status(BAD_REQUEST).body(ErrorDto.of(message, BAD_REQUEST));
+            ? ResponseEntity.status(BAD_REQUEST).body(
+                  ErrorDto.of(message, BAD_REQUEST, details)
+              )
+            : ResponseEntity.status(BAD_REQUEST).body(
+                  ErrorDto.of(message, BAD_REQUEST)
+              );
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorDto> handleAccessDenied(AccessDeniedException ex) {
+    public ResponseEntity<ErrorDto> handleAccessDenied(
+        AccessDeniedException ex
+    ) {
         log.warn("Access denied: {}", ex.getMessage());
         return ResponseEntity.status(FORBIDDEN).body(
             ErrorDto.of(ACCESS_DENIED, FORBIDDEN)
@@ -93,7 +119,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorDto> handleNoResource(NoResourceFoundException ex) {
+    public ResponseEntity<ErrorDto> handleNoResource(
+        NoResourceFoundException ex
+    ) {
         return ResponseEntity.status(NOT_FOUND).body(
             ErrorDto.of(RESOURCE_NOT_FOUND, NOT_FOUND)
         );

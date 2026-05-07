@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.student_groups.web.requests;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -12,13 +11,12 @@ import java.util.UUID;
  * Existing students should be sent with id, new students with null id.
  */
 public record UpdateGroupRequest(
-        @NotBlank String groupName,
-        @NotEmpty List<@Valid StudentPatchRequest> students
+    @NotBlank String groupName,
+    @NotEmpty List<@Valid StudentPatchRequest> students
 ) {
-
     public record StudentPatchRequest(
-            UUID id,
-            @NotBlank String username,
-            UUID subgroupId
+        UUID id,
+        @NotBlank String username,
+        UUID subgroupId
     ) {}
 }

@@ -22,8 +22,8 @@ public class Student extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     StudentGroup group;
-//TODO
-//    @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
-//    @Builder.Default
-//    Set<SubjectEntity> subjects = new HashSet<>();
+    //TODO
+    //    @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
+    //    @Builder.Default
+    //    Set<SubjectEntity> subjects = new HashSet<>();
 }

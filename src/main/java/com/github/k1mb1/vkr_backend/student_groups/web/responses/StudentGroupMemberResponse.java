@@ -1,8 +1,7 @@
 package com.github.k1mb1.vkr_backend.student_groups.web.responses;
 
-import lombok.Builder;
-
 import java.util.UUID;
+import lombok.Builder;
 
 /**
  * Student entry inside a group response.
@@ -14,7 +13,7 @@ import java.util.UUID;
  */
 @Builder
 public record StudentGroupMemberResponse(
-        UUID id,
-        String username,
-        UUID subgroupId
+    UUID id,
+    String username,
+    UUID subgroupId
 ) {}

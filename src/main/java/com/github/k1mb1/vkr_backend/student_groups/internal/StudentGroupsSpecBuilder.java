@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 class StudentGroupsSpecBuilder {
 
     Specification<StudentGroup> build(StudentGroupFilterRequest request) {
-        return Specification.where(rootGroupsOnly()).and(nameLikeSpec(request.name()));
+        return Specification.where(rootGroupsOnly()).and(
+            nameLikeSpec(request.name())
+        );
     }
 
     private Specification<StudentGroup> rootGroupsOnly() {
@@ -22,8 +24,8 @@ class StudentGroupsSpecBuilder {
                 return null;
             }
             return cb.like(
-                    cb.lower(root.get("name")),
-                    "%" + name.toLowerCase() + "%"
+                cb.lower(root.get("name")),
+                "%" + name.toLowerCase() + "%"
             );
         };
     }
