@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,5 +53,12 @@ public class GroupsController {
     @GetMapping("/{id}")
     public ResponseEntity<GroupResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(groupsApi.getById(id));
+    }
+
+    @Operation(summary = "Delete group")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        groupsApi.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

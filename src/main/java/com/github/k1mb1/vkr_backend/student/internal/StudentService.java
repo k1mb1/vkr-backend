@@ -45,4 +45,9 @@ public class StudentService {
             .build();
         return studentRepository.save(student);
     }
+
+    @Transactional
+    public void deleteByGroup(Group group) {
+        studentRepository.deleteByGroupId(group.getId());
+    }
 }

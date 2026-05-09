@@ -11,4 +11,6 @@ public interface GroupsApi {
     GroupResponse update(UUID id, UpdateGroupRequest request);
 
     GroupResponse getById(UUID id);
+
+    void delete(UUID id);
 }

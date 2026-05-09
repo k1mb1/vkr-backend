@@ -124,6 +124,16 @@ public class GroupService implements GroupsApi {
         return toResponse(group);
     }
 
+    @Transactional
+    @Override
+    public void delete(UUID id) {
+        var group = groupRepository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + id));
+
+        studentService.deleteByGroup(group);
+        groupRepository.delete(group);
+    }
+
     private GroupResponse toResponse(Group group) {
         var subgroups = subgroupRepository.findByGroup(group).stream()
             .map(subgroupMapper::toResponse)
