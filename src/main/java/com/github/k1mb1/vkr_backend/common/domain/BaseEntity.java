@@ -1,30 +1,29 @@
 package com.github.k1mb1.vkr_backend.common.domain;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
+
 import java.util.Objects;
 import java.util.UUID;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.proxy.HibernateProxy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @MappedSuperclass
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor
 @Getter
 @Setter
-@ToString(onlyExplicitlyIncluded = true)
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public abstract class BaseEntity extends Auditable {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @ToString.Include
-    protected UUID id;
+    @UuidGenerator
+    @GeneratedValue
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
     @Override
     public final boolean equals(Object o) {

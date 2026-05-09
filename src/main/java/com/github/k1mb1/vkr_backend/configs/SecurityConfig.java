@@ -47,7 +47,7 @@ public class SecurityConfig {
                     .requestMatchers(PUBLIC_ENDPOINTS)
                     .permitAll()
                     .anyRequest()
-                    .authenticated()
+                    .permitAll()
             )
             .sessionManagement(sessionManagement ->
                 sessionManagement.sessionCreationPolicy(STATELESS)

@@ -10,29 +10,18 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
-@SuperBuilder(toBuilder = true)
-@NoArgsConstructor
 @Getter
 @Setter
-@ToString(onlyExplicitlyIncluded = true)
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public abstract class Auditable {
 
     @CreatedDate
-    @Column(
-        name = "created_at",
-        nullable = false,
-        updatable = false,
-        columnDefinition = "timestamp with time zone"
-    )
-    @ToString.Include
-    protected Instant createdAt;
+    @Column(nullable = false, updatable = false, columnDefinition = "timestamptz")
+    private Instant createdAt;
 
     @LastModifiedDate
-    @Column(
-        name = "updated_at",
-        nullable = false,
-        columnDefinition = "timestamp with time zone"
-    )
-    @ToString.Include
-    protected Instant updatedAt;
+    @Column(nullable = false, columnDefinition = "timestamptz")
+    private Instant updatedAt;
 }
