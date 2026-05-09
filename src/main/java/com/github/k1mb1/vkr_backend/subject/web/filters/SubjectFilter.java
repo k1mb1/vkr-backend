@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.subject.web.filters;
 
-public record SubjectFilter(
-        String name
-) {}
+import lombok.Builder;
 
+@Builder
+public record SubjectFilter(String name) {}

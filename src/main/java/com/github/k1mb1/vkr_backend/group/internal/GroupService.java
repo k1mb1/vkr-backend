@@ -10,6 +10,9 @@ import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.student.StudentApi;
+import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
+import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
+import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
@@ -36,7 +39,9 @@ class GroupService implements GroupsApi {
     @Transactional
     @Override
     public GroupResponse create(CreateGroupRequest request) {
-        var group = groupRepository.save(Group.builder().name(request.groupName()).build());
+        var group = groupRepository.save(
+            Group.builder().name(request.groupName()).build()
+        );
 
         var uniqueIndices = request
             .students()
@@ -48,18 +53,24 @@ class GroupService implements GroupsApi {
 
         var indexToSubgroup = new HashMap<Short, Subgroup>();
         for (var index : uniqueIndices) {
-            var subgroup = subgroupRepository.save(Subgroup.builder().index(index).group(group).build());
+            var subgroup = subgroupRepository.save(
+                Subgroup.builder().index(index).group(group).build()
+            );
             group.getSubgroups().add(subgroup);
             indexToSubgroup.put(index, subgroup);
         }
 
         for (var req : request.students()) {
             studentApi.create(
-                req.username(),
-                group.getId(),
-                req.subgroupIndex() != null
-                    ? indexToSubgroup.get(req.subgroupIndex()).getId()
-                    : null
+                CreateStudentRequest.builder()
+                    .username(req.username())
+                    .groupId(group.getId())
+                    .subgroupId(
+                        req.subgroupIndex() != null
+                            ? indexToSubgroup.get(req.subgroupIndex()).getId()
+                            : null
+                    )
+                    .build()
             );
         }
 
@@ -82,7 +93,7 @@ class GroupService implements GroupsApi {
         var existingStudents = studentApi.findByGroup(group.getId());
         var existingById = existingStudents
             .stream()
-            .collect(Collectors.toMap(s -> s.id(), s -> s));
+            .collect(Collectors.toMap(StudentResponse::id, s -> s));
 
         var requestIds = request
             .students()
@@ -111,14 +122,18 @@ class GroupService implements GroupsApi {
                 }
                 studentApi.update(
                     student.id(),
-                    req.username(),
-                    req.subgroupId()
+                    UpdateStudentRequest.builder()
+                        .username(req.username())
+                        .subgroupId(req.subgroupId())
+                        .build()
                 );
             } else {
                 studentApi.create(
-                    req.username(),
-                    group.getId(),
-                    req.subgroupId()
+                    CreateStudentRequest.builder()
+                        .username(req.username())
+                        .groupId(group.getId())
+                        .subgroupId(req.subgroupId())
+                        .build()
                 );
             }
         }

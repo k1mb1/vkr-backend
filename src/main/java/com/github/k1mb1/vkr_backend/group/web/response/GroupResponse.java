@@ -4,7 +4,9 @@ import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentRespons
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 public record GroupResponse(
     UUID id,
     String name,

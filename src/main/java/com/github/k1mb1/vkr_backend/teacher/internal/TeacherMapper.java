@@ -3,11 +3,13 @@ package com.github.k1mb1.vkr_backend.teacher.internal;
 import com.github.k1mb1.vkr_backend.teacher.web.response.TeacherResponse;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 @Mapper(componentModel = SPRING)
 interface TeacherMapper {
@@ -22,5 +24,6 @@ interface TeacherMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(CreateOrUpdateTeacherRequest request, @MappingTarget Teacher teacher);
 }

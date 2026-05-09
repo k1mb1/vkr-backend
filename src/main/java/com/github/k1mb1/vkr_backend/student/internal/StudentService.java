@@ -5,6 +5,8 @@ import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.student.StudentApi;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
+import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
+import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
 import java.util.List;
 import java.util.UUID;
@@ -51,7 +53,7 @@ class StudentService implements StudentApi {
     }
 
     @Transactional
-    public void update(UUID studentId, String username, UUID subgroupId) {
+    public void update(UUID studentId, UpdateStudentRequest request) {
         var student = studentRepository
             .findById(studentId)
             .orElseThrow(() ->
@@ -59,30 +61,23 @@ class StudentService implements StudentApi {
                     "Student not found: " + studentId
                 )
             );
-        var subgroup =
-            subgroupId != null
-                ? groupReferenceService.getSubgroupReferenceById(subgroupId)
-                : null;
-        student.setUsername(username);
-        student.setSubgroup(subgroup);
-        if (student.isArchived()) {
-            student.unarchive();
-        }
+        studentMapper.updateEntity(request, student, groupReferenceService);
+        studentRepository.save(student);
     }
 
     @Transactional
-    public StudentResponse create(
-        String username,
-        UUID groupId,
-        UUID subgroupId
-    ) {
-        var group = groupReferenceService.getGroupReferenceById(groupId);
+    public StudentResponse create(CreateStudentRequest request) {
+        var group = groupReferenceService.getGroupReferenceById(
+            request.groupId()
+        );
         var subgroup =
-            subgroupId != null
-                ? groupReferenceService.getSubgroupReferenceById(subgroupId)
+            request.subgroupId() != null
+                ? groupReferenceService.getSubgroupReferenceById(
+                      request.subgroupId()
+                  )
                 : null;
         var student = Student.builder()
-            .username(username)
+            .username(request.username())
             .group(group)
             .subgroup(subgroup)
             .build();
