@@ -37,8 +37,11 @@ CREATE INDEX idx_subgroups_group_id ON subgroups (group_id);
 CREATE TABLE teachers (
     id          UUID         PRIMARY KEY,
     username    VARCHAR(255) NOT NULL,
+    email       VARCHAR(255) NOT NULL,
     created_at  TIMESTAMPTZ  NOT NULL,
-    updated_at  TIMESTAMPTZ  NOT NULL
+    updated_at  TIMESTAMPTZ  NOT NULL,
+
+    CONSTRAINT uk_teachers_email UNIQUE (email)
 );
 --rollback DROP TABLE teachers;
 
