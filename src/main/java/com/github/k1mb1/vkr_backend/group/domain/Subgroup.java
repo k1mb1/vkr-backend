@@ -18,8 +18,8 @@ import lombok.experimental.SuperBuilder;
 @Table(
     name = "subgroups",
     uniqueConstraints = @UniqueConstraint(
-        name = "uk_subgroup_group_name",
-        columnNames = {"group_id", "name"}
+        name = "uk_subgroup_group_index",
+        columnNames = {"group_id", "index"}
     )
 )
 @Getter
@@ -29,8 +29,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class Subgroup extends BaseEntity {
 
-    @Column(nullable = false)
-    String name;
+    @Column(name = "index", nullable = false)
+    Short index;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id", nullable = false)

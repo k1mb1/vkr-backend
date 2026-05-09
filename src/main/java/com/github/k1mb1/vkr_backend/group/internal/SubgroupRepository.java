@@ -1,0 +1,10 @@
+package com.github.k1mb1.vkr_backend.group.internal;
+
+import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface SubgroupRepository extends JpaRepository<Subgroup, UUID> {
+}

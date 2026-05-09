@@ -20,15 +20,15 @@ CREATE TABLE groups (
 
 --changeset k1mb1:002-create-subgroups
 CREATE TABLE subgroups (
-    id          UUID         PRIMARY KEY,
-    name        VARCHAR(255) NOT NULL,
-    group_id    UUID         NOT NULL,
-    created_at  TIMESTAMPTZ  NOT NULL,
-    updated_at  TIMESTAMPTZ  NOT NULL,
+    id          UUID     PRIMARY KEY,
+    index       SMALLINT NOT NULL,
+    group_id    UUID     NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_subgroups_group
         FOREIGN KEY (group_id) REFERENCES groups (id)
         ON DELETE CASCADE,
-    CONSTRAINT uk_subgroup_group_name UNIQUE (group_id, name)
+    CONSTRAINT uk_subgroup_group_index UNIQUE (group_id, index)
 );
 CREATE INDEX idx_subgroups_group_id ON subgroups (group_id);
 --rollback DROP TABLE subgroups;
