@@ -11,11 +11,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface StudentRepository extends JpaRepository<Student, UUID> {
+interface StudentRepository extends JpaRepository<Student, UUID> {
+    List<Student> findByGroupId(UUID groupId);
 
-    List<Student> findByGroup(Group group);
-
-    List<Student> findByGroupAndArchivedAtIsNull(Group group);
+    List<Student> findByGroupIdAndArchivedAtIsNull(UUID groupId);
 
     @Modifying
     @Query("DELETE FROM Student s WHERE s.group.id = :groupId")

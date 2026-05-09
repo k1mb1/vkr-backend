@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface GroupRepository extends JpaRepository<Group, UUID>, JpaSpecificationExecutor<Group> {
+interface GroupRepository extends JpaRepository<Group, UUID>, JpaSpecificationExecutor<Group> {
 }

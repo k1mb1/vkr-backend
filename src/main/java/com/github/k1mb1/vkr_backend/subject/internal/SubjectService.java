@@ -12,10 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SubjectService implements SubjectsApi {
+class SubjectService implements SubjectsApi {
 
-    private final SubjectRepository subjectRepository;
-    private final SubjectMapper subjectMapper;
+    final SubjectRepository subjectRepository;
+
+    final SubjectMapper subjectMapper;
 
     @Override
     public Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable) {

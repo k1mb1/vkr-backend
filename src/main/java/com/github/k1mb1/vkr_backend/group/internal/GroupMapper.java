@@ -4,7 +4,7 @@ import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.SubgroupResponse;
-import com.github.k1mb1.vkr_backend.student.StudentResponse;
+import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 @Mapper(componentModel = SPRING)
-public interface GroupMapper {
+interface GroupMapper {
 
     GroupPageResponse toPageResponse(Group group);
 

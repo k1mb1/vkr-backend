@@ -4,7 +4,7 @@ import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.web.filters.GroupFilter;
 import org.springframework.data.jpa.domain.Specification;
 
-public record GroupSpecifications(GroupFilter filter) {
+record GroupSpecifications(GroupFilter filter) {
 
     public Specification<Group> toSpec() {
         return Specification.allOf(nameContains(filter.name()));

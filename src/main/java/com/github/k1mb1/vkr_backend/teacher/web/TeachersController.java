@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.teacher.web;
 
 import com.github.k1mb1.vkr_backend.teacher.TeachersApi;
-import com.github.k1mb1.vkr_backend.teacher.TeacherResponse;
+import com.github.k1mb1.vkr_backend.teacher.web.response.TeacherResponse;
 import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TeachersController {
 
-    private final TeachersApi teachersApi;
+    final TeachersApi teachersApi;
 
     @Operation(summary = "Create or update teacher")
     @PutMapping("/{id}")

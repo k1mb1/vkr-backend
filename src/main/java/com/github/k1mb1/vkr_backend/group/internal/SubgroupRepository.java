@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface SubgroupRepository extends JpaRepository<Subgroup, UUID> {
+interface SubgroupRepository extends JpaRepository<Subgroup, UUID> {
 
     List<Subgroup> findByGroup(Group group);
 }

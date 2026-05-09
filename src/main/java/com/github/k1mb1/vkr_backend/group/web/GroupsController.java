@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class GroupsController {
 
-    private final GroupsApi groupsApi;
+    final GroupsApi groupsApi;
 
     @Operation(summary = "Get groups page filtered by name")
     @GetMapping

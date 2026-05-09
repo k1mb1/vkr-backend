@@ -1,13 +1,12 @@
-package com.github.k1mb1.vkr_backend.student;
+package com.github.k1mb1.vkr_backend.teacher.web.response;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record StudentResponse(
+public record TeacherResponse(
     UUID id,
     String username,
-    UUID groupId,
-    UUID subgroupId,
+    String email,
     Instant createdAt,
     Instant updatedAt
 ) {}

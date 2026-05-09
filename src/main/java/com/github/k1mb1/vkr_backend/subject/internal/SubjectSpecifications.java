@@ -4,7 +4,7 @@ import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter;
 import org.springframework.data.jpa.domain.Specification;
 
-public record SubjectSpecifications(SubjectFilter filter) {
+record SubjectSpecifications(SubjectFilter filter) {
 
     public Specification<Subject> toSpec() {
         return Specification.allOf(nameContains(filter.name()));

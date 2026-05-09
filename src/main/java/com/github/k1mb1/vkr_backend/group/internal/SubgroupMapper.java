@@ -5,7 +5,7 @@ import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
-public interface SubgroupMapper {
+interface SubgroupMapper {
 
     SubgroupResponse toResponse(Subgroup subgroup);
 }
