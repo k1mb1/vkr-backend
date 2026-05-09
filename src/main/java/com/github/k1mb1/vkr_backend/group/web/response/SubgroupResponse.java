@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.group;
+package com.github.k1mb1.vkr_backend.group.web.response;
 
 import java.time.Instant;
 import java.util.UUID;

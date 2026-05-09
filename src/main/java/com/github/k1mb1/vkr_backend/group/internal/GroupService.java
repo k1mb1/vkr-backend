@@ -1,7 +1,9 @@
 package com.github.k1mb1.vkr_backend.group.internal;
 
 import com.github.k1mb1.vkr_backend.group.GroupsApi;
-import com.github.k1mb1.vkr_backend.group.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
+import com.github.k1mb1.vkr_backend.group.web.filters.GroupFilter;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.group.web.requests.CreateGroupRequest;
@@ -15,6 +17,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +32,7 @@ public class GroupService implements GroupsApi {
     private final StudentService studentService;
     private final SubgroupMapper subgroupMapper;
     private final StudentMapper studentMapper;
+    private final GroupMapper groupMapper;
 
     @Transactional
     @Override
@@ -141,13 +146,13 @@ public class GroupService implements GroupsApi {
         var students = studentService.findActiveByGroup(group).stream()
             .map(studentMapper::toResponse)
             .toList();
-        return new GroupResponse(
-            group.getId(),
-            group.getName(),
-            subgroups,
-            students,
-            group.getCreatedAt(),
-            group.getUpdatedAt()
-        );
+        return groupMapper.toResponse(group, subgroups, students);
+    }
+
+    @Override
+    public Page<GroupPageResponse> getPage(GroupFilter filter, Pageable pageable) {
+        return groupRepository
+                .findAll(new GroupSpecifications(filter).toSpec(), pageable)
+                .map(groupMapper::toPageResponse);
     }
 }

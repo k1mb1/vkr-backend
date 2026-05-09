@@ -1,7 +1,9 @@
 package com.github.k1mb1.vkr_backend.group.web;
 
 import com.github.k1mb1.vkr_backend.group.GroupsApi;
-import com.github.k1mb1.vkr_backend.group.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.filters.GroupFilter;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.web.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,17 +11,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping(
     value = "/api/groups",
@@ -31,6 +29,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class GroupsController {
 
     private final GroupsApi groupsApi;
+
+    @Operation(summary = "Get groups page filtered by name")
+    @GetMapping
+    public ResponseEntity<Page<GroupPageResponse>> getPage(
+            @ModelAttribute GroupFilter filter,
+            @ParameterObject Pageable pageable
+    ) {
+        return ResponseEntity.ok(groupsApi.getPage(filter, pageable));
+    }
 
     @Operation(summary = "Create a new group with students")
     @PostMapping
