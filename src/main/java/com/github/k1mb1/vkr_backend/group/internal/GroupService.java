@@ -5,10 +5,15 @@ import com.github.k1mb1.vkr_backend.group.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.group.web.requests.CreateGroupRequest;
-import com.github.k1mb1.vkr_backend.group.web.requests.CreateGroupRequest.StudentGroupMemberRequest;
+import com.github.k1mb1.vkr_backend.group.web.requests.StudentGroupMemberRequest;
+import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
+import com.github.k1mb1.vkr_backend.student.domain.Student;
+import com.github.k1mb1.vkr_backend.student.internal.StudentMapper;
 import com.github.k1mb1.vkr_backend.student.internal.StudentService;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +26,8 @@ public class GroupService implements GroupsApi {
     private final GroupRepository groupRepository;
     private final SubgroupRepository subgroupRepository;
     private final StudentService studentService;
-    private final GroupMapper groupMapper;
+    private final SubgroupMapper subgroupMapper;
+    private final StudentMapper studentMapper;
 
     @Transactional
     @Override
@@ -46,8 +52,92 @@ public class GroupService implements GroupsApi {
             indexToSubgroup.put(index, subgroup);
         }
 
-        studentService.createStudentsForGroup(group, indexToSubgroup, request.students());
+        for (var req : request.students()) {
+            studentService.create(
+                req.username(),
+                group,
+                req.subgroupIndex() != null ? indexToSubgroup.get(req.subgroupIndex()) : null
+            );
+        }
 
-        return groupMapper.toResponse(group);
+        return toResponse(group);
+    }
+
+    @Transactional
+    @Override
+    public GroupResponse update(UUID id, UpdateGroupRequest request) {
+        var group = groupRepository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + id));
+
+        group.setName(request.groupName());
+
+        var existingStudents = studentService.findByGroup(group);
+        var existingById = existingStudents.stream()
+            .collect(Collectors.toMap(Student::getId, s -> s));
+
+        var requestIds = request.students().stream()
+            .map(UpdateGroupRequest.StudentPatchRequest::id)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        // archive removed students
+        for (var student : existingStudents) {
+            if (!requestIds.contains(student.getId())) {
+                studentService.archive(student);
+            }
+        }
+
+        // update or create
+        for (var req : request.students()) {
+            if (req.id() != null) {
+                var student = existingById.get(req.id());
+                if (student == null || !student.getGroup().getId().equals(group.getId())) {
+                    throw new jakarta.persistence.EntityNotFoundException(
+                        "Student not found in group: " + req.id()
+                    );
+                }
+                var subgroup = req.subgroupId() != null
+                    ? subgroupRepository.findById(req.subgroupId())
+                        .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                            "Subgroup not found: " + req.subgroupId()
+                        ))
+                    : null;
+                studentService.update(student, req.username(), subgroup);
+            } else {
+                var subgroup = req.subgroupId() != null
+                    ? subgroupRepository.findById(req.subgroupId())
+                        .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                            "Subgroup not found: " + req.subgroupId()
+                        ))
+                    : null;
+                studentService.create(req.username(), group, subgroup);
+            }
+        }
+
+        return toResponse(groupRepository.save(group));
+    }
+
+    @Override
+    public GroupResponse getById(UUID id) {
+        var group = groupRepository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + id));
+        return toResponse(group);
+    }
+
+    private GroupResponse toResponse(Group group) {
+        var subgroups = subgroupRepository.findByGroup(group).stream()
+            .map(subgroupMapper::toResponse)
+            .toList();
+        var students = studentService.findActiveByGroup(group).stream()
+            .map(studentMapper::toResponse)
+            .toList();
+        return new GroupResponse(
+            group.getId(),
+            group.getName(),
+            subgroups,
+            students,
+            group.getCreatedAt(),
+            group.getUpdatedAt()
+        );
     }
 }
