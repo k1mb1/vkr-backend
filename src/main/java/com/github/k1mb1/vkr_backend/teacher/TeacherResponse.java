@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.teacher.web.responses;
+package com.github.k1mb1.vkr_backend.teacher;
 
 import java.time.Instant;
 import java.util.UUID;

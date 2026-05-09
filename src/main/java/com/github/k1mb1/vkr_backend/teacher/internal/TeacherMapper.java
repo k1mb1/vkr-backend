@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.teacher.internal;
 
+import com.github.k1mb1.vkr_backend.teacher.TeacherResponse;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
-import com.github.k1mb1.vkr_backend.teacher.web.responses.TeacherResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 

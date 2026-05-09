@@ -1,9 +1,8 @@
 package com.github.k1mb1.vkr_backend.teacher.web;
 
 import com.github.k1mb1.vkr_backend.teacher.TeachersApi;
-import com.github.k1mb1.vkr_backend.teacher.internal.TeacherService;
+import com.github.k1mb1.vkr_backend.teacher.TeacherResponse;
 import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
-import com.github.k1mb1.vkr_backend.teacher.web.responses.TeacherResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,19 +24,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Teachers", description = "Teacher management")
 @RestController
 @RequiredArgsConstructor
-public class TeachersController implements TeachersApi {
+public class TeachersController {
 
-    private final TeacherService teacherService;
+    private final TeachersApi teachersApi;
 
     @Operation(summary = "Create or update teacher")
     @PutMapping("/{id}")
-    @Override
     public ResponseEntity<TeacherResponse> createOrUpdate(
         @PathVariable UUID id,
         @Valid @RequestBody CreateOrUpdateTeacherRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
-            teacherService.createOrUpdate(id, request)
+            teachersApi.createOrUpdate(id, request)
         );
     }
 }
