@@ -1,5 +1,6 @@
 server:
   port: ${PORT:8081}
+
 spring:
   application:
     name: vkr-backend
@@ -14,20 +15,17 @@ spring:
     generate-ddl: false
     properties:
       hibernate:
-        show_sql: true
-        format_sql: true
         jdbc:
           batch_size: 50
           order_inserts: true
           order_updates: true
         default_batch_fetch_size: 30
-        cache:
-          use_second_level_cache: false
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH2_RESOURSESERVER_ISSUER_URI}
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
