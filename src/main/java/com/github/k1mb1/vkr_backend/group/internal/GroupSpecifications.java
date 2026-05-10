@@ -7,7 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 record GroupSpecifications(GroupFilter filter) {
 
     public Specification<Group> toSpec() {
-        return Specification.allOf(nameContains(filter.name()));
+        return nameContains(filter.name());
     }
 
     private static Specification<Group> nameContains(String name) {

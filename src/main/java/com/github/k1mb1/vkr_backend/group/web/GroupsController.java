@@ -33,7 +33,7 @@ public class GroupsController {
     @Operation(summary = "Get groups page filtered by name")
     @GetMapping
     public ResponseEntity<Page<GroupPageResponse>> getPage(
-            @ModelAttribute GroupFilter filter,
+            @ParameterObject @ModelAttribute GroupFilter filter,
             @ParameterObject Pageable pageable
     ) {
         return ResponseEntity.ok(groupsApi.getPage(filter, pageable));

@@ -7,7 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 record SubjectSpecifications(SubjectFilter filter) {
 
     public Specification<Subject> toSpec() {
-        return Specification.allOf(nameContains(filter.name()));
+        return nameContains(filter.name());
     }
 
     private static Specification<Subject> nameContains(String name) {

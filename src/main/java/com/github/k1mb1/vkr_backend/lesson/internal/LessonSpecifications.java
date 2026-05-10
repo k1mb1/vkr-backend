@@ -9,7 +9,7 @@ import java.util.UUID;
 record LessonSpecifications(LessonFilter filter) {
 
     public Specification<Lesson> toSpec() {
-        return Specification.allOf(bySubjectId(filter.subjectId()));
+        return bySubjectId(filter.subjectId());
     }
 
     private static Specification<Lesson> bySubjectId(UUID subjectId) {
