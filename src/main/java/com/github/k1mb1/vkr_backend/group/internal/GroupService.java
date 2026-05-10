@@ -10,6 +10,7 @@ import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.student.StudentApi;
+import com.github.k1mb1.vkr_backend.student.internal.StudentMapper;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
@@ -35,6 +36,7 @@ class GroupService implements GroupsApi {
 
     final SubgroupMapper subgroupMapper;
     final GroupMapper groupMapper;
+    final StudentMapper studentMapper;
 
     @Transactional
     @Override
@@ -144,7 +146,7 @@ class GroupService implements GroupsApi {
     @Override
     public GroupResponse getById(UUID id) {
         var group = groupRepository
-            .findById(id)
+            .findWithDetailsById(id)
             .orElseThrow(() ->
                 new jakarta.persistence.EntityNotFoundException(
                     "Group not found: " + id
@@ -169,12 +171,17 @@ class GroupService implements GroupsApi {
     }
 
     private GroupResponse toResponse(Group group) {
-        var subgroups = subgroupRepository
-            .findByGroup(group)
+        var subgroups = group
+            .getSubgroups()
             .stream()
             .map(subgroupMapper::toResponse)
             .toList();
-        var students = studentApi.findActiveByGroup(group.getId());
+        var students = group
+            .getStudents()
+            .stream()
+            .filter(s -> s.getArchivedAt() == null)
+            .map(studentMapper::toResponse)
+            .toList();
         return groupMapper.toResponse(group, subgroups, students);
     }
 

@@ -16,7 +16,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
-interface StudentMapper {
+public interface StudentMapper {
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "subgroupId", source = "subgroup.id")
     StudentResponse toResponse(Student student);
