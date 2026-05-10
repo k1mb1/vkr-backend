@@ -24,11 +24,11 @@ import lombok.experimental.SuperBuilder;
     name = "subject_offerings",
     uniqueConstraints = @UniqueConstraint(
         name = "uk_offering_subject_group_period",
-        columnNames = {"subject_id", "group_id", "academic_year", "semester"}
+        columnNames = { "subject_id", "group_id" }
     ),
     indexes = {
         @Index(name = "idx_offering_subject", columnList = "subject_id"),
-        @Index(name = "idx_offering_group", columnList = "group_id")
+        @Index(name = "idx_offering_group", columnList = "group_id"),
     }
 )
 @Getter
@@ -46,13 +46,13 @@ public class SubjectOffering extends BaseEntity {
     @JoinColumn(name = "group_id", nullable = false)
     Group group;
 
-//    @Column(name = "academic_year", nullable = false)
-//    Integer academicYear;
-//
-//    @Column(nullable = false)
-//    Integer semester;
-//
-//    @Column(name = "is_active", nullable = false)
-//    @Builder.Default
-//    Boolean active = true;
+    //    @Column(name = "academic_year", nullable = false)
+    //    Integer academicYear;
+    //
+    //    @Column(nullable = false)
+    //    Integer semester;
+    //
+    //    @Column(name = "is_active", nullable = false)
+    //    @Builder.Default
+    //    Boolean active = true;
 }
