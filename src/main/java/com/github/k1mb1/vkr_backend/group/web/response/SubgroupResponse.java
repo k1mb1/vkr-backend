@@ -7,7 +7,7 @@ import lombok.Builder;
 @Builder
 public record SubgroupResponse(
     UUID id,
-    Short index,
+    Integer index,
     Instant createdAt,
     Instant updatedAt
 ) {}

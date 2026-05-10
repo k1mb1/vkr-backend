@@ -51,7 +51,7 @@ class GroupService implements GroupsApi {
             .distinct()
             .toList();
 
-        var indexToSubgroup = new HashMap<Short, Subgroup>();
+        var indexToSubgroup = new HashMap<Integer, Subgroup>();
         for (var index : uniqueIndices) {
             var subgroup = subgroupRepository.save(
                 Subgroup.builder().index(index).group(group).build()

@@ -7,5 +7,5 @@ import lombok.Builder;
 @Builder
 public record StudentGroupMemberRequest(
     @NotBlank String username,
-    @PositiveOrZero Short subgroupIndex
+    @PositiveOrZero Integer subgroupIndex
 ) {}

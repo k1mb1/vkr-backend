@@ -21,7 +21,7 @@ CREATE TABLE groups (
 --changeset k1mb1:002-create-subgroups
 CREATE TABLE subgroups (
     id          UUID     PRIMARY KEY,
-    index       SMALLINT NOT NULL,
+    index       INTEGER  NOT NULL,
     group_id    UUID     NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL,
     updated_at  TIMESTAMPTZ NOT NULL,
