@@ -1,6 +1,14 @@
 package com.github.k1mb1.vkr_backend.group.web.filters;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 @Builder
-public record GroupFilter(String name) {}
+@Schema(description = "Фильтр для поиска групп")
+public record GroupFilter(
+    @Schema(
+        description = "Название группы (частичное совпадение)",
+        example = "ИС"
+    )
+    String name
+) {}

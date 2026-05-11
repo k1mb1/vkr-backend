@@ -1,16 +1,15 @@
 package com.github.k1mb1.vkr_backend.common.domain;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
-
 import java.util.Objects;
 import java.util.UUID;
-
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.proxy.HibernateProxy;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+@Hidden
 @MappedSuperclass
 @Getter
 @Setter

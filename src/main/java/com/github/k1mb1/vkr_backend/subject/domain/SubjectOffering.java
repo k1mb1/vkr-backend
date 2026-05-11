@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -19,6 +20,7 @@ import lombok.experimental.SuperBuilder;
 
 // "Этот предмет читается этой группе в таком-то семестре"
 // Заменяет @ManyToMany Subject <-> Group
+@Hidden
 @Entity
 @Table(
     name = "subject_offerings",

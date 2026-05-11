@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -13,6 +14,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 // @SQLRestriction скрывает архивные subjects во всех SELECT'ах автоматически.
 // Для доступа к архивным используй native query в репозитории.
+@Hidden
 @Entity
 @Table(name = "subjects")
 @SQLRestriction("archived_at IS NULL")

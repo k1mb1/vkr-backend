@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.subject.internal;
 import com.github.k1mb1.vkr_backend.subject.SubjectsApi;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter;
+import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
@@ -45,5 +46,15 @@ class SubjectService implements SubjectsApi {
         return subjectRepository
             .findAll(new SubjectSpecifications(filter).toSpec(), pageable)
             .map(subjectMapper::toResponse);
+    }
+
+    @Transactional
+    @Override
+    public SubjectResponse create(CreateSubjectRequest request) {
+        var subject = Subject.builder()
+                .name(request.name())
+                .description(request.description())
+                .build();
+        return subjectMapper.toFullResponse(subjectRepository.save(subject));
     }
 }

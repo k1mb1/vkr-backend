@@ -1,12 +1,13 @@
 package com.github.k1mb1.vkr_backend.common.domain;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import java.time.Instant;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
-
+@Hidden
 @MappedSuperclass
 @Getter
 @SuperBuilder(toBuilder = true)

@@ -4,26 +4,30 @@ import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectOffering;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.experimental.SuperBuilder;
-
 import java.time.Instant;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+@Hidden
 @Entity
-@Table(name = "lessons", indexes = {
-    @Index(name = "idx_lesson_offering", columnList = "offering_id"),
-    @Index(name = "idx_lesson_started_at", columnList = "started_at"),
-    @Index(name = "idx_lesson_teacher", columnList = "teacher_id")
-})
+@Table(
+    name = "lessons",
+    indexes = {
+        @Index(name = "idx_lesson_offering", columnList = "offering_id"),
+        @Index(name = "idx_lesson_started_at", columnList = "started_at"),
+        @Index(name = "idx_lesson_teacher", columnList = "teacher_id"),
+    }
+)
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
@@ -41,14 +45,22 @@ public class Lesson extends BaseEntity {
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
-    @Column(name = "lesson_type", nullable = false, columnDefinition = "lesson_type")
+    @Column(
+        name = "lesson_type",
+        nullable = false,
+        columnDefinition = "lesson_type"
+    )
     LessonType type = LessonType.NONE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     Teacher teacher;
 
-    @Column(name = "started_at", nullable = false, columnDefinition = "timestamptz")
+    @Column(
+        name = "started_at",
+        nullable = false,
+        columnDefinition = "timestamptz"
+    )
     Instant startedAt;
 
     @Column(name = "ended_at", columnDefinition = "timestamptz")

@@ -3,29 +3,31 @@ package com.github.k1mb1.vkr_backend.attendance.domain;
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+@Hidden
 @Entity
 @Table(
     name = "attendances",
     uniqueConstraints = @UniqueConstraint(
         name = "uk_attendance_student_lesson",
-        columnNames = {"student_id", "lesson_id"}
+        columnNames = { "student_id", "lesson_id" }
     ),
     indexes = {
         @Index(name = "idx_attendance_lesson", columnList = "lesson_id"),
-        @Index(name = "idx_attendance_student", columnList = "student_id")
+        @Index(name = "idx_attendance_student", columnList = "student_id"),
     }
 )
 @Getter

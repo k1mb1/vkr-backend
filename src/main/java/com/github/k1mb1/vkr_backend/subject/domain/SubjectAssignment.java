@@ -1,13 +1,12 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
-import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
+import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -19,6 +18,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 // "Учитель ведёт offering — целиком (subgroup=null) или конкретную подгруппу"
 // Заменяет @ManyToMany Subject <-> Teacher
@@ -28,16 +29,17 @@ import lombok.experimental.SuperBuilder;
 //   CREATE UNIQUE INDEX uk_assignment_full_offering
 //     ON subject_assignments (teacher_id, offering_id)
 //     WHERE subgroup_id IS NULL;
+@Hidden
 @Entity
 @Table(
     name = "subject_assignments",
     uniqueConstraints = @UniqueConstraint(
         name = "uk_assignment_unique",
-        columnNames = {"teacher_id", "offering_id", "subgroup_id"}
+        columnNames = { "teacher_id", "offering_id", "subgroup_id" }
     ),
     indexes = {
         @Index(name = "idx_assignment_teacher", columnList = "teacher_id"),
-        @Index(name = "idx_assignment_offering", columnList = "offering_id")
+        @Index(name = "idx_assignment_offering", columnList = "offering_id"),
     }
 )
 @Getter

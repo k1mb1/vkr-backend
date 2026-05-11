@@ -1,6 +1,8 @@
 package com.github.k1mb1.vkr_backend.attendance.domain;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Статус посещаемости студента на занятии")
 public enum AttendanceStatus {
     NONE,
     /**
@@ -19,7 +21,7 @@ public enum AttendanceStatus {
     LATE,
 
     /**
-     * Студент отсутствовал по уважительной причине
+     * Студент отсутствовал по уважительной причине.
      */
-    EXCUSED
+    EXCUSED,
 }

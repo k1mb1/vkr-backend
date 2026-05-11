@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.common.error;
 import static com.github.k1mb1.vkr_backend.common.error.ErrorMessages.*;
 import static org.springframework.http.HttpStatus.*;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
+@Hidden
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

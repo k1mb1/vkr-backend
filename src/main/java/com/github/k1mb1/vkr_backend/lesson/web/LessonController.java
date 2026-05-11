@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.lesson.web;
 
+import com.github.k1mb1.vkr_backend.common.error.ErrorDto;
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.web.filters.LessonFilter;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkScheduleRequest;
@@ -7,6 +8,11 @@ import com.github.k1mb1.vkr_backend.lesson.web.requests.CreateLessonsByTypeReque
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,51 +30,170 @@ import org.springframework.web.bind.annotation.*;
     value = "/api/lessons",
     produces = MediaType.APPLICATION_JSON_VALUE
 )
-@Tag(name = "Lessons", description = "Lesson management")
+@Tag(name = "Lessons", description = "Управление занятиями и расписанием")
 @RestController
 @RequiredArgsConstructor
 public class LessonController {
 
     final LessonApi lessonApi;
 
-    @Operation(summary = "Get lessons page filtered by subject")
+    @Operation(summary = "Получить страницу занятий с фильтрацией по предмету")
+    @ApiResponses(
+        {
+            @ApiResponse(responseCode = "200", description = "Успешно"),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Внутренняя ошибка сервера",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+        }
+    )
     @GetMapping
     public ResponseEntity<Page<LessonResponse>> getPage(
-        @ModelAttribute LessonFilter filter,
+        @ParameterObject @ModelAttribute LessonFilter filter,
         @ParameterObject Pageable pageable
     ) {
         return ResponseEntity.ok(lessonApi.getPage(filter, pageable));
     }
 
-    @Operation(summary = "Partially update lesson")
+    @Operation(summary = "Частично обновить занятие")
+    @ApiResponses(
+        {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Занятие обновлено"
+            ),
+            @ApiResponse(
+                responseCode = "400",
+                description = "Ошибка валидации",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "404",
+                description = "Занятие не найдено",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Внутренняя ошибка сервера",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+        }
+    )
     @PatchMapping("/{id}")
     public ResponseEntity<LessonResponse> update(
-        @PathVariable UUID id,
-        @Valid @RequestBody UpdateLessonRequest request
+        @Parameter(
+            description = "ID занятия",
+            example = "550e8400-e29b-41d4-a716-446655440000"
+        ) @PathVariable UUID id,
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Данные для обновления занятия",
+            required = true
+        ) UpdateLessonRequest request
     ) {
         return ResponseEntity.ok(lessonApi.update(id, request));
     }
 
-    @Operation(summary = "Delete lesson")
+    @Operation(summary = "Удалить занятие")
+    @ApiResponses(
+        {
+            @ApiResponse(responseCode = "204", description = "Занятие удалено"),
+            @ApiResponse(
+                responseCode = "404",
+                description = "Занятие не найдено",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Внутренняя ошибка сервера",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+        }
+    )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(
+        @Parameter(
+            description = "ID занятия",
+            example = "550e8400-e29b-41d4-a716-446655440000"
+        ) @PathVariable UUID id
+    ) {
         lessonApi.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Bulk schedule lessons by weekly day pattern")
+    @Operation(summary = "Массовое создание занятий по недельному шаблону")
+    @ApiResponses(
+        {
+            @ApiResponse(responseCode = "201", description = "Занятия созданы"),
+            @ApiResponse(
+                responseCode = "400",
+                description = "Ошибка валидации",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Внутренняя ошибка сервера",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+        }
+    )
     @PostMapping("/bulk-schedule")
     public ResponseEntity<List<LessonResponse>> bulkSchedule(
-        @Valid @RequestBody BulkScheduleRequest request
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Шаблон расписания",
+            required = true
+        ) BulkScheduleRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonApi.bulkSchedule(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonApi.bulkSchedule(request)
+        );
     }
 
-    @Operation(summary = "Create lessons by type count")
+    @Operation(summary = "Создать занятия по количеству типов")
+    @ApiResponses(
+        {
+            @ApiResponse(responseCode = "201", description = "Занятия созданы"),
+            @ApiResponse(
+                responseCode = "400",
+                description = "Ошибка валидации",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+            @ApiResponse(
+                responseCode = "500",
+                description = "Внутренняя ошибка сервера",
+                content = @Content(
+                    schema = @Schema(implementation = ErrorDto.class)
+                )
+            ),
+        }
+    )
     @PostMapping("/by-type")
     public ResponseEntity<List<LessonResponse>> createByType(
-        @Valid @RequestBody CreateLessonsByTypeRequest request
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Количество занятий по типам",
+            required = true
+        ) CreateLessonsByTypeRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonApi.createByType(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonApi.createByType(request)
+        );
     }
 }

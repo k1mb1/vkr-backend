@@ -26,6 +26,16 @@ spring:
         jwt:
           issuer-uri: ${OAUTH2_RESOURSESERVER_ISSUER_URI}
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+    defaultModelsExpandDepth: 2
+    defaultModelExpandDepth: 2
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}

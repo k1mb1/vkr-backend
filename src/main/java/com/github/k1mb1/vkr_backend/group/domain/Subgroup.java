@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.group.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+@Hidden
 @Entity
 @Table(
     name = "subgroups",

@@ -2,11 +2,9 @@ package com.github.k1mb1.vkr_backend.subject.web.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
 
-@Builder
-@Schema(description = "Запрос на частичное обновление предмета")
-public record UpdateSubjectRequest(
+@Schema(description = "Запрос на создание предмета")
+public record CreateSubjectRequest(
     @Schema(
         description = "Название предмета",
         example = "Математический анализ",
@@ -18,7 +16,5 @@ public record UpdateSubjectRequest(
         description = "Описание предмета",
         example = "Базовый курс математического анализа"
     )
-    String description,
-    @Schema(description = "Флаг архивации предмета", example = "false")
-    Boolean archived
+    String description
 ) {}
