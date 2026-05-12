@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.UUID;
 
-@Schema(description = "Запрос на создание занятий по количеству типов")
+@Schema(name = "CreateLessonsByType", description = "Запрос на создание занятий по количеству типов")
 public record CreateLessonsByTypeRequest(
     @Schema(
         description = "ID предмета",

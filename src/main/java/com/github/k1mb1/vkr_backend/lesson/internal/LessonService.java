@@ -41,7 +41,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    public LessonResponse update(UUID id, UpdateLessonRequest request) {
+    public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
         var lesson = lessonRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
@@ -60,7 +60,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    public void delete(UUID id) {
+    public void deleteLesson(UUID id) {
         var lesson = lessonRepository
             .findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
@@ -68,7 +68,7 @@ class LessonService implements LessonApi {
     }
 
     @Override
-    public Page<LessonResponse> getPage(LessonFilter filter, Pageable pageable) {
+    public Page<LessonResponse> getLessonPage(LessonFilter filter, Pageable pageable) {
         return lessonRepository
             .findAll(new LessonSpecifications(filter).toSpec(), pageable)
             .map(lessonMapper::toResponse);
@@ -76,7 +76,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    public List<LessonResponse> bulkSchedule(BulkScheduleRequest request) {
+    public List<LessonResponse> bulkScheduleLessons(BulkScheduleRequest request) {
         var offerings = requireOfferings(request.subjectId());
         var lessons = new ArrayList<Lesson>();
 
@@ -94,7 +94,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    public List<LessonResponse> createByType(CreateLessonsByTypeRequest request) {
+    public List<LessonResponse> createLessonsByType(CreateLessonsByTypeRequest request) {
         var offerings = requireOfferings(request.subjectId());
         var now = Instant.now();
         var lessons = new ArrayList<Lesson>();

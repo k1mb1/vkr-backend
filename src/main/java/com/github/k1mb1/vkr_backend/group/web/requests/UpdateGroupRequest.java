@@ -9,7 +9,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Запрос на частичное обновление группы")
+@Schema(name = "UpdateGroup", description = "Запрос на частичное обновление группы")
 public record UpdateGroupRequest(
     @Schema(
         description = "Новое название группы",
@@ -26,7 +26,7 @@ public record UpdateGroupRequest(
     List<@Valid StudentPatchRequest> students
 ) {
     @Builder
-    @Schema(description = "Данные студента для обновления состава группы")
+    @Schema(name = "StudentPatch", description = "Данные студента для обновления состава группы")
     public record StudentPatchRequest(
         @Schema(
             description = "ID существующего студента (null для нового)",

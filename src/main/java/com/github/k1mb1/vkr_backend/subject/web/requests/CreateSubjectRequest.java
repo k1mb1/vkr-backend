@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.subject.web.requests;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-@Schema(description = "Запрос на создание предмета")
+@Schema(name = "CreateSubject", description = "Запрос на создание предмета")
 public record CreateSubjectRequest(
     @Schema(
         description = "Название предмета",

@@ -13,13 +13,13 @@ import java.util.UUID;
 
 public interface LessonApi {
 
-    LessonResponse update(UUID id, UpdateLessonRequest request);
+    LessonResponse updateLesson(UUID id, UpdateLessonRequest request);
 
-    void delete(UUID id);
+    void deleteLesson(UUID id);
 
-    Page<LessonResponse> getPage(LessonFilter filter, Pageable pageable);
+    Page<LessonResponse> getLessonPage(LessonFilter filter, Pageable pageable);
 
-    List<LessonResponse> bulkSchedule(BulkScheduleRequest request);
+    List<LessonResponse> bulkScheduleLessons(BulkScheduleRequest request);
 
-    List<LessonResponse> createByType(CreateLessonsByTypeRequest request);
+    List<LessonResponse> createLessonsByType(CreateLessonsByTypeRequest request);
 }

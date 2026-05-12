@@ -6,7 +6,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Информация о подгруппе")
+@Schema(name = "Subgroup", description = "Информация о подгруппе")
 public record SubgroupResponse(
     @Schema(
         description = "ID подгруппы",

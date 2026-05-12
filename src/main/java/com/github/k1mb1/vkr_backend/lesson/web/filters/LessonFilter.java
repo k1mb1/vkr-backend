@@ -5,7 +5,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Фильтр для поиска занятий")
+@Schema(name = "LessonFilter", description = "Фильтр для поиска занятий")
 public record LessonFilter(
     @Schema(
         description = "ID предмета",

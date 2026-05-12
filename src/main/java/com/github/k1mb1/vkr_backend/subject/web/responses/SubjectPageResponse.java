@@ -6,7 +6,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Краткая информация о предмете (для списка)")
+@Schema(name = "SubjectPage", description = "Краткая информация о предмете (для списка)")
 public record SubjectPageResponse(
     @Schema(
         description = "ID предмета",

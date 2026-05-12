@@ -50,11 +50,11 @@ public class GroupsController {
         }
     )
     @GetMapping
-    public ResponseEntity<Page<GroupPageResponse>> getPage(
+    public ResponseEntity<Page<GroupPageResponse>> getGroupPage(
         @ParameterObject @ModelAttribute GroupFilter filter,
         @ParameterObject Pageable pageable
     ) {
-        return ResponseEntity.ok(groupsApi.getPage(filter, pageable));
+        return ResponseEntity.ok(groupsApi.getGroupPage(filter, pageable));
     }
 
     @Operation(summary = "Создать новую группу со списком студентов")
@@ -78,14 +78,14 @@ public class GroupsController {
         }
     )
     @PostMapping
-    public ResponseEntity<GroupResponse> create(
+    public ResponseEntity<GroupResponse> createGroup(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Данные для создания группы",
             required = true
         ) CreateGroupRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            groupsApi.create(request)
+            groupsApi.createGroup(request)
         );
     }
 
@@ -120,7 +120,7 @@ public class GroupsController {
         }
     )
     @PatchMapping("/{id}")
-    public ResponseEntity<GroupResponse> update(
+    public ResponseEntity<GroupResponse> updateGroup(
         @Parameter(
             description = "ID группы",
             example = "550e8400-e29b-41d4-a716-446655440000"
@@ -130,7 +130,7 @@ public class GroupsController {
             required = true
         ) UpdateGroupRequest request
     ) {
-        return ResponseEntity.ok(groupsApi.update(id, request));
+        return ResponseEntity.ok(groupsApi.updateGroup(id, request));
     }
 
     @Operation(summary = "Получить группу по ID")
@@ -154,13 +154,13 @@ public class GroupsController {
         }
     )
     @GetMapping("/{id}")
-    public ResponseEntity<GroupResponse> getById(
+    public ResponseEntity<GroupResponse> getGroupById(
         @Parameter(
             description = "ID группы",
             example = "550e8400-e29b-41d4-a716-446655440000"
         ) @PathVariable UUID id
     ) {
-        return ResponseEntity.ok(groupsApi.getById(id));
+        return ResponseEntity.ok(groupsApi.getGroupById(id));
     }
 
     @Operation(summary = "Удалить группу")
@@ -184,13 +184,13 @@ public class GroupsController {
         }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Void> deleteGroup(
         @Parameter(
             description = "ID группы",
             example = "550e8400-e29b-41d4-a716-446655440000"
         ) @PathVariable UUID id
     ) {
-        groupsApi.delete(id);
+        groupsApi.deleteGroup(id);
         return ResponseEntity.noContent().build();
     }
 }

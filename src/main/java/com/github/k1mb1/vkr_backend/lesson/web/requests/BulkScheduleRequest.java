@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(
+    name = "BulkSchedule",
     description = "Запрос на массовое создание занятий по недельному шаблону"
 )
 public record BulkScheduleRequest(
@@ -29,7 +30,7 @@ public record BulkScheduleRequest(
     @NotEmpty
     List<@Valid Entry> schedules
 ) {
-    @Schema(description = "Элемент шаблона расписания")
+    @Schema(name = "ScheduleEntry", description = "Элемент шаблона расписания")
     public record Entry(
         @Schema(
             description = "Тип занятия",

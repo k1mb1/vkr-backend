@@ -6,7 +6,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Краткая информация о группе (для списка)")
+@Schema(name = "GroupPage", description = "Краткая информация о группе (для списка)")
 public record GroupPageResponse(
     @Schema(
         description = "ID группы",

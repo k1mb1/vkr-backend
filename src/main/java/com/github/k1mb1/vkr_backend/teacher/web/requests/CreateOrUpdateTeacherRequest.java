@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Запрос на создание или обновление преподавателя")
+@Schema(name = "CreateOrUpdateTeacher", description = "Запрос на создание или обновление преподавателя")
 public record CreateOrUpdateTeacherRequest(
     @Schema(
         description = "Имя пользователя преподавателя",

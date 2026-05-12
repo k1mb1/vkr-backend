@@ -7,7 +7,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 
 @Builder
-@Schema(description = "Стандартная модель ошибки API")
+@Schema(name = "Error", description = "Стандартная модель ошибки API")
 public record ErrorDto(
     @Schema(description = "HTTP статус код", example = "404") int status,
     @Schema(description = "Сообщение об ошибке", example = "Entity not found")

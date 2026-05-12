@@ -51,11 +51,11 @@ public class LessonController {
         }
     )
     @GetMapping
-    public ResponseEntity<Page<LessonResponse>> getPage(
+    public ResponseEntity<Page<LessonResponse>> getLessonPage(
         @ParameterObject @ModelAttribute LessonFilter filter,
         @ParameterObject Pageable pageable
     ) {
-        return ResponseEntity.ok(lessonApi.getPage(filter, pageable));
+        return ResponseEntity.ok(lessonApi.getLessonPage(filter, pageable));
     }
 
     @Operation(summary = "Частично обновить занятие")
@@ -89,7 +89,7 @@ public class LessonController {
         }
     )
     @PatchMapping("/{id}")
-    public ResponseEntity<LessonResponse> update(
+    public ResponseEntity<LessonResponse> updateLesson(
         @Parameter(
             description = "ID занятия",
             example = "550e8400-e29b-41d4-a716-446655440000"
@@ -99,7 +99,7 @@ public class LessonController {
             required = true
         ) UpdateLessonRequest request
     ) {
-        return ResponseEntity.ok(lessonApi.update(id, request));
+        return ResponseEntity.ok(lessonApi.updateLesson(id, request));
     }
 
     @Operation(summary = "Удалить занятие")
@@ -123,13 +123,13 @@ public class LessonController {
         }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Void> deleteLesson(
         @Parameter(
             description = "ID занятия",
             example = "550e8400-e29b-41d4-a716-446655440000"
         ) @PathVariable UUID id
     ) {
-        lessonApi.delete(id);
+        lessonApi.deleteLesson(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -154,14 +154,14 @@ public class LessonController {
         }
     )
     @PostMapping("/bulk-schedule")
-    public ResponseEntity<List<LessonResponse>> bulkSchedule(
+    public ResponseEntity<List<LessonResponse>> bulkScheduleLessons(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Шаблон расписания",
             required = true
         ) BulkScheduleRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            lessonApi.bulkSchedule(request)
+            lessonApi.bulkScheduleLessons(request)
         );
     }
 
@@ -186,14 +186,14 @@ public class LessonController {
         }
     )
     @PostMapping("/by-type")
-    public ResponseEntity<List<LessonResponse>> createByType(
+    public ResponseEntity<List<LessonResponse>> createLessonsByType(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Количество занятий по типам",
             required = true
         ) CreateLessonsByTypeRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            lessonApi.createByType(request)
+            lessonApi.createLessonsByType(request)
         );
     }
 }

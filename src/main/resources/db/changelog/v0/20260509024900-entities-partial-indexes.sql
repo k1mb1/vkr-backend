@@ -62,9 +62,6 @@ CREATE TABLE students (
 CREATE INDEX idx_students_group_id    ON students (group_id);
 CREATE INDEX idx_students_subgroup_id ON students (subgroup_id);
 
-CREATE UNIQUE INDEX uk_students_username_active
-    ON students (username)
-    WHERE archived_at IS NULL;
 --rollback DROP TABLE students;
 
 --changeset k1mb1:005-create-subjects

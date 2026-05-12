@@ -40,7 +40,7 @@ class GroupService implements GroupsApi {
 
     @Transactional
     @Override
-    public GroupResponse create(CreateGroupRequest request) {
+    public GroupResponse createGroup(CreateGroupRequest request) {
         var group = groupRepository.save(
             Group.builder().name(request.groupName()).build()
         );
@@ -63,7 +63,7 @@ class GroupService implements GroupsApi {
         }
 
         for (var req : request.students()) {
-            studentApi.create(
+            studentApi.createStudent(
                 CreateStudentRequest.builder()
                     .username(req.username())
                     .groupId(group.getId())
@@ -81,7 +81,7 @@ class GroupService implements GroupsApi {
 
     @Transactional
     @Override
-    public GroupResponse update(UUID id, UpdateGroupRequest request) {
+    public GroupResponse updateGroup(UUID id, UpdateGroupRequest request) {
         var group = groupRepository
             .findById(id)
             .orElseThrow(() ->
@@ -92,7 +92,7 @@ class GroupService implements GroupsApi {
 
         group.setName(request.groupName());
 
-        var existingStudents = studentApi.findByGroup(group.getId());
+        var existingStudents = studentApi.findStudentsByGroup(group.getId());
         var existingById = existingStudents
             .stream()
             .collect(Collectors.toMap(StudentResponse::id, s -> s));
@@ -107,7 +107,7 @@ class GroupService implements GroupsApi {
         // archive removed students
         for (var student : existingStudents) {
             if (!requestIds.contains(student.id())) {
-                studentApi.archive(student.id());
+                studentApi.archiveStudent(student.id());
             }
         }
 
@@ -122,7 +122,7 @@ class GroupService implements GroupsApi {
                         "Student not found in group: " + req.id()
                     );
                 }
-                studentApi.update(
+                studentApi.updateStudent(
                     student.id(),
                     UpdateStudentRequest.builder()
                         .username(req.username())
@@ -130,7 +130,7 @@ class GroupService implements GroupsApi {
                         .build()
                 );
             } else {
-                studentApi.create(
+                studentApi.createStudent(
                     CreateStudentRequest.builder()
                         .username(req.username())
                         .groupId(group.getId())
@@ -144,7 +144,7 @@ class GroupService implements GroupsApi {
     }
 
     @Override
-    public GroupResponse getById(UUID id) {
+    public GroupResponse getGroupById(UUID id) {
         var group = groupRepository
             .findWithDetailsById(id)
             .orElseThrow(() ->
@@ -157,7 +157,7 @@ class GroupService implements GroupsApi {
 
     @Transactional
     @Override
-    public void delete(UUID id) {
+    public void deleteGroup(UUID id) {
         var group = groupRepository
             .findById(id)
             .orElseThrow(() ->
@@ -166,7 +166,7 @@ class GroupService implements GroupsApi {
                 )
             );
 
-        studentApi.deleteByGroup(group.getId());
+        studentApi.deleteStudentsByGroup(group.getId());
         groupRepository.delete(group);
     }
 
@@ -186,7 +186,7 @@ class GroupService implements GroupsApi {
     }
 
     @Override
-    public Page<GroupPageResponse> getPage(
+    public Page<GroupPageResponse> getGroupPage(
         GroupFilter filter,
         Pageable pageable
     ) {

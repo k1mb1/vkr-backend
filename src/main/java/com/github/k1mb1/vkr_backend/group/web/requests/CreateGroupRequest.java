@@ -8,7 +8,7 @@ import java.util.List;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Запрос на создание группы со списком студентов")
+@Schema(name = "CreateGroup", description = "Запрос на создание группы со списком студентов")
 public record CreateGroupRequest(
     @Schema(
         description = "Название группы",

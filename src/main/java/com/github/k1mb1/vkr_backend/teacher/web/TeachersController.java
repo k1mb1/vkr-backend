@@ -58,7 +58,7 @@ public class TeachersController {
         }
     )
     @PutMapping("/{id}")
-    public ResponseEntity<TeacherResponse> createOrUpdate(
+    public ResponseEntity<TeacherResponse> createOrUpdateTeacher(
         @Parameter(
             description = "ID преподавателя",
             example = "550e8400-e29b-41d4-a716-446655440005"
@@ -69,7 +69,7 @@ public class TeachersController {
         ) CreateOrUpdateTeacherRequest request
     ) {
         return ResponseEntity.status(HttpStatus.OK).body(
-            teachersApi.createOrUpdate(id, request)
+            teachersApi.createOrUpdateTeacher(id, request)
         );
     }
 }

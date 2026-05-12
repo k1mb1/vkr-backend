@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Запрос на частичное обновление предмета")
+@Schema(name = "UpdateSubject", description = "Запрос на частичное обновление предмета")
 public record UpdateSubjectRequest(
     @Schema(
         description = "Название предмета",

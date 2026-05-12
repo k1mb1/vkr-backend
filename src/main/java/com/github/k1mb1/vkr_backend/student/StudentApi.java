@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.UUID;
 
 public interface StudentApi {
-    List<StudentResponse> findActiveByGroup(UUID groupId);
+    List<StudentResponse> findActiveStudentsByGroup(UUID groupId);
 
-    List<StudentResponse> findByGroup(UUID groupId);
+    List<StudentResponse> findStudentsByGroup(UUID groupId);
 
-    void update(UUID studentId, UpdateStudentRequest request);
+    void updateStudent(UUID studentId, UpdateStudentRequest request);
 
-    StudentResponse create(CreateStudentRequest request);
+    StudentResponse createStudent(CreateStudentRequest request);
 
-    void archive(UUID studentId);
+    void archiveStudent(UUID studentId);
 
-    void deleteByGroup(UUID groupId);
+    void deleteStudentsByGroup(UUID groupId);
 }

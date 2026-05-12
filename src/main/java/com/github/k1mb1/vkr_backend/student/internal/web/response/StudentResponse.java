@@ -6,7 +6,7 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Информация о студенте")
+@Schema(name = "Student", description = "Информация о студенте")
 public record StudentResponse(
     @Schema(
         description = "ID студента",

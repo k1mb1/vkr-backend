@@ -12,13 +12,13 @@ import java.util.UUID;
 
 public interface GroupsApi {
 
-    GroupResponse create(CreateGroupRequest request);
+    GroupResponse createGroup(CreateGroupRequest request);
 
-    GroupResponse update(UUID id, UpdateGroupRequest request);
+    GroupResponse updateGroup(UUID id, UpdateGroupRequest request);
 
-    GroupResponse getById(UUID id);
+    GroupResponse getGroupById(UUID id);
 
-    void delete(UUID id);
+    void deleteGroup(UUID id);
 
-    Page<GroupPageResponse> getPage(GroupFilter filter, Pageable pageable);
+    Page<GroupPageResponse> getGroupPage(GroupFilter filter, Pageable pageable);
 }

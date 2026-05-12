@@ -7,5 +7,5 @@ import java.util.UUID;
 
 public interface TeachersApi {
 
-    TeacherResponse createOrUpdate(UUID id, CreateOrUpdateTeacherRequest request);
+    TeacherResponse createOrUpdateTeacher(UUID id, CreateOrUpdateTeacherRequest request);
 }

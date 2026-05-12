@@ -12,9 +12,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface SubjectsApi {
-    SubjectResponse update(UUID id, UpdateSubjectRequest request);
+    SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request);
 
-    Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable);
+    Page<SubjectPageResponse> getSubjectPage(SubjectFilter filter, Pageable pageable);
 
-    SubjectResponse create(@Valid CreateSubjectRequest request);
+    SubjectResponse createSubject(@Valid CreateSubjectRequest request);
 }

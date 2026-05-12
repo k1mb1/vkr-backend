@@ -52,11 +52,11 @@ public class SubjectsController {
         }
     )
     @GetMapping
-    public ResponseEntity<Page<SubjectPageResponse>> getPage(
+    public ResponseEntity<Page<SubjectPageResponse>> getSubjectPage(
         @ParameterObject @ModelAttribute SubjectFilter filter,
         @ParameterObject Pageable pageable
     ) {
-        return ResponseEntity.ok(subjectsApi.getPage(filter, pageable));
+        return ResponseEntity.ok(subjectsApi.getSubjectPage(filter, pageable));
     }
 
     @Operation(summary = "Частично обновить предмет")
@@ -90,7 +90,7 @@ public class SubjectsController {
         }
     )
     @PatchMapping("/{id}")
-    public ResponseEntity<SubjectResponse> update(
+    public ResponseEntity<SubjectResponse> updateSubject(
         @Parameter(
             description = "ID предмета",
             example = "550e8400-e29b-41d4-a716-446655440002"
@@ -100,7 +100,7 @@ public class SubjectsController {
             required = true
         ) UpdateSubjectRequest request
     ) {
-        return ResponseEntity.ok(subjectsApi.update(id, request));
+        return ResponseEntity.ok(subjectsApi.updateSubject(id, request));
     }
 
     @Operation(summary = "Создать предмет")
@@ -124,14 +124,14 @@ public class SubjectsController {
         }
     )
     @PostMapping
-    public ResponseEntity<SubjectResponse> create(
+    public ResponseEntity<SubjectResponse> createSubject(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Данные для создания предмета",
             required = true
         ) CreateSubjectRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            subjectsApi.create(request)
+            subjectsApi.createSubject(request)
         );
     }
 }

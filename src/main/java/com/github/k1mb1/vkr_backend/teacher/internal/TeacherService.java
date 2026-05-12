@@ -20,7 +20,7 @@ class TeacherService implements TeachersApi {
 
     @Transactional
     @Override
-    public TeacherResponse createOrUpdate(UUID id, CreateOrUpdateTeacherRequest request) {
+    public TeacherResponse createOrUpdateTeacher(UUID id, CreateOrUpdateTeacherRequest request) {
         var teacher = teacherRepository
             .findById(id)
             .orElseGet(() -> Teacher.builder().id(id).build());

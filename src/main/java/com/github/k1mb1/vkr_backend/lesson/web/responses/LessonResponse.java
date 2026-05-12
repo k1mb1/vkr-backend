@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
 
-@Schema(description = "Информация о занятии")
+@Schema(name = "Lesson", description = "Информация о занятии")
 public record LessonResponse(
     @Schema(
         description = "ID занятия",

@@ -25,7 +25,7 @@ class SubjectService implements SubjectsApi {
 
     @Transactional
     @Override
-    public SubjectResponse update(UUID id, UpdateSubjectRequest request) {
+    public SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request) {
         var subject = subjectRepository
             .findById(id)
             .orElseThrow(() ->
@@ -39,7 +39,7 @@ class SubjectService implements SubjectsApi {
     }
 
     @Override
-    public Page<SubjectPageResponse> getPage(
+    public Page<SubjectPageResponse> getSubjectPage(
         SubjectFilter filter,
         Pageable pageable
     ) {
@@ -50,7 +50,7 @@ class SubjectService implements SubjectsApi {
 
     @Transactional
     @Override
-    public SubjectResponse create(CreateSubjectRequest request) {
+    public SubjectResponse createSubject(CreateSubjectRequest request) {
         var subject = Subject.builder()
                 .name(request.name())
                 .description(request.description())

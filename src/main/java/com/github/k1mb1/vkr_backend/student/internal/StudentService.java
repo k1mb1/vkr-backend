@@ -24,7 +24,7 @@ class StudentService implements StudentApi {
 
     final StudentMapper studentMapper;
 
-    public List<StudentResponse> findActiveByGroup(UUID groupId) {
+    public List<StudentResponse> findActiveStudentsByGroup(UUID groupId) {
         return studentRepository
             .findByGroupIdAndArchivedAtIsNull(groupId)
             .stream()
@@ -32,7 +32,7 @@ class StudentService implements StudentApi {
             .toList();
     }
 
-    public List<StudentResponse> findByGroup(UUID groupId) {
+    public List<StudentResponse> findStudentsByGroup(UUID groupId) {
         return studentRepository
             .findByGroupId(groupId)
             .stream()
@@ -41,7 +41,7 @@ class StudentService implements StudentApi {
     }
 
     @Transactional
-    public void archive(UUID studentId) {
+    public void archiveStudent(UUID studentId) {
         var student = studentRepository
             .findById(studentId)
             .orElseThrow(() ->
@@ -53,7 +53,7 @@ class StudentService implements StudentApi {
     }
 
     @Transactional
-    public void update(UUID studentId, UpdateStudentRequest request) {
+    public void updateStudent(UUID studentId, UpdateStudentRequest request) {
         var student = studentRepository
             .findById(studentId)
             .orElseThrow(() ->
@@ -66,7 +66,7 @@ class StudentService implements StudentApi {
     }
 
     @Transactional
-    public StudentResponse create(CreateStudentRequest request) {
+    public StudentResponse createStudent(CreateStudentRequest request) {
         var group = groupReferenceService.getGroupReferenceById(
             request.groupId()
         );
@@ -85,7 +85,7 @@ class StudentService implements StudentApi {
     }
 
     @Transactional
-    public void deleteByGroup(UUID groupId) {
+    public void deleteStudentsByGroup(UUID groupId) {
         studentRepository.deleteByGroupId(groupId);
     }
 }
