@@ -36,29 +36,6 @@ public class SubjectsController {
 
     final SubjectsApi subjectsApi;
 
-    @Operation(
-        summary = "Получить страницу предметов с фильтрацией по названию"
-    )
-    @ApiResponses(
-        {
-            @ApiResponse(responseCode = "200", description = "Успешно"),
-            @ApiResponse(
-                responseCode = "500",
-                description = "Внутренняя ошибка сервера",
-                content = @Content(
-                    schema = @Schema(implementation = ErrorDto.class)
-                )
-            ),
-        }
-    )
-    @GetMapping
-    public ResponseEntity<Page<SubjectPageResponse>> getSubjectPage(
-        @ParameterObject @ModelAttribute SubjectFilter filter,
-        @ParameterObject Pageable pageable
-    ) {
-        return ResponseEntity.ok(subjectsApi.getSubjectPage(filter, pageable));
-    }
-
     @Operation(summary = "Частично обновить предмет")
     @ApiResponses(
         {
