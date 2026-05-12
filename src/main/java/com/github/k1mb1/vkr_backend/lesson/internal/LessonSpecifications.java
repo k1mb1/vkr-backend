@@ -8,10 +8,6 @@ import java.util.UUID;
 
 record LessonSpecifications(LessonFilter filter) {
 
-    public Specification<Lesson> toSpec() {
-        return bySubjectId(filter.subjectId());
-    }
-
     private static Specification<Lesson> bySubjectId(UUID subjectId) {
         if (subjectId == null) {
             return null;
@@ -21,5 +17,9 @@ record LessonSpecifications(LessonFilter filter) {
             var subject = offering.join("subject");
             return cb.equal(subject.get("id"), subjectId);
         };
+    }
+
+    public Specification<Lesson> toSpec() {
+        return bySubjectId(filter.subjectId());
     }
 }

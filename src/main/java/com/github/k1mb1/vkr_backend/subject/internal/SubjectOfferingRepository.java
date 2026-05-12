@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-interface SubjectOfferingRepository extends JpaRepository<SubjectOffering, UUID> {
+interface SubjectOfferingRepository
+    extends JpaRepository<SubjectOffering, UUID> {
 
     List<SubjectOffering> findBySubjectId(UUID subjectId);
 }

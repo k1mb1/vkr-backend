@@ -2,32 +2,27 @@ package com.github.k1mb1.vkr_backend.lesson.web.requests;
 
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.UUID;
 
-@Schema(name = "UpdateLesson", description = "Запрос на частичное обновление занятия")
+@Schema(description = "Запрос на частичное обновление занятия")
 public record UpdateLessonRequest(
-    @Schema(description = "Тип занятия") LessonType type,
-    @Schema(
-        description = "Время начала занятия",
-        example = "2024-01-15T09:00:00Z"
-    )
+    @Schema(description = "Тип занятия")
+    LessonType type,
+
+    @Schema(description = "Время начала занятия")
     Instant startedAt,
-    @Schema(
-        description = "Время окончания занятия",
-        example = "2024-01-15T10:30:00Z"
-    )
+
+    @Schema(description = "Время окончания занятия")
     Instant endedAt,
-    @Schema(description = "Тема занятия", example = "Введение в алгебру")
+
+    @Schema(description = "Тема занятия")
     String topic,
-    @Schema(
-        description = "ID преподавателя",
-        example = "550e8400-e29b-41d4-a716-446655440005"
-    )
+
+    @Schema(description = "ID преподавателя")
     UUID teacherId,
-    @Schema(
-        description = "ID подгруппы (null для всей группы)",
-        example = "550e8400-e29b-41d4-a716-446655440004"
-    )
+
+    @Schema(description = "ID подгруппы (null для всей группы)")
     UUID subgroupId
 ) {}

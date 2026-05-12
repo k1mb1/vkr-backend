@@ -3,16 +3,8 @@ package com.github.k1mb1.vkr_backend.subject.domain;
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,22 +15,21 @@ import lombok.experimental.SuperBuilder;
 @Hidden
 @Entity
 @Table(
-    name = "subject_offerings",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_offering_subject_group_period",
-        columnNames = { "subject_id", "group_id" }
-    ),
-    indexes = {
-        @Index(name = "idx_offering_subject", columnList = "subject_id"),
-        @Index(name = "idx_offering_group", columnList = "group_id"),
-    }
+    name = "subject_offerings", uniqueConstraints = @UniqueConstraint(
+    name = "uk_offering_subject_group_period", columnNames = { "subject_id", "group_id" }
+), indexes = {
+    @Index(name = "idx_offering_subject", columnList = "subject_id"), @Index(
+    name = "idx_offering_group", columnList = "group_id"
+),
+}
 )
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubjectOffering extends BaseEntity {
+public class SubjectOffering
+    extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "subject_id", nullable = false)

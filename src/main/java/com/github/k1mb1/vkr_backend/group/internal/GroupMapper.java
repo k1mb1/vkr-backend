@@ -26,6 +26,10 @@ interface GroupMapper {
     @Mapping(target = "createdAt", source = "group.createdAt")
     @Mapping(target = "updatedAt", source = "group.updatedAt")
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
-    GroupResponse toResponse(Group group, List<SubgroupResponse> subgroups, List<StudentResponse> students);
+    GroupResponse toResponse(
+        Group group,
+        List<SubgroupResponse> subgroups,
+        List<StudentResponse> students
+    );
 }
 

@@ -14,39 +14,41 @@ import com.github.k1mb1.vkr_backend.student.internal.StudentMapper;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class GroupService implements GroupsApi {
+class GroupService
+    implements GroupsApi {
 
     final GroupRepository groupRepository;
+
     final SubgroupRepository subgroupRepository;
 
     final StudentApi studentApi;
 
     final SubgroupMapper subgroupMapper;
+
     final GroupMapper groupMapper;
+
     final StudentMapper studentMapper;
 
     @Transactional
     @Override
     public GroupResponse createGroup(CreateGroupRequest request) {
-        var group = groupRepository.save(
-            Group.builder().name(request.groupName()).build()
-        );
+        var group = groupRepository.save(Group.builder().name(request.groupName()).build());
 
-        var uniqueIndices = request
-            .students()
+        var uniqueIndices = request.students()
             .stream()
             .map(StudentGroupMemberRequest::subgroupIndex)
             .filter(Objects::nonNull)
@@ -55,25 +57,23 @@ class GroupService implements GroupsApi {
 
         var indexToSubgroup = new HashMap<Integer, Subgroup>();
         for (var index : uniqueIndices) {
-            var subgroup = subgroupRepository.save(
-                Subgroup.builder().index(index).group(group).build()
-            );
+            var subgroup = subgroupRepository.save(Subgroup.builder()
+                                                       .index(index)
+                                                       .group(group)
+                                                       .build());
             group.getSubgroups().add(subgroup);
             indexToSubgroup.put(index, subgroup);
         }
 
         for (var req : request.students()) {
-            studentApi.createStudent(
-                CreateStudentRequest.builder()
-                    .username(req.username())
-                    .groupId(group.getId())
-                    .subgroupId(
-                        req.subgroupIndex() != null
-                            ? indexToSubgroup.get(req.subgroupIndex()).getId()
-                            : null
-                    )
-                    .build()
-            );
+            studentApi.createStudent(CreateStudentRequest.builder()
+                                         .username(req.username())
+                                         .groupId(group.getId())
+                                         .subgroupId(req.subgroupIndex() != null
+                                                     ? indexToSubgroup.get(req.subgroupIndex())
+                                                       .getId()
+                                                     : null)
+                                         .build());
         }
 
         return toResponse(group);
@@ -82,23 +82,16 @@ class GroupService implements GroupsApi {
     @Transactional
     @Override
     public GroupResponse updateGroup(UUID id, UpdateGroupRequest request) {
-        var group = groupRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new jakarta.persistence.EntityNotFoundException(
-                    "Group not found: " + id
-                )
-            );
+        var group = groupRepository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + id));
 
         group.setName(request.groupName());
 
         var existingStudents = studentApi.findStudentsByGroup(group.getId());
-        var existingById = existingStudents
-            .stream()
+        var existingById = existingStudents.stream()
             .collect(Collectors.toMap(StudentResponse::id, s -> s));
 
-        var requestIds = request
-            .students()
+        var requestIds = request.students()
             .stream()
             .map(UpdateGroupRequest.StudentPatchRequest::id)
             .filter(Objects::nonNull)
@@ -115,28 +108,22 @@ class GroupService implements GroupsApi {
         for (var req : request.students()) {
             if (req.id() != null) {
                 var student = existingById.get(req.id());
-                if (
-                    student == null || !student.groupId().equals(group.getId())
-                ) {
+                if (student == null || !student.groupId().equals(group.getId())) {
                     throw new jakarta.persistence.EntityNotFoundException(
-                        "Student not found in group: " + req.id()
-                    );
+                        "Student not found in group: " + req.id());
                 }
-                studentApi.updateStudent(
-                    student.id(),
-                    UpdateStudentRequest.builder()
-                        .username(req.username())
-                        .subgroupId(req.subgroupId())
-                        .build()
+                studentApi.updateStudent(student.id(),
+                                         UpdateStudentRequest.builder()
+                                             .username(req.username())
+                                             .subgroupId(req.subgroupId())
+                                             .build()
                 );
             } else {
-                studentApi.createStudent(
-                    CreateStudentRequest.builder()
-                        .username(req.username())
-                        .groupId(group.getId())
-                        .subgroupId(req.subgroupId())
-                        .build()
-                );
+                studentApi.createStudent(CreateStudentRequest.builder()
+                                             .username(req.username())
+                                             .groupId(group.getId())
+                                             .subgroupId(req.subgroupId())
+                                             .build());
             }
         }
 
@@ -145,39 +132,24 @@ class GroupService implements GroupsApi {
 
     @Override
     public GroupResponse getGroupById(UUID id) {
-        var group = groupRepository
-            .findWithDetailsById(id)
-            .orElseThrow(() ->
-                new jakarta.persistence.EntityNotFoundException(
-                    "Group not found: " + id
-                )
-            );
+        var group = groupRepository.findWithDetailsById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + id));
         return toResponse(group);
     }
 
     @Transactional
     @Override
     public void deleteGroup(UUID id) {
-        var group = groupRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new jakarta.persistence.EntityNotFoundException(
-                    "Group not found: " + id
-                )
-            );
+        var group = groupRepository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + id));
 
         studentApi.deleteStudentsByGroup(group.getId());
         groupRepository.delete(group);
     }
 
     private GroupResponse toResponse(Group group) {
-        var subgroups = group
-            .getSubgroups()
-            .stream()
-            .map(subgroupMapper::toResponse)
-            .toList();
-        var students = group
-            .getStudents()
+        var subgroups = group.getSubgroups().stream().map(subgroupMapper::toResponse).toList();
+        var students = group.getStudents()
             .stream()
             .filter(s -> s.getArchivedAt() == null)
             .map(studentMapper::toResponse)
@@ -186,12 +158,8 @@ class GroupService implements GroupsApi {
     }
 
     @Override
-    public Page<GroupPageResponse> getGroupPage(
-        GroupFilter filter,
-        Pageable pageable
-    ) {
-        return groupRepository
-            .findAll(new GroupSpecifications(filter).toSpec(), pageable)
+    public Page<GroupPageResponse> getGroupPage(GroupFilter filter, Pageable pageable) {
+        return groupRepository.findAll(new GroupSpecifications(filter).toSpec(), pageable)
             .map(groupMapper::toPageResponse);
     }
 }

@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-interface LessonRepository extends JpaRepository<Lesson, UUID>, JpaSpecificationExecutor<Lesson> {
-}
+interface LessonRepository
+    extends JpaRepository<Lesson, UUID>, JpaSpecificationExecutor<Lesson> {}

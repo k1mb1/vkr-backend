@@ -23,11 +23,10 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Subject extends ArchivableEntity {
+public class Subject
+    extends ArchivableEntity {
 
-    @Column(nullable = false)
-    String name;
+    @Column(nullable = false) String name;
 
-    @Column(columnDefinition = "text")
-    String description;
+    @Column(columnDefinition = "text") String description;
 }

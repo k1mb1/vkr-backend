@@ -6,16 +6,16 @@ import org.springframework.data.jpa.domain.Specification;
 
 record GroupSpecifications(GroupFilter filter) {
 
-    public Specification<Group> toSpec() {
-        return nameContains(filter.name());
-    }
-
     private static Specification<Group> nameContains(String name) {
         if (name == null || name.isBlank()) {
             return null;
         }
         var pattern = "%" + name.toLowerCase() + "%";
         return (root, query, cb) -> cb.like(cb.lower(root.get("name")), pattern);
+    }
+
+    public Specification<Group> toSpec() {
+        return nameContains(filter.name());
     }
 }
 

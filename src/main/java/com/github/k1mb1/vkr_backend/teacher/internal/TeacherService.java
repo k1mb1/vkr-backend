@@ -1,18 +1,20 @@
 package com.github.k1mb1.vkr_backend.teacher.internal;
 
 import com.github.k1mb1.vkr_backend.teacher.TeachersApi;
-import com.github.k1mb1.vkr_backend.teacher.web.response.TeacherResponse;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
-import java.util.UUID;
+import com.github.k1mb1.vkr_backend.teacher.web.response.TeacherResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
-class TeacherService implements TeachersApi {
+class TeacherService
+    implements TeachersApi {
 
     final TeacherRepository teacherRepository;
 
@@ -21,8 +23,7 @@ class TeacherService implements TeachersApi {
     @Transactional
     @Override
     public TeacherResponse createOrUpdateTeacher(UUID id, CreateOrUpdateTeacherRequest request) {
-        var teacher = teacherRepository
-            .findById(id)
+        var teacher = teacherRepository.findById(id)
             .orElseGet(() -> Teacher.builder().id(id).build());
 
         teacherMapper.updateEntity(request, teacher);

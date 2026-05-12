@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
-import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -18,12 +17,8 @@ import org.springframework.context.annotation.Configuration;
         version = "v1",
         description = "API для управления учебным процессом: группы, студенты, предметы, преподаватели, занятия и посещаемость.",
         contact = @Contact(name = "k1mb1", url = "https://github.com/k1mb1"),
-        license = @License(
-            name = "MIT License",
-            url = "https://opensource.org/licenses/MIT"
-        )
-    ),
-    security = @SecurityRequirement(name = "bearerAuth")
+        license = @License(name = "MIT License", url = "https://opensource.org/licenses/MIT")
+    ), security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(
     name = "bearerAuth",

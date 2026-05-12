@@ -10,7 +10,8 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-class SubjectOfferingReferenceServiceImpl implements SubjectOfferingReferenceService {
+class SubjectOfferingReferenceServiceImpl
+    implements SubjectOfferingReferenceService {
 
     final SubjectOfferingRepository subjectOfferingRepository;
 

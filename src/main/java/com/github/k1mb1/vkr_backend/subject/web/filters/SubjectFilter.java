@@ -4,11 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 @Builder
-@Schema(name = "SubjectFilter", description = "Фильтр для поиска предметов")
+@Schema(description = "Фильтр для поиска предметов")
 public record SubjectFilter(
-    @Schema(
-        description = "Название предмета (частичное совпадение)",
-        example = "Математика"
-    )
+    @Schema(description = "Название предмета (частичное совпадение)")
     String name
 ) {}

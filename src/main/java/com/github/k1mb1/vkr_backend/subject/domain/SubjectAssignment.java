@@ -5,14 +5,7 @@ import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,22 +25,21 @@ import org.hibernate.type.SqlTypes;
 @Hidden
 @Entity
 @Table(
-    name = "subject_assignments",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uk_assignment_unique",
-        columnNames = { "teacher_id", "offering_id", "subgroup_id" }
-    ),
-    indexes = {
-        @Index(name = "idx_assignment_teacher", columnList = "teacher_id"),
-        @Index(name = "idx_assignment_offering", columnList = "offering_id"),
-    }
+    name = "subject_assignments", uniqueConstraints = @UniqueConstraint(
+    name = "uk_assignment_unique", columnNames = { "teacher_id", "offering_id", "subgroup_id" }
+), indexes = {
+    @Index(name = "idx_assignment_teacher", columnList = "teacher_id"), @Index(
+    name = "idx_assignment_offering", columnList = "offering_id"
+),
+}
 )
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubjectAssignment extends BaseEntity {
+public class SubjectAssignment
+    extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)

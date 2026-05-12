@@ -13,37 +13,41 @@ import com.github.k1mb1.vkr_backend.subject.SubjectOfferingReferenceService;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectOffering;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
-import java.time.DayOfWeek;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class LessonService implements LessonApi {
+class LessonService
+    implements LessonApi {
 
     final LessonRepository lessonRepository;
+
     final LessonMapper lessonMapper;
+
     final GroupReferenceService groupReferenceService;
+
     final TeacherReferenceService teacherReferenceService;
+
     final SubjectOfferingReferenceService subjectOfferingReferenceService;
 
     @Transactional
     @Override
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
-        var lesson = lessonRepository
-            .findById(id)
+        var lesson = lessonRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
 
         lessonMapper.updateEntity(request, lesson);
@@ -61,16 +65,14 @@ class LessonService implements LessonApi {
     @Transactional
     @Override
     public void deleteLesson(UUID id) {
-        var lesson = lessonRepository
-            .findById(id)
+        var lesson = lessonRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
         lessonRepository.delete(lesson);
     }
 
     @Override
     public Page<LessonResponse> getLessonPage(LessonFilter filter, Pageable pageable) {
-        return lessonRepository
-            .findAll(new LessonSpecifications(filter).toSpec(), pageable)
+        return lessonRepository.findAll(new LessonSpecifications(filter).toSpec(), pageable)
             .map(lessonMapper::toResponse);
     }
 
@@ -86,10 +88,7 @@ class LessonService implements LessonApi {
             }
         }
 
-        return lessonRepository.saveAll(lessons)
-            .stream()
-            .map(lessonMapper::toResponse)
-            .toList();
+        return lessonRepository.saveAll(lessons).stream().map(lessonMapper::toResponse).toList();
     }
 
     @Transactional
@@ -108,10 +107,7 @@ class LessonService implements LessonApi {
             }
         }
 
-        return lessonRepository.saveAll(lessons)
-            .stream()
-            .map(lessonMapper::toResponse)
-            .toList();
+        return lessonRepository.saveAll(lessons).stream().map(lessonMapper::toResponse).toList();
     }
 
     private List<SubjectOffering> requireOfferings(UUID subjectId) {
@@ -122,7 +118,10 @@ class LessonService implements LessonApi {
         return offerings;
     }
 
-    private List<Lesson> generateSchedule(SubjectOffering offering, BulkScheduleRequest.Entry entry) {
+    private List<Lesson> generateSchedule(
+        SubjectOffering offering,
+        BulkScheduleRequest.Entry entry
+    ) {
         var lessons = new ArrayList<Lesson>();
         var patterns = entry.daysOfWeek();
         var weekStart = entry.startDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -135,10 +134,15 @@ class LessonService implements LessonApi {
                 .toList();
 
             for (var dow : sortedDays) {
-                if (lessons.size() >= entry.totalCount()) break;
+                if (lessons.size() >= entry.totalCount()) {
+                    break;
+                }
                 var lessonDate = weekStart.plusDays(dow.getValue() - DayOfWeek.MONDAY.getValue());
                 if (!lessonDate.isBefore(entry.startDate())) {
-                    lessons.add(lesson(offering, entry.type(), lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()));
+                    lessons.add(lesson(offering,
+                                       entry.type(),
+                                       lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()
+                    ));
                 }
             }
 
@@ -150,10 +154,6 @@ class LessonService implements LessonApi {
     }
 
     private Lesson lesson(SubjectOffering offering, LessonType type, Instant startedAt) {
-        return Lesson.builder()
-            .offering(offering)
-            .type(type)
-            .startedAt(startedAt)
-            .build();
+        return Lesson.builder().offering(offering).type(type).startedAt(startedAt).build();
     }
 }

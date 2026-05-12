@@ -5,20 +5,17 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 
 @Builder
-@Schema(name = "UpdateSubject", description = "Запрос на частичное обновление предмета")
+@Schema(description = "Запрос на частичное обновление предмета")
 public record UpdateSubjectRequest(
     @Schema(
-        description = "Название предмета",
-        example = "Математический анализ",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Название предмета", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotBlank
     String name,
-    @Schema(
-        description = "Описание предмета",
-        example = "Базовый курс математического анализа"
-    )
+
+    @Schema(description = "Описание предмета")
     String description,
-    @Schema(description = "Флаг архивации предмета", example = "false")
+
+    @Schema(description = "Флаг архивации предмета")
     Boolean archived
 ) {}

@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-interface SubjectAssignmentRepository extends JpaRepository<SubjectAssignment, UUID> {}
+interface SubjectAssignmentRepository
+    extends JpaRepository<SubjectAssignment, UUID> {}

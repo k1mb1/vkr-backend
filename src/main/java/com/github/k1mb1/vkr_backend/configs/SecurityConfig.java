@@ -1,9 +1,5 @@
 package com.github.k1mb1.vkr_backend.configs;
 
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
-
-import java.util.Arrays;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,21 +13,23 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+import java.util.List;
+
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
     static final String[] PUBLIC_ENDPOINTS = {
-        "/swagger-ui/**",
-        "/v3/api-docs/**",
-        "/v3/api-docs",
+        "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs"
     };
 
     private final JwtAuthConverter jwtAuthConverter;
 
-    @Value("${app.cors.allowed-origins}")
-    String[] allowedOrigins;
+    @Value("${app.cors.allowed-origins}") String[] allowedOrigins;
 
     public SecurityConfig(JwtAuthConverter jwtAuthConverter) {
         this.jwtAuthConverter = jwtAuthConverter;
@@ -39,24 +37,14 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
-        return http
-            .cors(Customizer.withDefaults())
+        return http.cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(authorizeHttpRequests ->
-                authorizeHttpRequests
-                    .requestMatchers(PUBLIC_ENDPOINTS)
-                    .permitAll()
-                    .anyRequest()
-                    .permitAll()
-            )
-            .sessionManagement(sessionManagement ->
-                sessionManagement.sessionCreationPolicy(STATELESS)
-            )
-            .oauth2ResourceServer(oauth2ResourceServer ->
-                oauth2ResourceServer.jwt(jwt ->
-                    jwt.jwtAuthenticationConverter(jwtAuthConverter)
-                )
-            )
+            .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests.requestMatchers(
+                PUBLIC_ENDPOINTS).permitAll().anyRequest().permitAll())
+            .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
+                STATELESS))
+            .oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer.jwt(jwt -> jwt.jwtAuthenticationConverter(
+                jwtAuthConverter)))
             .build();
     }
 
@@ -64,9 +52,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        config.setAllowedMethods(
-            List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-        );
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         // Все заголовки включая Authorization
         config.setAllowedHeaders(List.of("*"));
@@ -77,8 +63,7 @@ public class SecurityConfig {
         // Кешировать preflight на 1 час
         config.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source =
-            new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
