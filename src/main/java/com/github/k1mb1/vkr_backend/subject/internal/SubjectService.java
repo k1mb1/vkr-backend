@@ -5,11 +5,15 @@ import com.github.k1mb1.vkr_backend.subject.SubjectsApi;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectAssignment;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectOffering;
+import com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,5 +68,12 @@ class SubjectService
                                              .build());
 
         return subjectMapper.toFullResponse(subject);
+    }
+
+    @Override
+    public Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable) {
+        return subjectRepository.findAll(new SubjectSpecifications(filter).toSpecification(),
+                                         pageable
+        ).map(subjectMapper::toResponse);
     }
 }

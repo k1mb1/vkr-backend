@@ -1,14 +1,19 @@
 package com.github.k1mb1.vkr_backend.subject.web;
 
 import com.github.k1mb1.vkr_backend.subject.SubjectsApi;
+import com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -53,5 +58,16 @@ public class SubjectsController {
         CreateSubjectRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(subjectsApi.createSubject(request));
+    }
+
+    @Operation(summary = "Get subjects page filtered by name")
+    @GetMapping
+    public ResponseEntity<Page<SubjectPageResponse>> getPage(
+        @ParameterObject
+        @ModelAttribute
+        SubjectFilter filter,
+        @ParameterObject Pageable pageable
+    ) {
+        return ResponseEntity.ok(subjectsApi.getPage(filter, pageable));
     }
 }

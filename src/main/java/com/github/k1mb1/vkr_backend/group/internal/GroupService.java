@@ -159,7 +159,7 @@ class GroupService
 
     @Override
     public Page<GroupPageResponse> getGroupPage(GroupFilter filter, Pageable pageable) {
-        return groupRepository.findAll(new GroupSpecifications(filter).toSpec(), pageable)
+        return groupRepository.findAll(new GroupSpecifications(filter).toSpecification(), pageable)
             .map(groupMapper::toPageResponse);
     }
 }

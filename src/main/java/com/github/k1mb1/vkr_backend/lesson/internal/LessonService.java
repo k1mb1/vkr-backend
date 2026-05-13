@@ -72,13 +72,16 @@ class LessonService
 
     @Override
     public Page<LessonResponse> getLessonPage(LessonFilter filter, Pageable pageable) {
-        return lessonRepository.findAll(new LessonSpecifications(filter).toSpec(), pageable)
-            .map(lessonMapper::toResponse);
+        return lessonRepository.findAll(new LessonSpecifications(filter).toSpecification(),
+                                        pageable
+        ).map(lessonMapper::toResponse);
     }
 
     @Transactional
     @Override
-    public List<LessonResponse> bulkScheduleLessons(BulkScheduleRequest request) {
+    public List<LessonResponse> bulkScheduleLessons(
+        BulkScheduleRequest request
+    ) {
         var offerings = requireOfferings(request.subjectId());
         var lessons = new ArrayList<Lesson>();
 
@@ -93,7 +96,9 @@ class LessonService
 
     @Transactional
     @Override
-    public List<LessonResponse> createLessonsByType(CreateLessonsByTypeRequest request) {
+    public List<LessonResponse> createLessonsByType(
+        CreateLessonsByTypeRequest request
+    ) {
         var offerings = requireOfferings(request.subjectId());
         var now = Instant.now();
         var lessons = new ArrayList<Lesson>();

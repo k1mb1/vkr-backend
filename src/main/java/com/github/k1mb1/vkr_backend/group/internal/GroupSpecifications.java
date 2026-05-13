@@ -5,17 +5,17 @@ import com.github.k1mb1.vkr_backend.group.web.filters.GroupFilter;
 import org.springframework.data.jpa.domain.Specification;
 
 record GroupSpecifications(GroupFilter filter) {
-
-    private static Specification<Group> nameContains(String name) {
-        if (name == null || name.isBlank()) {
-            return null;
-        }
-        var pattern = "%" + name.toLowerCase() + "%";
-        return (root, query, cb) -> cb.like(cb.lower(root.get("name")), pattern);
+    public Specification<Group> toSpecification() {
+        return nameContainsSpec();
     }
 
-    public Specification<Group> toSpec() {
-        return nameContains(filter.name());
+    private Specification<Group> nameContainsSpec() {
+        return (root, query, cb) -> {
+            if (filter.name() == null || filter.name().isBlank()) {
+                return null;
+            }
+            var pattern = "%" + filter.name().toLowerCase() + "%";
+            return cb.like(cb.lower(root.get("name")), pattern);
+        };
     }
 }
-
