@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.teacher.web;
 
 import com.github.k1mb1.vkr_backend.common.error.ErrorDto;
 import com.github.k1mb1.vkr_backend.teacher.TeachersApi;
+import com.github.k1mb1.vkr_backend.teacher.web.filters.TeacherFilter;
 import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
 import com.github.k1mb1.vkr_backend.teacher.web.response.TeacherResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -56,5 +60,16 @@ public class TeachersController {
     ) {
         return ResponseEntity.status(HttpStatus.OK)
             .body(teachersApi.createOrUpdateTeacher(id, request));
+    }
+
+    @Operation(summary = "Получение преподавателей")
+    @GetMapping
+    public ResponseEntity<Page<TeacherResponse>> getPageTeachers(
+        @ParameterObject
+        @ModelAttribute
+        TeacherFilter filter,
+        @ParameterObject Pageable pageable
+    ) {
+        return ResponseEntity.ok(teachersApi.getPage(filter, pageable));
     }
 }

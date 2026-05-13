@@ -10,6 +10,7 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectTeachingRowResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,7 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -72,8 +73,62 @@ class SubjectService
 
     @Override
     public Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable) {
-        return subjectRepository.findAll(new SubjectSpecifications(filter).toSpecification(),
-                                         pageable
-        ).map(subjectMapper::toResponse);
+        return subjectRepository.findAll(
+                new SubjectSpecifications(filter).toSpecification(),
+                pageable
+            )
+            .map(subjectMapper::toResponse);
+    }
+
+    @Override
+    public List<SubjectTeachingRowResponse> getTeachingRows(UUID subjectId) {
+        var offerings = subjectOfferingRepository.findBySubjectIdFetchGroup(subjectId);
+        if (offerings.isEmpty()) {
+            return List.of();
+        }
+
+        var offeringIds = offerings.stream().map(SubjectOffering::getId).toList();
+        Map<UUID, List<SubjectAssignment>> assignmentsByOffering = new HashMap<>();
+        for (var a : subjectAssignmentRepository.findByOfferingIdInFetch(offeringIds)) {
+            assignmentsByOffering.computeIfAbsent(a.getOffering().getId(), k -> new ArrayList<>())
+                .add(a);
+        }
+
+        var rows = new ArrayList<SubjectTeachingRowResponse>();
+        for (var o : offerings) {
+            var assignments = assignmentsByOffering.get(o.getId());
+            if (assignments == null || assignments.isEmpty()) {
+                rows.add(new SubjectTeachingRowResponse(
+                    o.getId(),
+                    o.getGroup().getId(),
+                    o.getGroup().getName(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                ));
+                continue;
+            }
+            for (var a : assignments) {
+                rows.add(new SubjectTeachingRowResponse(
+                    o.getId(),
+                    o.getGroup().getId(),
+                    o.getGroup().getName(),
+                    a.getId(),
+                    a.getTeacher().getId(),
+                    a.getTeacher().getUsername(),
+                    a.getLessonTypeScope(),
+                    a.getSubgroup() != null
+                    ? a.getSubgroup().getId()
+                    : null,
+                    a.getSubgroup() != null
+                    ? a.getSubgroup().getIndex()
+                    : null
+                ));
+            }
+        }
+        return rows;
     }
 }

@@ -6,7 +6,10 @@ import com.github.k1mb1.vkr_backend.subject.domain.SubjectOffering;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -39,11 +42,10 @@ public class Lesson
     Subgroup subgroup;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Builder.Default
     @Column(
-        name = "lesson_type", nullable = false, columnDefinition = "lesson_type"
+        name = "lesson_type", columnDefinition = "lesson_type"
     )
-    LessonType type = LessonType.NONE;
+    LessonType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")

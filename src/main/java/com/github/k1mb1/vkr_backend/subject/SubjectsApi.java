@@ -5,10 +5,12 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectTeachingRowResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface SubjectsApi {
@@ -19,4 +21,6 @@ public interface SubjectsApi {
     );
 
     Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable);
+
+    List<SubjectTeachingRowResponse> getTeachingRows(UUID subjectId);
 }

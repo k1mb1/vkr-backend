@@ -1,7 +1,9 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
+import com.github.k1mb1.vkr_backend.subject.domain.SubjectAssignment;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectAssignmentResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
 import org.mapstruct.*;
@@ -24,6 +26,11 @@ interface SubjectMapper {
         UpdateSubjectRequest request,
         @MappingTarget Subject subject
     );
+
+    @Mapping(target = "teacherId", source = "teacher.id")
+    @Mapping(target = "offeringId", source = "offering.id")
+    @Mapping(target = "subgroupId", source = "subgroup.id")
+    SubjectAssignmentResponse toAssignmentResponse(SubjectAssignment assignment);
 
     @AfterMapping
     default void afterUpdate(

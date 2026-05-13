@@ -6,6 +6,7 @@ import com.github.k1mb1.vkr_backend.group.web.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.SubgroupResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -92,5 +94,13 @@ public class GroupsController {
     ) {
         groupsApi.deleteGroup(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Get all subgroups of a group")
+    @GetMapping("/{id}/subgroups")
+    public ResponseEntity<List<SubgroupResponse>> getSubgroups(
+        @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(groupsApi.getSubgroups(id));
     }
 }

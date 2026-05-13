@@ -72,9 +72,11 @@ class LessonService
 
     @Override
     public Page<LessonResponse> getLessonPage(LessonFilter filter, Pageable pageable) {
-        return lessonRepository.findAll(new LessonSpecifications(filter).toSpecification(),
-                                        pageable
-        ).map(lessonMapper::toResponse);
+        return lessonRepository.findAll(
+                new LessonSpecifications(filter).toSpecification(),
+                pageable
+            )
+            .map(lessonMapper::toResponse);
     }
 
     @Transactional
@@ -144,9 +146,10 @@ class LessonService
                 }
                 var lessonDate = weekStart.plusDays(dow.getValue() - DayOfWeek.MONDAY.getValue());
                 if (!lessonDate.isBefore(entry.startDate())) {
-                    lessons.add(lesson(offering,
-                                       entry.type(),
-                                       lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()
+                    lessons.add(lesson(
+                        offering,
+                        entry.type(),
+                        lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()
                     ));
                 }
             }

@@ -9,6 +9,7 @@ import com.github.k1mb1.vkr_backend.group.web.requests.StudentGroupMemberRequest
 import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.SubgroupResponse;
 import com.github.k1mb1.vkr_backend.student.StudentApi;
 import com.github.k1mb1.vkr_backend.student.internal.StudentMapper;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -112,11 +114,12 @@ class GroupService
                     throw new jakarta.persistence.EntityNotFoundException(
                         "Student not found in group: " + req.id());
                 }
-                studentApi.updateStudent(student.id(),
-                                         UpdateStudentRequest.builder()
-                                             .username(req.username())
-                                             .subgroupId(req.subgroupId())
-                                             .build()
+                studentApi.updateStudent(
+                    student.id(),
+                    UpdateStudentRequest.builder()
+                        .username(req.username())
+                        .subgroupId(req.subgroupId())
+                        .build()
                 );
             } else {
                 studentApi.createStudent(CreateStudentRequest.builder()
@@ -161,5 +164,16 @@ class GroupService
     public Page<GroupPageResponse> getGroupPage(GroupFilter filter, Pageable pageable) {
         return groupRepository.findAll(new GroupSpecifications(filter).toSpecification(), pageable)
             .map(groupMapper::toPageResponse);
+    }
+
+    @Override
+    public List<SubgroupResponse> getSubgroups(UUID groupId) {
+        if (!groupRepository.existsById(groupId)) {
+            throw new jakarta.persistence.EntityNotFoundException("Group not found: " + groupId);
+        }
+        return subgroupRepository.findByGroupIdOrderByIndex(groupId)
+            .stream()
+            .map(subgroupMapper::toResponse)
+            .toList();
     }
 }

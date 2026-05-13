@@ -29,8 +29,9 @@ public class JwtAuthConverter
         @NonNull
         final Jwt jwt
     ) {
-        val authorities = Stream.concat(jwtGrantedAuthoritiesConverter.convert(jwt).stream(),
-                                        extractResourceRoles(jwt).stream()
+        val authorities = Stream.concat(
+            jwtGrantedAuthoritiesConverter.convert(jwt).stream(),
+            extractResourceRoles(jwt).stream()
         ).collect(toUnmodifiableSet());
 
         return new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());

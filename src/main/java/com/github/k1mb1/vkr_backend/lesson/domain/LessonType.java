@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Тип занятия")
 public enum LessonType {
-    NONE,
     LECTURE,
     PRACTICE,
 }

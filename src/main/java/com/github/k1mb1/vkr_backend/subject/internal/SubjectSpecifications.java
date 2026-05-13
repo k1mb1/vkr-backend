@@ -29,11 +29,10 @@ record SubjectSpecifications(SubjectFilter filter) {
             }
             Subquery<SubjectAssignment> sub = query.subquery(SubjectAssignment.class);
             Root<SubjectAssignment> assignment = sub.from(SubjectAssignment.class);
-            sub.select(assignment)
-                .where(cb.equal(assignment.get("offering").get("subject").get("id"),
-                                root.get("id")
-                       ), cb.equal(assignment.get("teacher").get("id"), filter.teacherId())
-                );
+            sub.select(assignment).where(
+                cb.equal(assignment.get("offering").get("subject").get("id"), root.get("id")),
+                cb.equal(assignment.get("teacher").get("id"), filter.teacherId())
+            );
             return cb.exists(sub);
         };
     }

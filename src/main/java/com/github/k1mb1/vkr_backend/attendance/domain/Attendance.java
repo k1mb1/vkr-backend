@@ -5,7 +5,10 @@ import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -40,9 +43,8 @@ public class Attendance
     Lesson lesson;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Builder.Default
-    @Column(nullable = false, columnDefinition = "attendance_status")
-    AttendanceStatus status = AttendanceStatus.NONE;
+    @Column(columnDefinition = "attendance_status")
+    AttendanceStatus status;
 
     @Column(columnDefinition = "text") String comment;
 }

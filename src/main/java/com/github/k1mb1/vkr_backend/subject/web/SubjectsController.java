@@ -6,6 +6,7 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectTeachingRowResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -69,5 +71,13 @@ public class SubjectsController {
         @ParameterObject Pageable pageable
     ) {
         return ResponseEntity.ok(subjectsApi.getPage(filter, pageable));
+    }
+
+    @Operation(summary = "Get flat rows (group × teacher × lessonTypeScope × subgroup) for the subject's teaching table")
+    @GetMapping("/{id}/teaching-rows")
+    public ResponseEntity<List<SubjectTeachingRowResponse>> getTeachingRows(
+        @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(subjectsApi.getTeachingRows(id));
     }
 }

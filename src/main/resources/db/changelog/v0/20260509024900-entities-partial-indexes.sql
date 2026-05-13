@@ -1,10 +1,9 @@
---liquibase formatted sql
 --changeset k1mb1:20260509-entities-partial-indexes
 --liquibase formatted sql
 
 --changeset k1mb1:000-create-enums
-CREATE TYPE lesson_type AS ENUM ('LECTURE', 'PRACTICE','NONE');
-CREATE TYPE attendance_status AS ENUM ('PRESENT', 'ABSENT', 'LATE', 'EXCUSED','NONE');
+CREATE TYPE lesson_type AS ENUM ('LECTURE', 'PRACTICE');
+CREATE TYPE attendance_status AS ENUM ('PRESENT', 'ABSENT', 'LATE', 'EXCUSED');
 --rollback DROP TYPE IF EXISTS attendance_status CASCADE;
 --rollback DROP TYPE IF EXISTS lesson_type CASCADE;
 
@@ -141,7 +140,7 @@ CREATE TABLE lessons
     offering_id UUID        NOT NULL,
     subgroup_id UUID,
     teacher_id  UUID,
-    lesson_type lesson_type NOT NULL,
+    lesson_type lesson_type,
     started_at  TIMESTAMPTZ NOT NULL,
     ended_at    TIMESTAMPTZ,
     topic       TEXT,
@@ -165,7 +164,7 @@ CREATE TABLE attendances
     id         UUID PRIMARY KEY,
     student_id UUID              NOT NULL,
     lesson_id  UUID              NOT NULL,
-    status     attendance_status NOT NULL,
+    status     attendance_status,
     comment    TEXT,
     created_at TIMESTAMPTZ       NOT NULL,
     updated_at TIMESTAMPTZ       NOT NULL,

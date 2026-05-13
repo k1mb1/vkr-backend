@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Статус посещаемости студента на занятии")
 public enum AttendanceStatus {
-    NONE,
     /**
      * Студент присутствовал.
      */
