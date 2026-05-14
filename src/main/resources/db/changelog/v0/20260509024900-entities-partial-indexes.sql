@@ -86,11 +86,11 @@ CREATE UNIQUE INDEX uk_subjects_name_active ON subjects (name) WHERE archived_at
 CREATE TABLE teacher_subject_permissions
 (
     id                  UUID PRIMARY KEY,
-    teacher_id          UUID        NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
-    subject_id          UUID        NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-    group_id            UUID        NOT NULL REFERENCES groups(id)   ON DELETE CASCADE,
-    allowed_subgroup_id UUID        REFERENCES subgroups(id) ON DELETE CASCADE,
-    allowed_lesson_type lesson_type,  -- NULL = все типы
+    teacher_id          UUID        NOT NULL REFERENCES teachers (id) ON DELETE CASCADE,
+    subject_id          UUID        NOT NULL REFERENCES subjects (id) ON DELETE CASCADE,
+    group_id            UUID        NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
+    allowed_subgroup_id UUID REFERENCES subgroups (id) ON DELETE CASCADE,
+    allowed_lesson_type lesson_type, -- NULL = все типы
     archived_at         TIMESTAMPTZ,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -98,12 +98,12 @@ CREATE TABLE teacher_subject_permissions
 
 -- Одно правило на комбинацию (учитель, предмет, группа, подгруппа, тип)
 CREATE UNIQUE INDEX uk_permissions_active
-    ON teacher_subject_permissions (teacher_id, subject_id, group_id, allowed_subgroup_id, allowed_lesson_type)
-    WHERE archived_at IS NULL;
+    ON teacher_subject_permissions (teacher_id, subject_id, group_id, allowed_subgroup_id,
+                                    allowed_lesson_type) WHERE archived_at IS NULL;
 
 CREATE INDEX idx_permissions_teacher ON teacher_subject_permissions (teacher_id);
 CREATE INDEX idx_permissions_subject ON teacher_subject_permissions (subject_id);
-CREATE INDEX idx_permissions_group   ON teacher_subject_permissions (group_id);
+CREATE INDEX idx_permissions_group ON teacher_subject_permissions (group_id);
 --rollback DROP TABLE teacher_subject_permissions;
 
 -- ============================================================
@@ -113,10 +113,10 @@ CREATE INDEX idx_permissions_group   ON teacher_subject_permissions (group_id);
 CREATE TABLE lessons
 (
     id          UUID PRIMARY KEY,
-    subject_id  UUID        NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
-    group_id    UUID        NOT NULL REFERENCES groups(id)   ON DELETE CASCADE,
-    subgroup_id UUID        REFERENCES subgroups(id) ON DELETE SET NULL,
-    teacher_id  UUID        REFERENCES teachers(id) ON DELETE SET NULL,
+    subject_id  UUID        NOT NULL REFERENCES subjects (id) ON DELETE CASCADE,
+    group_id    UUID        NOT NULL REFERENCES groups (id) ON DELETE CASCADE,
+    subgroup_id UUID        REFERENCES subgroups (id) ON DELETE SET NULL,
+    teacher_id  UUID        REFERENCES teachers (id) ON DELETE SET NULL,
     lesson_type lesson_type NOT NULL,
     started_at  TIMESTAMPTZ NOT NULL,
     ended_at    TIMESTAMPTZ,
@@ -126,12 +126,12 @@ CREATE TABLE lessons
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT chk_lesson_time CHECK (ended_at IS NULL OR ended_at > started_at)
 );
-CREATE INDEX idx_lessons_subject_id  ON lessons (subject_id);
-CREATE INDEX idx_lessons_group_id    ON lessons (group_id);
+CREATE INDEX idx_lessons_subject_id ON lessons (subject_id);
+CREATE INDEX idx_lessons_group_id ON lessons (group_id);
 CREATE INDEX idx_lessons_subgroup_id ON lessons (subgroup_id);
-CREATE INDEX idx_lessons_teacher_id  ON lessons (teacher_id);
-CREATE INDEX idx_lessons_started_at  ON lessons (started_at);
-CREATE INDEX idx_lessons_active      ON lessons (archived_at) WHERE archived_at IS NULL;
+CREATE INDEX idx_lessons_teacher_id ON lessons (teacher_id);
+CREATE INDEX idx_lessons_started_at ON lessons (started_at);
+CREATE INDEX idx_lessons_active ON lessons (archived_at) WHERE archived_at IS NULL;
 --rollback DROP TABLE lessons;
 
 -- ============================================================
@@ -141,14 +141,14 @@ CREATE INDEX idx_lessons_active      ON lessons (archived_at) WHERE archived_at 
 CREATE TABLE attendances
 (
     id         UUID PRIMARY KEY,
-    student_id UUID            NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    lesson_id  UUID            NOT NULL REFERENCES lessons(id)  ON DELETE CASCADE,
+    student_id UUID              NOT NULL REFERENCES students (id) ON DELETE CASCADE,
+    lesson_id  UUID              NOT NULL REFERENCES lessons (id) ON DELETE CASCADE,
     status     attendance_status NOT NULL DEFAULT 'ABSENT',
     comment    TEXT,
-    created_at TIMESTAMPTZ     NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ     NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ       NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ       NOT NULL DEFAULT now(),
     CONSTRAINT uk_attendance_student_lesson UNIQUE (student_id, lesson_id)
 );
-CREATE INDEX idx_attendances_lesson_id  ON attendances (lesson_id);
+CREATE INDEX idx_attendances_lesson_id ON attendances (lesson_id);
 CREATE INDEX idx_attendances_student_id ON attendances (student_id);
 --rollback DROP TABLE attendances;

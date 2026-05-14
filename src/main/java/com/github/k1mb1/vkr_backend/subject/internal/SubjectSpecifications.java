@@ -27,24 +27,12 @@ record SubjectSpecifications(SubjectFilter filter) {
             if (filter.teacherId() == null) {
                 return null;
             }
-            Subquery<TeacherSubjectPermission> sub = query.subquery(
-                TeacherSubjectPermission.class
+            Subquery<TeacherSubjectPermission> sub = query.subquery(TeacherSubjectPermission.class);
+            Root<TeacherSubjectPermission> permission = sub.from(TeacherSubjectPermission.class);
+            sub.select(permission.get("id")).where(
+                cb.equal(permission.get("subject").get("id"), root.get("id")),
+                cb.equal(permission.get("teacher").get("id"), filter.teacherId())
             );
-            Root<TeacherSubjectPermission> permission = sub.from(
-                TeacherSubjectPermission.class
-            );
-            sub
-                .select(permission)
-                .where(
-                    cb.equal(
-                        permission.get("subject").get("id"),
-                        root.get("id")
-                    ),
-                    cb.equal(
-                        permission.get("teacher").get("id"),
-                        filter.teacherId()
-                    )
-                );
             return cb.exists(sub);
         };
     }

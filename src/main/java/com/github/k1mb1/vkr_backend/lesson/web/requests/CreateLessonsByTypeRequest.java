@@ -4,34 +4,31 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+
 import java.util.UUID;
 
 @Schema(description = "Запрос на создание занятий по количеству типов")
 public record CreateLessonsByTypeRequest(
     @Schema(
-        description = "ID предмета",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID предмета", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
     UUID subjectId,
 
     @Schema(
-        description = "ID группы",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID группы", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
     UUID groupId,
 
     @Schema(
-        description = "Количество лекций",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Количество лекций", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @PositiveOrZero
     int lectureCount,
 
     @Schema(
-        description = "Количество практик",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Количество практик", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @PositiveOrZero
     int practiceCount

@@ -10,17 +10,19 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class SubjectService implements SubjectsApi {
+class SubjectService
+    implements SubjectsApi {
 
     final SubjectRepository subjectRepository;
 
@@ -34,17 +36,9 @@ class SubjectService implements SubjectsApi {
 
     @Transactional
     @Override
-    public SubjectResponse updateSubject(
-        UUID id,
-        UpdateSubjectRequest request
-    ) {
-        var subject = subjectRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new jakarta.persistence.EntityNotFoundException(
-                    "Subject not found: " + id
-                )
-            );
+    public SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request) {
+        var subject = subjectRepository.findById(id)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + id));
 
         subjectMapper.updateEntity(request, subject);
         return subjectMapper.toFullResponse(subjectRepository.save(subject));
@@ -53,39 +47,24 @@ class SubjectService implements SubjectsApi {
     @Transactional
     @Override
     public SubjectResponse createSubject(CreateSubjectRequest request) {
-        var subject = subjectRepository.save(
-            Subject.builder()
-                .name(request.name())
-                .description(request.description())
-                .build()
-        );
+        var subject = subjectRepository.save(Subject.builder()
+                                                 .name(request.name())
+                                                 .description(request.description())
+                                                 .build());
 
-        permissionRepository.save(
-            TeacherSubjectPermission.builder()
-                .subject(subject)
-                .group(
-                    groupReferenceService.getGroupReferenceById(
-                        request.groupId()
-                    )
-                )
-                .teacher(
-                    teacherReferenceService.getTeacherReferenceById(
-                        request.teacherId()
-                    )
-                )
-                .build()
-        );
+        permissionRepository.save(TeacherSubjectPermission.builder()
+                                      .subject(subject)
+                                      .group(groupReferenceService.getGroupReferenceById(request.groupId()))
+                                      .teacher(teacherReferenceService.getTeacherReferenceById(
+                                          request.teacherId()))
+                                      .build());
 
         return subjectMapper.toFullResponse(subject);
     }
 
     @Override
-    public Page<SubjectPageResponse> getPage(
-        SubjectFilter filter,
-        Pageable pageable
-    ) {
-        return subjectRepository
-            .findAll(
+    public Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable) {
+        return subjectRepository.findAll(
                 new SubjectSpecifications(filter).toSpecification(),
                 pageable
             )

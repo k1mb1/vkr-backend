@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -106,6 +107,15 @@ public class GlobalExceptionHandler {
         NoResourceFoundException ex
     ) {
         return ResponseEntity.status(NOT_FOUND).body(ErrorDto.of(RESOURCE_NOT_FOUND, NOT_FOUND));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorDto> handleDataIntegrity(
+        DataIntegrityViolationException ex
+    ) {
+        log.warn("Data integrity violation: {}", ex.getMessage());
+        return ResponseEntity.status(CONFLICT)
+            .body(ErrorDto.of("Resource conflict: duplicate or invalid reference", CONFLICT));
     }
 
     @ExceptionHandler(Exception.class)

@@ -13,7 +13,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class SubgroupService implements SubgroupsApi {
+class SubgroupService
+    implements SubgroupsApi {
 
     final GroupRepository groupRepository;
 

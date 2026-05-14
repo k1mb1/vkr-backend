@@ -19,10 +19,10 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Subgroup extends ArchivableEntity {
+public class Subgroup
+    extends ArchivableEntity {
 
-    @Column(name = "index", nullable = false)
-    Integer index;
+    @Column(name = "index", nullable = false) Integer index;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id", nullable = false)

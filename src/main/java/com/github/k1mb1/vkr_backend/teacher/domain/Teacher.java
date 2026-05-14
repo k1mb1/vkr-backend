@@ -1,9 +1,10 @@
 package com.github.k1mb1.vkr_backend.teacher.domain;
 
-import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
+import com.github.k1mb1.vkr_backend.common.domain.Auditable;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +12,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Hidden
 @Entity
@@ -21,11 +25,16 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Teacher extends ArchivableEntity {
+public class Teacher
+    extends Auditable {
 
-    @Column(nullable = false)
-    String username;
+    @Id
+    @Column(updatable = false, nullable = false)
+    private UUID id;
 
-    @Column(nullable = false)
-    String email;
+    @Column(name = "archived_at", columnDefinition = "timestamptz") private Instant archivedAt;
+
+    @Column(nullable = false) String username;
+
+    @Column(nullable = false) String email;
 }

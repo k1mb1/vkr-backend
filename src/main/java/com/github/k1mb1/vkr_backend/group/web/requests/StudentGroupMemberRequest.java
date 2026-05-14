@@ -16,10 +16,10 @@ public record StudentGroupMemberRequest(
     String username,
 
     @Schema(
-        description = "Индекс подгруппы (0, 1, ...)",
+        description = "Индекс подгруппы (1, 2, ...)",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED
     )
-    @Min(0)
+    @Min(1)
     @Nullable
     Integer subgroupIndex
 ) {}
