@@ -14,9 +14,7 @@ record LessonSpecifications(LessonFilter filter) {
             if (filter.subjectId() == null) {
                 return null;
             }
-            var offering = root.join("offering");
-            var subject = offering.join("subject");
-            return cb.equal(subject.get("id"), filter.subjectId());
+            return cb.equal(root.get("subject").get("id"), filter.subjectId());
         };
     }
 }

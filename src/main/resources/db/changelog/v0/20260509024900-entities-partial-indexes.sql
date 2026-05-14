@@ -1,4 +1,3 @@
---changeset k1mb1:20260509-entities-partial-indexes
 --liquibase formatted sql
 
 --changeset k1mb1:000-create-enums
@@ -10,41 +9,42 @@ CREATE TYPE attendance_status AS ENUM ('PRESENT', 'ABSENT', 'LATE', 'EXCUSED');
 --changeset k1mb1:001-create-groups
 CREATE TABLE groups
 (
-    id         UUID PRIMARY KEY,
-    name       VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL,
-    updated_at TIMESTAMPTZ  NOT NULL,
-    CONSTRAINT uk_groups_name UNIQUE (name)
+    id          UUID PRIMARY KEY,
+    name        VARCHAR(255) NOT NULL,
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX uk_groups_name_active ON groups (name) WHERE archived_at IS NULL;
 --rollback DROP TABLE groups;
 
 --changeset k1mb1:002-create-subgroups
 CREATE TABLE subgroups
 (
-    id         UUID PRIMARY KEY,
-    index      INTEGER     NOT NULL,
-    group_id   UUID        NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
+    id          UUID PRIMARY KEY,
+    index       INTEGER     NOT NULL CHECK (index > 0),
+    group_id    UUID        NOT NULL,
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT fk_subgroups_group
-        FOREIGN KEY (group_id) REFERENCES groups (id)
-            ON DELETE CASCADE,
-    CONSTRAINT uk_subgroup_group_index UNIQUE (group_id, index)
+        FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE CASCADE
 );
+CREATE UNIQUE INDEX uk_subgroups_group_index_active ON subgroups (group_id, index) WHERE archived_at IS NULL;
 CREATE INDEX idx_subgroups_group_id ON subgroups (group_id);
 --rollback DROP TABLE subgroups;
 
 --changeset k1mb1:003-create-teachers
 CREATE TABLE teachers
 (
-    id         UUID PRIMARY KEY,
-    username   VARCHAR(255) NOT NULL,
-    email      VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL,
-    updated_at TIMESTAMPTZ  NOT NULL,
-
-    CONSTRAINT uk_teachers_email UNIQUE (email)
+    id          UUID PRIMARY KEY,
+    username    VARCHAR(255) NOT NULL,
+    email       VARCHAR(255) NOT NULL,
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX uk_teachers_email_active ON teachers (email) WHERE archived_at IS NULL;
 --rollback DROP TABLE teachers;
 
 --changeset k1mb1:004-create-students
@@ -55,16 +55,15 @@ CREATE TABLE students
     group_id    UUID         NOT NULL,
     subgroup_id UUID,
     archived_at TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ  NOT NULL,
-    updated_at  TIMESTAMPTZ  NOT NULL,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
     CONSTRAINT fk_students_group
-        FOREIGN KEY (group_id) REFERENCES groups (id),
+        FOREIGN KEY (group_id) REFERENCES groups (id) ON DELETE RESTRICT,
     CONSTRAINT fk_students_subgroup
-        FOREIGN KEY (subgroup_id) REFERENCES subgroups (id)
+        FOREIGN KEY (subgroup_id) REFERENCES subgroups (id) ON DELETE SET NULL
 );
 CREATE INDEX idx_students_group_id ON students (group_id);
 CREATE INDEX idx_students_subgroup_id ON students (subgroup_id);
-
 --rollback DROP TABLE students;
 
 --changeset k1mb1:005-create-subjects
@@ -74,107 +73,82 @@ CREATE TABLE subjects
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     archived_at TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ  NOT NULL,
-    updated_at  TIMESTAMPTZ  NOT NULL
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ  NOT NULL DEFAULT now()
 );
-
--- partial unique: одно и то же имя нельзя у активных, но можно после архивации
-CREATE UNIQUE INDEX uk_subjects_name_active
-    ON subjects (name) WHERE archived_at IS NULL;
+CREATE UNIQUE INDEX uk_subjects_name_active ON subjects (name) WHERE archived_at IS NULL;
 --rollback DROP TABLE subjects;
 
---changeset k1mb1:006-create-subject-offerings
-CREATE TABLE subject_offerings
+-- ============================================================
+-- 6. Права учителей (одна таблица вместо offerings+assignments)
+-- ============================================================
+--changeset k1mb1:006-create-teacher-subject-permissions
+CREATE TABLE teacher_subject_permissions
 (
-    id         UUID PRIMARY KEY,
-    subject_id UUID        NOT NULL,
-    group_id   UUID        NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_offerings_subject
-        FOREIGN KEY (subject_id) REFERENCES subjects (id),
-    CONSTRAINT fk_offerings_group
-        FOREIGN KEY (group_id) REFERENCES groups (id),
-    CONSTRAINT uk_offering_subject_group UNIQUE (subject_id, group_id)
+    id                  UUID PRIMARY KEY,
+    teacher_id          UUID        NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+    subject_id          UUID        NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+    group_id            UUID        NOT NULL REFERENCES groups(id)   ON DELETE CASCADE,
+    allowed_subgroup_id UUID        REFERENCES subgroups(id) ON DELETE CASCADE,
+    allowed_lesson_type lesson_type,  -- NULL = все типы
+    archived_at         TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX idx_offerings_subject_id ON subject_offerings (subject_id);
-CREATE INDEX idx_offerings_group_id ON subject_offerings (group_id);
---rollback DROP TABLE subject_offerings;
 
---changeset k1mb1:007-create-subject-assignments
-CREATE TABLE subject_assignments
-(
-    id                UUID PRIMARY KEY,
-    teacher_id        UUID        NOT NULL,
-    offering_id       UUID        NOT NULL,
-    subgroup_id       UUID,
-    lesson_type_scope lesson_type,
-    created_at        TIMESTAMPTZ NOT NULL,
-    updated_at        TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_assignments_teacher
-        FOREIGN KEY (teacher_id) REFERENCES teachers (id),
-    CONSTRAINT fk_assignments_offering
-        FOREIGN KEY (offering_id) REFERENCES subject_offerings (id)
-            ON DELETE CASCADE,
-    CONSTRAINT fk_assignments_subgroup
-        FOREIGN KEY (subgroup_id) REFERENCES subgroups (id)
-);
-CREATE INDEX idx_assignments_teacher_id ON subject_assignments (teacher_id);
-CREATE INDEX idx_assignments_offering_id ON subject_assignments (offering_id);
+-- Одно правило на комбинацию (учитель, предмет, группа, подгруппа, тип)
+CREATE UNIQUE INDEX uk_permissions_active
+    ON teacher_subject_permissions (teacher_id, subject_id, group_id, allowed_subgroup_id, allowed_lesson_type)
+    WHERE archived_at IS NULL;
 
--- Уникальность с учётом того, что NULL != NULL в Postgres.
--- Случай 1: subgroup задана — обычная уникальность тройки.
-CREATE UNIQUE INDEX uk_assignment_with_subgroup
-    ON subject_assignments (teacher_id, offering_id, subgroup_id) WHERE subgroup_id IS NOT NULL;
+CREATE INDEX idx_permissions_teacher ON teacher_subject_permissions (teacher_id);
+CREATE INDEX idx_permissions_subject ON teacher_subject_permissions (subject_id);
+CREATE INDEX idx_permissions_group   ON teacher_subject_permissions (group_id);
+--rollback DROP TABLE teacher_subject_permissions;
 
--- Случай 2: subgroup = NULL (учитель ведёт offering целиком).
--- Гарантируем, что такая запись не более одной на (teacher, offering).
-CREATE UNIQUE INDEX uk_assignment_full_offering
-    ON subject_assignments (teacher_id, offering_id) WHERE subgroup_id IS NULL;
---rollback DROP TABLE subject_assignments;
-
---changeset k1mb1:008-create-lessons
+-- ============================================================
+-- 7. Занятия (без offering_id — напрямую subject + group)
+-- ============================================================
+--changeset k1mb1:007-create-lessons
 CREATE TABLE lessons
 (
     id          UUID PRIMARY KEY,
-    offering_id UUID        NOT NULL,
-    subgroup_id UUID,
-    teacher_id  UUID,
-    lesson_type lesson_type,
+    subject_id  UUID        NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+    group_id    UUID        NOT NULL REFERENCES groups(id)   ON DELETE CASCADE,
+    subgroup_id UUID        REFERENCES subgroups(id) ON DELETE SET NULL,
+    teacher_id  UUID        REFERENCES teachers(id) ON DELETE SET NULL,
+    lesson_type lesson_type NOT NULL,
     started_at  TIMESTAMPTZ NOT NULL,
     ended_at    TIMESTAMPTZ,
     topic       TEXT,
-    created_at  TIMESTAMPTZ NOT NULL,
-    updated_at  TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_lessons_offering
-        FOREIGN KEY (offering_id) REFERENCES subject_offerings (id),
-    CONSTRAINT fk_lessons_subgroup
-        FOREIGN KEY (subgroup_id) REFERENCES subgroups (id),
-    CONSTRAINT fk_lessons_teacher
-        FOREIGN KEY (teacher_id) REFERENCES teachers (id)
+    archived_at TIMESTAMPTZ,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT chk_lesson_time CHECK (ended_at IS NULL OR ended_at > started_at)
 );
-CREATE INDEX idx_lessons_offering_id ON lessons (offering_id);
-CREATE INDEX idx_lessons_started_at ON lessons (started_at);
-CREATE INDEX idx_lessons_teacher_id ON lessons (teacher_id);
+CREATE INDEX idx_lessons_subject_id  ON lessons (subject_id);
+CREATE INDEX idx_lessons_group_id    ON lessons (group_id);
+CREATE INDEX idx_lessons_subgroup_id ON lessons (subgroup_id);
+CREATE INDEX idx_lessons_teacher_id  ON lessons (teacher_id);
+CREATE INDEX idx_lessons_started_at  ON lessons (started_at);
+CREATE INDEX idx_lessons_active      ON lessons (archived_at) WHERE archived_at IS NULL;
 --rollback DROP TABLE lessons;
 
---changeset k1mb1:009-create-attendances
+-- ============================================================
+-- 8. Посещаемость
+-- ============================================================
+--changeset k1mb1:008-create-attendances
 CREATE TABLE attendances
 (
     id         UUID PRIMARY KEY,
-    student_id UUID        NOT NULL,
-    lesson_id  UUID        NOT NULL,
-    status     attendance_status,
+    student_id UUID            NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    lesson_id  UUID            NOT NULL REFERENCES lessons(id)  ON DELETE CASCADE,
+    status     attendance_status NOT NULL DEFAULT 'ABSENT',
     comment    TEXT,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_attendances_student
-        FOREIGN KEY (student_id) REFERENCES students (id),
-    CONSTRAINT fk_attendances_lesson
-        FOREIGN KEY (lesson_id) REFERENCES lessons (id)
-            ON DELETE CASCADE,
+    created_at TIMESTAMPTZ     NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ     NOT NULL DEFAULT now(),
     CONSTRAINT uk_attendance_student_lesson UNIQUE (student_id, lesson_id)
 );
-CREATE INDEX idx_attendances_lesson_id ON attendances (lesson_id);
+CREATE INDEX idx_attendances_lesson_id  ON attendances (lesson_id);
 CREATE INDEX idx_attendances_student_id ON attendances (student_id);
 --rollback DROP TABLE attendances;

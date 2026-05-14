@@ -1,41 +1,49 @@
 package com.github.k1mb1.vkr_backend.lesson.domain;
 
-import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
+import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
-import com.github.k1mb1.vkr_backend.subject.domain.SubjectOffering;
+import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
-
-import java.time.Instant;
 
 @Hidden
 @Entity
 @Table(
-    name = "lessons", indexes = {
-    @Index(name = "idx_lesson_offering", columnList = "offering_id"), @Index(
-    name = "idx_lesson_started_at", columnList = "started_at"
-), @Index(name = "idx_lesson_teacher", columnList = "teacher_id"),
-}
+    name = "lessons",
+    indexes = {
+        @Index(name = "idx_lessons_subject_id", columnList = "subject_id"),
+        @Index(name = "idx_lessons_group_id", columnList = "group_id"),
+        @Index(name = "idx_lessons_subgroup_id", columnList = "subgroup_id"),
+        @Index(name = "idx_lessons_teacher_id", columnList = "teacher_id"),
+        @Index(name = "idx_lessons_started_at", columnList = "started_at"),
+    }
 )
+@SQLRestriction("archived_at IS NULL")
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Lesson
-    extends BaseEntity {
+public class Lesson extends ArchivableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "offering_id", nullable = false)
-    SubjectOffering offering;
+    @JoinColumn(name = "subject_id", nullable = false)
+    Subject subject;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "group_id", nullable = false)
+    Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subgroup_id")
@@ -43,7 +51,9 @@ public class Lesson
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(
-        name = "lesson_type", columnDefinition = "lesson_type"
+        name = "lesson_type",
+        nullable = false,
+        columnDefinition = "lesson_type"
     )
     LessonType type;
 
@@ -52,10 +62,15 @@ public class Lesson
     Teacher teacher;
 
     @Column(
-        name = "started_at", nullable = false, columnDefinition = "timestamptz"
-    ) Instant startedAt;
+        name = "started_at",
+        nullable = false,
+        columnDefinition = "timestamptz"
+    )
+    Instant startedAt;
 
-    @Column(name = "ended_at", columnDefinition = "timestamptz") Instant endedAt;
+    @Column(name = "ended_at", columnDefinition = "timestamptz")
+    Instant endedAt;
 
-    @Column(columnDefinition = "text") String topic;
+    @Column(columnDefinition = "text")
+    String topic;
 }

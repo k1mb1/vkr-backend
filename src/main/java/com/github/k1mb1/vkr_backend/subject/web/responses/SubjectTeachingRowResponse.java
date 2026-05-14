@@ -1,25 +1,29 @@
 package com.github.k1mb1.vkr_backend.subject.web.responses;
 
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
 
+@Schema(
+    description = "Плоская строка таблицы преподавания (группа × учитель × тип × подгруппа)"
+)
 public record SubjectTeachingRowResponse(
-    UUID offeringId,
+    @Schema(description = "ID права") UUID permissionId,
 
-    UUID groupId,
+    @Schema(description = "ID группы") UUID groupId,
 
-    String groupName,
+    @Schema(description = "Название группы") String groupName,
 
-    UUID assignmentId,
+    @Schema(description = "ID преподавателя") UUID teacherId,
 
-    UUID teacherId,
+    @Schema(description = "Имя преподавателя") String teacherName,
 
-    String teacherName,
+    @Schema(description = "Разрешённый тип занятия (null = все)")
+    LessonType allowedLessonType,
 
-    LessonType lessonTypeScope,
+    @Schema(description = "ID разрешённой подгруппы (null = вся группа)")
+    UUID allowedSubgroupId,
 
-    UUID subgroupId,
-
-    Integer subgroupIndex
+    @Schema(description = "Индекс разрешённой подгруппы")
+    Integer allowedSubgroupIndex
 ) {}

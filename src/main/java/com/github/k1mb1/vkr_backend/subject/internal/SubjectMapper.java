@@ -1,15 +1,15 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
-import com.github.k1mb1.vkr_backend.subject.domain.Subject;
-import com.github.k1mb1.vkr_backend.subject.domain.SubjectAssignment;
-import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
-import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectAssignmentResponse;
-import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
-import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
-import org.mapstruct.*;
-
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+
+import com.github.k1mb1.vkr_backend.subject.domain.Subject;
+import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
+import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.TeacherSubjectPermissionResponse;
+import org.mapstruct.*;
 
 @Mapper(componentModel = SPRING)
 interface SubjectMapper {
@@ -28,9 +28,12 @@ interface SubjectMapper {
     );
 
     @Mapping(target = "teacherId", source = "teacher.id")
-    @Mapping(target = "offeringId", source = "offering.id")
-    @Mapping(target = "subgroupId", source = "subgroup.id")
-    SubjectAssignmentResponse toAssignmentResponse(SubjectAssignment assignment);
+    @Mapping(target = "subjectId", source = "subject.id")
+    @Mapping(target = "groupId", source = "group.id")
+    @Mapping(target = "allowedSubgroupId", source = "allowedSubgroup.id")
+    TeacherSubjectPermissionResponse toPermissionResponse(
+        TeacherSubjectPermission permission
+    );
 
     @AfterMapping
     default void afterUpdate(
