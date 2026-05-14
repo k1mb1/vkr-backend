@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.subject.internal;
 
 import com.github.k1mb1.vkr_backend.subject.SubjectOfferingReferenceService;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectOffering;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,12 @@ class SubjectOfferingReferenceServiceImpl
     implements SubjectOfferingReferenceService {
 
     final SubjectOfferingRepository subjectOfferingRepository;
+
+    @Override
+    public SubjectOffering findById(UUID offeringId) {
+        return subjectOfferingRepository.findById(offeringId)
+            .orElseThrow(() -> new EntityNotFoundException("SubjectOffering not found: " + offeringId));
+    }
 
     @Override
     public List<SubjectOffering> findBySubjectId(UUID subjectId) {

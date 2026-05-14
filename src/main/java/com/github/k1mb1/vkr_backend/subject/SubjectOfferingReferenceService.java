@@ -7,5 +7,7 @@ import java.util.UUID;
 
 public interface SubjectOfferingReferenceService {
 
+    SubjectOffering findById(UUID offeringId);
+
     List<SubjectOffering> findBySubjectId(UUID subjectId);
 }

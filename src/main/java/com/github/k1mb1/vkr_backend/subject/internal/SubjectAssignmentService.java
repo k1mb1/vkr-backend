@@ -3,6 +3,8 @@ package com.github.k1mb1.vkr_backend.subject.internal;
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.subject.SubjectAssignmentApi;
 import com.github.k1mb1.vkr_backend.subject.SubjectOfferingReferenceService;
+import com.github.k1mb1.vkr_backend.subject.domain.SubjectAssignment;
+import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectAssignmentRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectAssignmentRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectAssignmentResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
@@ -29,22 +31,24 @@ class SubjectAssignmentService
 
     final SubjectMapper subjectMapper;
 
-    //    @Transactional
-    //    @Override
-    //    public SubjectAssignmentResponse create(CreateSubjectAssignmentRequest request) {
-    //        var subgroup = request.subgroupId() != null
-    //                       ? groupReferenceService.getSubgroupReferenceById(request.subgroupId())
-    //                       : null;
-    //
-    //        var assignment = SubjectAssignment.builder()
-    //            .teacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()))
-    //            .offering(subjectOfferingReferenceService.findById(request.offeringId()))
-    //            .subgroup(subgroup)
-    //            .lessonTypeScope(request.lessonTypeScope())
-    //            .build();
-    //
-    //        return subjectMapper.toAssignmentResponse(subjectAssignmentRepository.save(assignment));
-    //    }
+    @Transactional
+    @Override
+    public SubjectAssignmentResponse create(
+        CreateSubjectAssignmentRequest request
+    ) {
+        var subgroup = request.subgroupId() != null
+                       ? groupReferenceService.getSubgroupReferenceById(request.subgroupId())
+                       : null;
+
+        var assignment = SubjectAssignment.builder()
+            .teacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()))
+            .offering(subjectOfferingReferenceService.findById(request.offeringId()))
+            .subgroup(subgroup)
+            .lessonTypeScope(request.lessonTypeScope())
+            .build();
+
+        return subjectMapper.toAssignmentResponse(subjectAssignmentRepository.save(assignment));
+    }
 
     @Transactional
     @Override

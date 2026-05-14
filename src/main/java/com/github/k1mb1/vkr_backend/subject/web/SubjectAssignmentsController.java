@@ -1,12 +1,14 @@
 package com.github.k1mb1.vkr_backend.subject.web;
 
 import com.github.k1mb1.vkr_backend.subject.SubjectAssignmentApi;
+import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectAssignmentRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectAssignmentRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectAssignmentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,15 +23,15 @@ public class SubjectAssignmentsController {
 
     final SubjectAssignmentApi subjectAssignmentApi;
 
-    //    @Operation(summary = "Assign a teacher to a subject offering (optionally scoped to subgroup / lesson type)")
-    //    @PostMapping
-    //    public ResponseEntity<SubjectAssignmentResponse> create(
-    //        @Valid
-    //        @RequestBody
-    //        CreateSubjectAssignmentRequest request
-    //    ) {
-    //        return ResponseEntity.status(HttpStatus.CREATED).body(subjectAssignmentApi.create(request));
-    //    }
+    @Operation(summary = "Assign a teacher to a subject offering (optionally scoped to subgroup / lesson type)")
+    @PostMapping
+    public ResponseEntity<SubjectAssignmentResponse> create(
+        @Valid
+        @RequestBody
+        CreateSubjectAssignmentRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(subjectAssignmentApi.create(request));
+    }
 
     @Operation(summary = "Update an existing teacher–offering binding (teacher / subgroup / lessonTypeScope)")
     @PatchMapping("/{id}")

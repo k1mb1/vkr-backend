@@ -162,12 +162,12 @@ CREATE INDEX idx_lessons_teacher_id ON lessons (teacher_id);
 CREATE TABLE attendances
 (
     id         UUID PRIMARY KEY,
-    student_id UUID              NOT NULL,
-    lesson_id  UUID              NOT NULL,
+    student_id UUID        NOT NULL,
+    lesson_id  UUID        NOT NULL,
     status     attendance_status,
     comment    TEXT,
-    created_at TIMESTAMPTZ       NOT NULL,
-    updated_at TIMESTAMPTZ       NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_attendances_student
         FOREIGN KEY (student_id) REFERENCES students (id),
     CONSTRAINT fk_attendances_lesson
