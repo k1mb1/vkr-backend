@@ -9,9 +9,7 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
-import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectTeachingRowResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -92,31 +90,5 @@ class SubjectService implements SubjectsApi {
                 pageable
             )
             .map(subjectMapper::toResponse);
-    }
-
-    @Override
-    public List<SubjectTeachingRowResponse> getTeachingRows(UUID subjectId) {
-        var permissions = permissionRepository.findBySubjectIdFetchDetails(
-            subjectId
-        );
-        return permissions
-            .stream()
-            .map(p ->
-                new SubjectTeachingRowResponse(
-                    p.getId(),
-                    p.getGroup().getId(),
-                    p.getGroup().getName(),
-                    p.getTeacher().getId(),
-                    p.getTeacher().getUsername(),
-                    p.getAllowedLessonType(),
-                    p.getAllowedSubgroup() != null
-                        ? p.getAllowedSubgroup().getId()
-                        : null,
-                    p.getAllowedSubgroup() != null
-                        ? p.getAllowedSubgroup().getIndex()
-                        : null
-                )
-            )
-            .toList();
     }
 }

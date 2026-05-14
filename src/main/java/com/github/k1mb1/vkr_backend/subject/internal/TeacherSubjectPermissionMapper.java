@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.TeacherSubjectPermissionResponse;
@@ -8,17 +11,18 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
-import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
-
 @Mapper(componentModel = SPRING)
 interface TeacherSubjectPermissionMapper {
-
     @Mapping(target = "teacherId", source = "teacher.id")
+    @Mapping(target = "teacherName", source = "teacher.username")
     @Mapping(target = "subjectId", source = "subject.id")
     @Mapping(target = "groupId", source = "group.id")
+    @Mapping(target = "groupName", source = "group.name")
     @Mapping(target = "allowedSubgroupId", source = "allowedSubgroup.id")
-    TeacherSubjectPermissionResponse toResponse(TeacherSubjectPermission permission);
+    @Mapping(target = "allowedSubgroupIndex", source = "allowedSubgroup.index")
+    TeacherSubjectPermissionResponse toResponse(
+        TeacherSubjectPermission permission
+    );
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
