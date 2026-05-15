@@ -53,15 +53,6 @@ class TeacherSubjectPermissionService
                               ? groupReferenceService.getSubgroupReferenceById(request.allowedSubgroupId())
                               : null;
 
-        validateSubgroupBelongsToGroup(allowedSubgroup, group);
-        validateUniqueCombination(
-            request.teacherId(),
-            request.subjectId(),
-            request.groupId(),
-            request.allowedSubgroupId(),
-            request.allowedLessonType()
-        );
-
         var permission = TeacherSubjectPermission.builder()
             .teacher(teacher)
             .subject(subject)
@@ -69,7 +60,7 @@ class TeacherSubjectPermissionService
             .allowedSubgroup(allowedSubgroup)
             .allowedLessonType(request.allowedLessonType())
             .build();
-
+        //TODO validate
         return permissionMapper.toResponse(permissionRepository.save(permission));
     }
 
