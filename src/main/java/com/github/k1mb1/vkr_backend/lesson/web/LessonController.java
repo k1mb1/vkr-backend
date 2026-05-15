@@ -10,20 +10,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.UUID;
-
 @RequestMapping(
-    value = "/api/lessons", produces = MediaType.APPLICATION_JSON_VALUE
+    value = "/api/lessons",
+    produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Tag(name = "Lessons", description = "Управление занятиями и расписанием")
 @RestController
@@ -32,29 +30,24 @@ public class LessonController {
 
     final LessonApi lessonApi;
 
-    @Operation(summary = "Получить страницу занятий с фильтрацией по предмету")
+    @Operation(
+        summary = "Получить список занятий с фильтрацией по предмету и доступу учителя"
+    )
     @GetMapping
-    public ResponseEntity<Page<LessonResponse>> getLessonPage(
-        @ParameterObject
-        @ModelAttribute
-        LessonFilter filter,
-        @ParameterObject Pageable pageable
+    public ResponseEntity<List<LessonResponse>> getLessons(
+        @ParameterObject @Valid @ModelAttribute LessonFilter filter
     ) {
-        return ResponseEntity.ok(lessonApi.getLessonPage(filter, pageable));
+        return ResponseEntity.ok(lessonApi.getLessons(filter));
     }
 
     @Operation(summary = "Частично обновить занятие")
     @PatchMapping("/{id}")
     public ResponseEntity<LessonResponse> updateLesson(
-        @Parameter(description = "ID занятия")
-        @PathVariable
-        UUID id,
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Данные для обновления занятия", required = true
-        )
-        UpdateLessonRequest request
+        @Parameter(description = "ID занятия") @PathVariable UUID id,
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Данные для обновления занятия",
+            required = true
+        ) UpdateLessonRequest request
     ) {
         return ResponseEntity.ok(lessonApi.updateLesson(id, request));
     }
@@ -62,9 +55,7 @@ public class LessonController {
     @Operation(summary = "Удалить занятие")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLesson(
-        @Parameter(description = "ID занятия")
-        @PathVariable
-        UUID id
+        @Parameter(description = "ID занятия") @PathVariable UUID id
     ) {
         lessonApi.deleteLesson(id);
         return ResponseEntity.noContent().build();
@@ -73,28 +64,26 @@ public class LessonController {
     @Operation(summary = "Массовое создание занятий по недельному шаблону")
     @PostMapping("/bulk-schedule")
     public ResponseEntity<List<LessonResponse>> bulkScheduleLessons(
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Шаблон расписания", required = true
-        )
-        BulkScheduleRequest request
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Шаблон расписания",
+            required = true
+        ) BulkScheduleRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(lessonApi.bulkScheduleLessons(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonApi.bulkScheduleLessons(request)
+        );
     }
 
     @Operation(summary = "Создать занятия по количеству типов")
     @PostMapping("/by-type")
     public ResponseEntity<List<LessonResponse>> createLessonsByType(
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Количество занятий по типам", required = true
-        )
-        CreateLessonsByTypeRequest request
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Количество занятий по типам",
+            required = true
+        ) CreateLessonsByTypeRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(lessonApi.createLessonsByType(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonApi.createLessonsByType(request)
+        );
     }
 }

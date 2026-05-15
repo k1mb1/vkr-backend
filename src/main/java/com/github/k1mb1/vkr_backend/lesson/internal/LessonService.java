@@ -12,12 +12,6 @@ import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectRepository;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -26,12 +20,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class LessonService
-    implements LessonApi {
+class LessonService implements LessonApi {
 
     final LessonRepository lessonRepository;
 
@@ -46,25 +42,40 @@ class LessonService
     @Transactional
     @Override
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
-        var lesson = lessonRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
+        var lesson = lessonRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Lesson not found: " + id)
+            );
 
         lessonMapper.updateEntity(request, lesson);
 
         if (request.subjectId() != null) {
-            lesson.setSubject(subjectRepository.getReferenceById(request.subjectId()));
+            lesson.setSubject(
+                subjectRepository.getReferenceById(request.subjectId())
+            );
         }
         if (request.groupId() != null) {
-            lesson.setGroup(groupReferenceService.getGroupReferenceById(request.groupId()));
+            lesson.setGroup(
+                groupReferenceService.getGroupReferenceById(request.groupId())
+            );
         }
         if (request.teacherId() != null) {
-            lesson.setTeacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()));
+            lesson.setTeacher(
+                teacherReferenceService.getTeacherReferenceById(
+                    request.teacherId()
+                )
+            );
         }
         if (request.subgroupId() != null) {
-            var subgroup = groupReferenceService.getSubgroupReferenceById(request.subgroupId());
+            var subgroup = groupReferenceService.getSubgroupReferenceById(
+                request.subgroupId()
+            );
             var targetGroup = lesson.getGroup();
             if (!subgroup.getGroup().getId().equals(targetGroup.getId())) {
-                throw new IllegalArgumentException("Subgroup does not belong to the lesson's group");
+                throw new IllegalArgumentException(
+                    "Subgroup does not belong to the lesson's group"
+                );
             }
             lesson.setSubgroup(subgroup);
         }
@@ -75,19 +86,22 @@ class LessonService
     @Transactional
     @Override
     public void deleteLesson(UUID id) {
-        var lesson = lessonRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
+        var lesson = lessonRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new EntityNotFoundException("Lesson not found: " + id)
+            );
         lesson.archive();
         lessonRepository.save(lesson);
     }
 
     @Override
-    public Page<LessonResponse> getLessonPage(LessonFilter filter, Pageable pageable) {
-        return lessonRepository.findAll(
-                new LessonSpecifications(filter).toSpecification(),
-                pageable
-            )
-            .map(lessonMapper::toResponse);
+    public List<LessonResponse> getLessons(LessonFilter filter) {
+        return lessonRepository
+            .findAll(new LessonSpecifications(filter).toSpecification())
+            .stream()
+            .map(lessonMapper::toResponse)
+            .toList();
     }
 
     @Transactional
@@ -95,17 +109,42 @@ class LessonService
     public List<LessonResponse> bulkScheduleLessons(
         BulkScheduleRequest request
     ) {
-        var subject = subjectRepository.findById(request.subjectId())
-            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + request.subjectId()));
-        var group = groupReferenceService.getGroupReferenceById(request.groupId());
+        var subject = subjectRepository
+            .findById(request.subjectId())
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "Subject not found: " + request.subjectId()
+                )
+            );
+        var group = groupReferenceService.getGroupReferenceById(
+            request.groupId()
+        );
+        var subgroup =
+            request.subgroupId() != null
+                ? groupReferenceService.getSubgroupReferenceById(
+                      request.subgroupId()
+                  )
+                : null;
+        if (
+            subgroup != null &&
+            !subgroup.getGroup().getId().equals(group.getId())
+        ) {
+            throw new IllegalArgumentException(
+                "Subgroup does not belong to the specified group"
+            );
+        }
 
         var lessons = new ArrayList<Lesson>();
 
         for (var entry : request.schedules()) {
-            lessons.addAll(generateSchedule(subject, group, entry));
+            lessons.addAll(generateSchedule(subject, group, subgroup, entry));
         }
 
-        return lessonRepository.saveAll(lessons).stream().map(lessonMapper::toResponse).toList();
+        return lessonRepository
+            .saveAll(lessons)
+            .stream()
+            .map(lessonMapper::toResponse)
+            .toList();
     }
 
     @Transactional
@@ -113,35 +152,68 @@ class LessonService
     public List<LessonResponse> createLessonsByType(
         CreateLessonsByTypeRequest request
     ) {
-        var subject = subjectRepository.findById(request.subjectId())
-            .orElseThrow(() -> new EntityNotFoundException("Subject not found: " + request.subjectId()));
-        var group = groupReferenceService.getGroupReferenceById(request.groupId());
+        var subject = subjectRepository
+            .findById(request.subjectId())
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "Subject not found: " + request.subjectId()
+                )
+            );
+        var group = groupReferenceService.getGroupReferenceById(
+            request.groupId()
+        );
+        var subgroup =
+            request.subgroupId() != null
+                ? groupReferenceService.getSubgroupReferenceById(
+                      request.subgroupId()
+                  )
+                : null;
+        if (
+            subgroup != null &&
+            !subgroup.getGroup().getId().equals(group.getId())
+        ) {
+            throw new IllegalArgumentException(
+                "Subgroup does not belong to the specified group"
+            );
+        }
         var now = Instant.now();
         var lessons = new ArrayList<Lesson>();
 
         for (int i = 0; i < request.lectureCount(); i++) {
-            lessons.add(lesson(subject, group, LessonType.LECTURE, now));
+            lessons.add(
+                lesson(subject, group, subgroup, LessonType.LECTURE, now)
+            );
         }
         for (int i = 0; i < request.practiceCount(); i++) {
-            lessons.add(lesson(subject, group, LessonType.PRACTICE, now));
+            lessons.add(
+                lesson(subject, group, subgroup, LessonType.PRACTICE, now)
+            );
         }
 
-        return lessonRepository.saveAll(lessons).stream().map(lessonMapper::toResponse).toList();
+        return lessonRepository
+            .saveAll(lessons)
+            .stream()
+            .map(lessonMapper::toResponse)
+            .toList();
     }
 
     private List<Lesson> generateSchedule(
         com.github.k1mb1.vkr_backend.subject.domain.Subject subject,
         com.github.k1mb1.vkr_backend.group.domain.Group group,
+        com.github.k1mb1.vkr_backend.group.domain.Subgroup subgroup,
         BulkScheduleRequest.Entry entry
     ) {
         var lessons = new ArrayList<Lesson>();
         var patterns = entry.daysOfWeek();
-        var weekStart = entry.startDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        var weekStart = entry
+            .startDate()
+            .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         var weekIndex = 0;
 
         while (lessons.size() < entry.totalCount()) {
             var pattern = patterns.get(weekIndex % patterns.size());
-            var sortedDays = pattern.stream()
+            var sortedDays = pattern
+                .stream()
                 .sorted(Comparator.comparingInt(DayOfWeek::getValue))
                 .toList();
 
@@ -149,14 +221,19 @@ class LessonService
                 if (lessons.size() >= entry.totalCount()) {
                     break;
                 }
-                var lessonDate = weekStart.plusDays(dow.getValue() - DayOfWeek.MONDAY.getValue());
+                var lessonDate = weekStart.plusDays(
+                    dow.getValue() - DayOfWeek.MONDAY.getValue()
+                );
                 if (!lessonDate.isBefore(entry.startDate())) {
-                    lessons.add(lesson(
-                        subject,
-                        group,
-                        entry.type(),
-                        lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()
-                    ));
+                    lessons.add(
+                        lesson(
+                            subject,
+                            group,
+                            subgroup,
+                            entry.type(),
+                            lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()
+                        )
+                    );
                 }
             }
 
@@ -170,12 +247,14 @@ class LessonService
     private Lesson lesson(
         com.github.k1mb1.vkr_backend.subject.domain.Subject subject,
         com.github.k1mb1.vkr_backend.group.domain.Group group,
+        com.github.k1mb1.vkr_backend.group.domain.Subgroup subgroup,
         LessonType type,
         Instant startedAt
     ) {
         return Lesson.builder()
             .subject(subject)
             .group(group)
+            .subgroup(subgroup)
             .type(type)
             .startedAt(startedAt)
             .build();
