@@ -1,6 +1,8 @@
 package com.github.k1mb1.vkr_backend.lesson.internal;
 
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
+import com.github.k1mb1.vkr_backend.group.domain.Group;
+import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
@@ -9,17 +11,15 @@ import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkScheduleRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.CreateLessonsByTypeRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
+import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
-import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,16 +38,12 @@ class LessonService
 
     final GroupReferenceService groupReferenceService;
 
-    final TeacherReferenceService teacherReferenceService;
-
     final SubjectRepository subjectRepository;
-
-    final TeacherSubjectPermissionRepository permissionRepository;
 
     @Transactional
     @Override
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
-        var lesson = lessonRepository.findById(id)
+        var lesson = lessonRepository.findByIdWithDetails(id)
             .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + id));
 
         lessonMapper.updateEntity(request, lesson);
@@ -57,9 +53,6 @@ class LessonService
         }
         if (request.groupId() != null) {
             lesson.setGroup(groupReferenceService.getGroupReferenceById(request.groupId()));
-        }
-        if (request.teacherId() != null) {
-            lesson.setTeacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()));
         }
         if (request.subgroupId() != null) {
             var subgroup = groupReferenceService.getSubgroupReferenceById(request.subgroupId());
@@ -84,9 +77,7 @@ class LessonService
 
     @Override
     public List<LessonResponse> getLessons(LessonFilter filter) {
-        var permission = permissionRepository.findById(filter.permissionId())
-            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + filter.permissionId()));
-        return lessonRepository.findAll(new LessonSpecifications(permission).toSpecification())
+        return lessonRepository.findAllByPermissionIdWithDetails(filter.permissionId())
             .stream()
             .map(lessonMapper::toResponse)
             .toList();
@@ -130,23 +121,23 @@ class LessonService
         if (subgroup != null && !subgroup.getGroup().getId().equals(group.getId())) {
             throw new IllegalArgumentException("Subgroup does not belong to the specified group");
         }
-        var now = Instant.now();
+        var today = LocalDate.now();
         var lessons = new ArrayList<Lesson>();
 
         for (int i = 0; i < request.lectureCount(); i++) {
-            lessons.add(lesson(subject, group, subgroup, LessonType.LECTURE, now));
+            lessons.add(lesson(subject, group, subgroup, LessonType.LECTURE, today));
         }
         for (int i = 0; i < request.practiceCount(); i++) {
-            lessons.add(lesson(subject, group, subgroup, LessonType.PRACTICE, now));
+            lessons.add(lesson(subject, group, subgroup, LessonType.PRACTICE, today));
         }
 
         return lessonRepository.saveAll(lessons).stream().map(lessonMapper::toResponse).toList();
     }
 
     private List<Lesson> generateSchedule(
-        com.github.k1mb1.vkr_backend.subject.domain.Subject subject,
-        com.github.k1mb1.vkr_backend.group.domain.Group group,
-        com.github.k1mb1.vkr_backend.group.domain.Subgroup subgroup,
+        Subject subject,
+        Group group,
+        Subgroup subgroup,
         BulkScheduleRequest.Entry entry
     ) {
         var lessons = new ArrayList<Lesson>();
@@ -166,13 +157,7 @@ class LessonService
                 }
                 var lessonDate = weekStart.plusDays(dow.getValue() - DayOfWeek.MONDAY.getValue());
                 if (!lessonDate.isBefore(entry.startDate())) {
-                    lessons.add(lesson(
-                        subject,
-                        group,
-                        subgroup,
-                        entry.type(),
-                        lessonDate.atStartOfDay(ZoneOffset.UTC).toInstant()
-                    ));
+                    lessons.add(lesson(subject, group, subgroup, entry.type(), lessonDate));
                 }
             }
 
@@ -184,11 +169,11 @@ class LessonService
     }
 
     private Lesson lesson(
-        com.github.k1mb1.vkr_backend.subject.domain.Subject subject,
-        com.github.k1mb1.vkr_backend.group.domain.Group group,
-        com.github.k1mb1.vkr_backend.group.domain.Subgroup subgroup,
+        Subject subject,
+        Group group,
+        Subgroup subgroup,
         LessonType type,
-        Instant startedAt
+        LocalDate startedAt
     ) {
         return Lesson.builder()
             .subject(subject)

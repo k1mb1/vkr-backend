@@ -4,7 +4,6 @@ import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
-import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -16,7 +15,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
-import java.time.Instant;
+import java.time.LocalDate;
 
 @Hidden
 @Entity
@@ -25,7 +24,6 @@ import java.time.Instant;
     @Index(name = "idx_lessons_subject_id", columnList = "subject_id"),
     @Index(name = "idx_lessons_group_id", columnList = "group_id"),
     @Index(name = "idx_lessons_subgroup_id", columnList = "subgroup_id"),
-    @Index(name = "idx_lessons_teacher_id", columnList = "teacher_id"),
     @Index(name = "idx_lessons_started_at", columnList = "started_at"),
 }
 )
@@ -56,15 +54,7 @@ public class Lesson
     )
     LessonType type;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id")
-    Teacher teacher;
-
-    @Column(
-        name = "started_at", nullable = false, columnDefinition = "timestamptz"
-    ) Instant startedAt;
-
-    @Column(name = "ended_at", columnDefinition = "timestamptz") Instant endedAt;
+    @Column(name = "started_at", nullable = false) LocalDate startedAt;
 
     @Column(columnDefinition = "text") String topic;
 }

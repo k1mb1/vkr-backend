@@ -14,9 +14,11 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 @Mapper(componentModel = SPRING)
 interface LessonMapper {
     @Mapping(target = "subjectId", source = "subject.id")
+    @Mapping(target = "subjectName", source = "subject.name")
     @Mapping(target = "groupId", source = "group.id")
+    @Mapping(target = "groupName", source = "group.name")
     @Mapping(target = "subgroupId", source = "subgroup.id")
-    @Mapping(target = "teacherId", source = "teacher.id")
+    @Mapping(target = "subgroupIndex", source = "subgroup.index")
     LessonResponse toResponse(Lesson lesson);
 
     @Mapping(target = "id", ignore = true)
@@ -26,7 +28,6 @@ interface LessonMapper {
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "group", ignore = true)
     @Mapping(target = "subgroup", ignore = true)
-    @Mapping(target = "teacher", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(
         UpdateLessonRequest request,

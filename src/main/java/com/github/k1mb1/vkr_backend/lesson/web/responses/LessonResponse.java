@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Schema(description = "Информация о занятии")
@@ -14,23 +15,26 @@ public record LessonResponse(
     @Schema(description = "ID предмета")
     UUID subjectId,
 
+    @Schema(description = "Название предмета")
+    String subjectName,
+
     @Schema(description = "ID группы")
     UUID groupId,
+
+    @Schema(description = "Название группы")
+    String groupName,
 
     @Schema(description = "ID подгруппы (null для всей группы)")
     UUID subgroupId,
 
+    @Schema(description = "Индекс подгруппы (null для всей группы)")
+    Integer subgroupIndex,
+
     @Schema(description = "Тип занятия")
     LessonType type,
 
-    @Schema(description = "ID преподавателя")
-    UUID teacherId,
-
-    @Schema(description = "Время начала занятия")
-    Instant startedAt,
-
-    @Schema(description = "Время окончания занятия")
-    Instant endedAt,
+    @Schema(description = "Дата занятия")
+    LocalDate startedAt,
 
     @Schema(description = "Тема занятия")
     String topic,
