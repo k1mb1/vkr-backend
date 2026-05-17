@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/v0/20260509024900-entities-partial-indexes.sql
+  - include:
+      file: db/changelog/v0/20260516120000-permission-unique-teacher-subject.sql

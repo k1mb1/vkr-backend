@@ -10,6 +10,7 @@ import com.github.k1mb1.vkr_backend.lesson.web.requests.CreateLessonsByTypeReque
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectRepository;
+import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,8 @@ class LessonService
     final TeacherReferenceService teacherReferenceService;
 
     final SubjectRepository subjectRepository;
+
+    final TeacherSubjectPermissionRepository permissionRepository;
 
     @Transactional
     @Override
@@ -81,7 +84,9 @@ class LessonService
 
     @Override
     public List<LessonResponse> getLessons(LessonFilter filter) {
-        return lessonRepository.findAll(new LessonSpecifications(filter).toSpecification())
+        var permission = permissionRepository.findById(filter.permissionId())
+            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + filter.permissionId()));
+        return lessonRepository.findAll(new LessonSpecifications(permission).toSpecification())
             .stream()
             .map(lessonMapper::toResponse)
             .toList();

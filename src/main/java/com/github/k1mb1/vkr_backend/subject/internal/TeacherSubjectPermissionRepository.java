@@ -7,13 +7,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-interface TeacherSubjectPermissionRepository
+public interface TeacherSubjectPermissionRepository
     extends JpaRepository<TeacherSubjectPermission, UUID> {
-    List<TeacherSubjectPermission> findBySubjectId(UUID subjectId);
-
     @Query(
         """
             SELECT p FROM TeacherSubjectPermission p
@@ -36,26 +35,12 @@ interface TeacherSubjectPermissionRepository
             LEFT JOIN FETCH p.allowedSubgroup
             WHERE p.subject.id = :subjectId
               AND p.teacher.id = :teacherId
-            ORDER BY p.group.name
             """
     )
-    List<TeacherSubjectPermission> findBySubjectIdAndTeacherIdFetchDetails(
+    Optional<TeacherSubjectPermission> findBySubjectIdAndTeacherIdFetchDetails(
         @Param("subjectId") UUID subjectId,
         @Param("teacherId") UUID teacherId
     );
 
-    @Query(
-        """
-            SELECT p FROM TeacherSubjectPermission p
-            WHERE p.teacher.id = :teacherId
-              AND p.subject.id = :subjectId
-              AND p.group.id = :groupId
-              AND p.archivedAt IS NULL
-            """
-    )
-    List<TeacherSubjectPermission> findActiveByTeacherSubjectGroup(
-        @Param("teacherId") UUID teacherId,
-        @Param("subjectId") UUID subjectId,
-        @Param("groupId") UUID groupId
-    );
+    boolean existsByTeacherIdAndSubjectId(UUID teacherId, UUID subjectId);
 }
