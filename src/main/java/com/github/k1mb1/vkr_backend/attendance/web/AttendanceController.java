@@ -12,16 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequestMapping(
-    value = "/api/attendances",
-    produces = MediaType.APPLICATION_JSON_VALUE
+    value = "/api/attendances", produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Tag(name = "Attendances", description = "Посещаемость")
 @RestController
@@ -35,7 +29,10 @@ public class AttendanceController {
     )
     @GetMapping
     public ResponseEntity<AttendanceTableResponse> getAttendanceTable(
-        @ParameterObject @Valid @ModelAttribute AttendanceFilter filter
+        @ParameterObject
+        @Valid
+        @ModelAttribute
+        AttendanceFilter filter
     ) {
         return ResponseEntity.ok(attendanceApi.getAttendanceTable(filter));
     }
@@ -45,10 +42,12 @@ public class AttendanceController {
     )
     @PutMapping
     public ResponseEntity<AttendanceCellResponse> upsert(
-        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Ячейка посещаемости",
-            required = true
-        ) UpsertAttendanceRequest request
+        @Valid
+        @RequestBody
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Ячейка посещаемости", required = true
+        )
+        UpsertAttendanceRequest request
     ) {
         return ResponseEntity.ok(attendanceApi.upsert(request));
     }
