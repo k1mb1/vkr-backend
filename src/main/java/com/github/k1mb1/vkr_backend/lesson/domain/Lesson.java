@@ -1,12 +1,14 @@
 package com.github.k1mb1.vkr_backend.lesson.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
-import com.github.k1mb1.vkr_backend.group.domain.Group;
-import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,15 +17,11 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDate;
-
 @Hidden
 @Entity
 @Table(
     name = "lessons", indexes = {
     @Index(name = "idx_lessons_subject_id", columnList = "subject_id"),
-    @Index(name = "idx_lessons_group_id", columnList = "group_id"),
-    @Index(name = "idx_lessons_subgroup_id", columnList = "subgroup_id"),
     @Index(name = "idx_lessons_started_at", columnList = "started_at"),
 }
 )
@@ -40,14 +38,6 @@ public class Lesson
     @JoinColumn(name = "subject_id", nullable = false)
     Subject subject;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id", nullable = false)
-    Group group;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subgroup_id")
-    Subgroup subgroup;
-
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(
         name = "lesson_type", nullable = false, columnDefinition = "lesson_type"
@@ -57,4 +47,15 @@ public class Lesson
     @Column(name = "started_at", nullable = false) LocalDate startedAt;
 
     @Column(columnDefinition = "text") String topic;
+
+    @Column(name = "all_groups", nullable = false)
+    boolean allGroups;
+
+    @OneToMany(
+        mappedBy = "lesson",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @Builder.Default
+    Set<LessonScope> scopes = new HashSet<>();
 }

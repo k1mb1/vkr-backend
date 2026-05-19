@@ -1,20 +1,18 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
-import com.github.k1mb1.vkr_backend.group.domain.Group;
-import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
-import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.type.SqlTypes;
 
 @Hidden
 @Entity
@@ -25,8 +23,7 @@ import org.hibernate.type.SqlTypes;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeacherSubjectPermission
-    extends ArchivableEntity {
+public class TeacherSubjectPermission extends ArchivableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "teacher_id", nullable = false)
@@ -36,15 +33,14 @@ public class TeacherSubjectPermission
     @JoinColumn(name = "subject_id", nullable = false)
     Subject subject;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id", nullable = false)
-    Group group;
+    @Column(name = "all_permissions", nullable = false)
+    boolean allPermissions;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "allowed_subgroup_id")
-    Subgroup allowedSubgroup;
-
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "allowed_lesson_type", columnDefinition = "lesson_type")
-    LessonType allowedLessonType;
+    @OneToMany(
+        mappedBy = "permission",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    @Builder.Default
+    Set<PermissionScope> scopes = new HashSet<>();
 }

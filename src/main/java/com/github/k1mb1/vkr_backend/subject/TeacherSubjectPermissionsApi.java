@@ -8,9 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TeacherSubjectPermissionsApi {
-    List<TeacherSubjectPermissionResponse> getPermissionsBySubject(
-        UUID subjectId
-    );
+    List<TeacherSubjectPermissionResponse> getPermissionsBySubject(UUID subjectId);
 
     TeacherSubjectPermissionResponse getPermission(UUID subjectId, UUID teacherId);
 

@@ -25,7 +25,7 @@ public class AttendanceController {
     final AttendanceApi attendanceApi;
 
     @Operation(
-        summary = "Получить таблицу посещаемости по permissionId (студенты × занятия)"
+        summary = "Получить таблицу посещаемости по permissionId"
     )
     @GetMapping
     public ResponseEntity<AttendanceTableResponse> getAttendanceTable(

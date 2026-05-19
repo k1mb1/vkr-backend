@@ -15,39 +15,39 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSess
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
+import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class CheckInSessionService
-    implements CheckInSessionApi {
+class CheckInSessionService implements CheckInSessionApi {
 
     final CheckInSessionRepository sessionRepository;
 
     final CheckInRecordRepository recordRepository;
 
-    final TeacherSubjectPermissionRepository permissionRepository;
-
     final LessonRepository lessonRepository;
 
+    final TeacherSubjectPermissionRepository permissionRepository;
+
     final StudentRepository studentRepository;
+
+    final LessonStudentsApi lessonStudentsApi;
 
     final CheckInSessionMapper mapper;
 
@@ -56,28 +56,34 @@ class CheckInSessionService
     @Transactional
     @Override
     public CheckInSessionResponse start(StartCheckInRequest request) {
-        var permission = permissionRepository.findById(request.permissionId())
-            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + request.permissionId()));
-        var lesson = lessonRepository.findByIdWithDetails(request.lessonId())
-            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + request.lessonId()));
+        var lesson = lessonRepository
+            .findByIdWithDetails(request.lessonId())
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "Lesson not found: " + request.lessonId()
+                )
+            );
 
-        assertLessonMatchesPermission(lesson, permission);
-
-        sessionRepository.findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(lesson.getId())
+        sessionRepository
+            .findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(lesson.getId())
             .ifPresent(existing -> {
                 throw new IllegalStateException(
-                    "Active check-in session already exists for lesson: " + lesson.getId());
+                    "Active check-in session already exists for lesson: " +
+                        lesson.getId()
+                );
             });
 
         var session = CheckInSession.builder()
             .lesson(lesson)
-            .permission(permission)
             .startedAt(Instant.now())
             .onTimeSeconds(request.onTimeSeconds())
             .lateSeconds(request.lateSeconds())
             .build();
 
-        return mapper.toResponse(sessionRepository.save(session), Instant.now());
+        return mapper.toResponse(
+            sessionRepository.save(session),
+            Instant.now()
+        );
     }
 
     @Override
@@ -88,8 +94,26 @@ class CheckInSessionService
 
     @Override
     public List<CheckInSessionResponse> listForPermission(UUID permissionId) {
+        var permission = permissionRepository
+            .findByIdWithDetails(permissionId)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "TeacherSubjectPermission not found: " + permissionId
+                )
+            );
+
+        var lessonIds = lessonRepository
+            .findAll(LessonSpecifications.forPermission(permission))
+            .stream()
+            .map(Lesson::getId)
+            .toList();
+        if (lessonIds.isEmpty()) {
+            return List.of();
+        }
+
         var now = Instant.now();
-        return sessionRepository.findByPermissionIdOrderByStartedAtDesc(permissionId)
+        return sessionRepository
+            .findByLessonIdInOrderByStartedAtDesc(lessonIds)
             .stream()
             .map(s -> mapper.toResponse(s, now))
             .toList();
@@ -98,14 +122,16 @@ class CheckInSessionService
     @Override
     public CheckInPreviewResponse preview(UUID sessionId) {
         var session = loadSession(sessionId);
-        var students = loadStudents(session.getPermission());
+        var students = lessonStudentsApi.studentsOf(session.getLesson());
         var recordsByStudent = recordsByStudentId(sessionId);
 
-        var rows = students.stream()
+        var rows = students
+            .stream()
             .map(student -> {
                 var record = recordsByStudent.get(student.getId());
                 var checkInStatus = record != null ? record.getStatus() : null;
-                var checkedInAt = record != null ? record.getCheckedInAt() : null;
+                var checkedInAt =
+                    record != null ? record.getCheckedInAt() : null;
                 var proposed = proposedAttendanceStatus(checkInStatus);
                 return new CheckInPreviewResponse.Row(
                     student.getId(),
@@ -117,30 +143,48 @@ class CheckInSessionService
             })
             .toList();
 
-        return new CheckInPreviewResponse(mapper.toResponse(session, Instant.now()), rows);
+        return new CheckInPreviewResponse(
+            mapper.toResponse(session, Instant.now()),
+            rows
+        );
     }
 
     @Transactional
     @Override
-    public CheckInSessionResponse confirm(UUID sessionId, ConfirmCheckInRequest request) {
+    public CheckInSessionResponse confirm(
+        UUID sessionId,
+        ConfirmCheckInRequest request
+    ) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
-            throw new IllegalStateException("Session already confirmed: " + sessionId);
+            throw new IllegalStateException(
+                "Session already confirmed: " + sessionId
+            );
         }
         if (session.getCancelledAt() != null) {
-            throw new IllegalStateException("Session is cancelled: " + sessionId);
+            throw new IllegalStateException(
+                "Session is cancelled: " + sessionId
+            );
         }
 
-        var students = loadStudents(session.getPermission());
-        var studentIds = students.stream().map(Student::getId).collect(java.util.stream.Collectors.toSet());
+        var students = lessonStudentsApi.studentsOf(session.getLesson());
+        var studentIds = students
+            .stream()
+            .map(Student::getId)
+            .collect(java.util.stream.Collectors.toSet());
         var recordsByStudent = recordsByStudentId(sessionId);
 
-        var overridesByStudent = new HashMap<UUID, ConfirmCheckInRequest.Override>();
+        var overridesByStudent = new HashMap<
+            UUID,
+            ConfirmCheckInRequest.Override
+        >();
         if (request != null && request.overrides() != null) {
             for (var ov : request.overrides()) {
                 if (!studentIds.contains(ov.studentId())) {
                     throw new IllegalArgumentException(
-                        "Override references student not in lesson scope: " + ov.studentId());
+                        "Override references student not in lesson audience: " +
+                            ov.studentId()
+                    );
                 }
                 overridesByStudent.put(ov.studentId(), ov);
             }
@@ -156,14 +200,26 @@ class CheckInSessionService
                 comment = override.comment();
             } else {
                 var record = recordsByStudent.get(student.getId());
-                status = proposedAttendanceStatus(record != null ? record.getStatus() : null);
+                status = proposedAttendanceStatus(
+                    record != null ? record.getStatus() : null
+                );
                 comment = null;
             }
-            attendanceApi.upsert(new UpsertAttendanceRequest(student.getId(), lessonId, status, comment));
+            attendanceApi.upsert(
+                new UpsertAttendanceRequest(
+                    student.getId(),
+                    lessonId,
+                    status,
+                    comment
+                )
+            );
         }
 
         session.setConfirmedAt(Instant.now());
-        return mapper.toResponse(sessionRepository.save(session), Instant.now());
+        return mapper.toResponse(
+            sessionRepository.save(session),
+            Instant.now()
+        );
     }
 
     @Transactional
@@ -171,7 +227,9 @@ class CheckInSessionService
     public CheckInSessionResponse cancel(UUID sessionId) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
-            throw new IllegalStateException("Cannot cancel a confirmed session: " + sessionId);
+            throw new IllegalStateException(
+                "Cannot cancel a confirmed session: " + sessionId
+            );
         }
         if (session.getCancelledAt() == null) {
             session.setCancelledAt(Instant.now());
@@ -183,11 +241,12 @@ class CheckInSessionService
     @Override
     public PublicCheckInSessionResponse getPublic(UUID sessionId) {
         var session = loadSession(sessionId);
-        var students = loadStudents(session.getPermission());
+        var students = lessonStudentsApi.studentsOf(session.getLesson());
         var recordsByStudent = recordsByStudentId(sessionId);
         var now = Instant.now();
 
-        var rows = students.stream()
+        var rows = students
+            .stream()
             .map(student -> {
                 var record = recordsByStudent.get(student.getId());
                 return new PublicCheckInSessionResponse.Student(
@@ -202,6 +261,7 @@ class CheckInSessionService
         return new PublicCheckInSessionResponse(
             session.getId(),
             session.getLesson().getTopic(),
+            mapper.audienceOf(session.getLesson()),
             session.stateAt(now),
             session.onTimeEndsAt(),
             session.lateEndsAt(),
@@ -212,20 +272,31 @@ class CheckInSessionService
 
     @Transactional
     @Override
-    public CheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
+    public CheckInRecordResponse checkIn(
+        UUID sessionId,
+        StudentCheckInRequest request
+    ) {
         var session = loadSession(sessionId);
         var now = Instant.now();
         var state = session.stateAt(now);
-        if (state != CheckInSessionState.OPEN && state != CheckInSessionState.LATE_WINDOW) {
-            throw new IllegalStateException("Check-in is closed for session: " + sessionId);
+        if (
+            state != CheckInSessionState.OPEN &&
+            state != CheckInSessionState.LATE_WINDOW
+        ) {
+            throw new IllegalStateException(
+                "Check-in is closed for session: " + sessionId
+            );
         }
 
         var studentId = request.studentId();
-        var students = loadStudents(session.getPermission());
-        var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
+        var students = lessonStudentsApi.studentsOf(session.getLesson());
+        var inScope = students
+            .stream()
+            .anyMatch(s -> s.getId().equals(studentId));
         if (!inScope) {
             throw new IllegalArgumentException(
-                "Student is not part of this lesson scope: " + studentId);
+                "Student is not part of this lesson audience: " + studentId
+            );
         }
 
         var status = session.statusForCheckInAt(now);
@@ -233,12 +304,15 @@ class CheckInSessionService
             throw new IllegalStateException("Check-in window has elapsed");
         }
 
-        var record = recordRepository.findBySessionIdAndStudentId(sessionId, studentId)
-            .orElseGet(() -> CheckInRecord.builder()
-                .session(session)
-                .student(studentRepository.getReferenceById(studentId))
-                .checkedInAt(now)
-                .build());
+        var record = recordRepository
+            .findBySessionIdAndStudentId(sessionId, studentId)
+            .orElseGet(() ->
+                CheckInRecord.builder()
+                    .session(session)
+                    .student(studentRepository.getReferenceById(studentId))
+                    .checkedInAt(now)
+                    .build()
+            );
 
         // first check-in wins; do not downgrade PRESENT to LATE on repeated submission
         if (record.getId() == null) {
@@ -250,8 +324,13 @@ class CheckInSessionService
     }
 
     private CheckInSession loadSession(UUID sessionId) {
-        return sessionRepository.findByIdWithDetails(sessionId)
-            .orElseThrow(() -> new EntityNotFoundException("CheckInSession not found: " + sessionId));
+        return sessionRepository
+            .findByIdWithDetails(sessionId)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "CheckInSession not found: " + sessionId
+                )
+            );
     }
 
     private Map<UUID, CheckInRecord> recordsByStudentId(UUID sessionId) {
@@ -262,37 +341,9 @@ class CheckInSessionService
         return map;
     }
 
-    private List<Student> loadStudents(TeacherSubjectPermission permission) {
-        var groupId = permission.getGroup().getId();
-        var students = permission.getAllowedSubgroup() != null
-                       ? studentRepository.findByGroupIdAndSubgroupIdAndArchivedAtIsNull(
-            groupId,
-            permission.getAllowedSubgroup().getId()
-        )
-                       : studentRepository.findByGroupIdAndArchivedAtIsNull(groupId);
-        return students.stream().sorted(Comparator.comparing(Student::getUsername)).toList();
-    }
-
-    private void assertLessonMatchesPermission(Lesson lesson, TeacherSubjectPermission permission) {
-        if (!lesson.getSubject().getId().equals(permission.getSubject().getId())) {
-            throw new IllegalArgumentException("Lesson subject does not match permission");
-        }
-        if (!lesson.getGroup().getId().equals(permission.getGroup().getId())) {
-            throw new IllegalArgumentException("Lesson group does not match permission");
-        }
-        if (permission.getAllowedSubgroup() != null) {
-            if (lesson.getSubgroup() == null
-                || !lesson.getSubgroup().getId().equals(permission.getAllowedSubgroup().getId())) {
-                throw new IllegalArgumentException("Lesson subgroup does not match permission");
-            }
-        }
-        if (permission.getAllowedLessonType() != null
-            && permission.getAllowedLessonType() != lesson.getType()) {
-            throw new IllegalArgumentException("Lesson type does not match permission");
-        }
-    }
-
-    private static AttendanceStatus proposedAttendanceStatus(CheckInRecordStatus status) {
+    private static AttendanceStatus proposedAttendanceStatus(
+        CheckInRecordStatus status
+    ) {
         if (status == null) {
             return AttendanceStatus.ABSENT;
         }

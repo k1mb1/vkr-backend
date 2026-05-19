@@ -19,6 +19,7 @@ interface SubjectMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "archivedAt", ignore = true)
+    @Mapping(target = "groups", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(
         UpdateSubjectRequest request,

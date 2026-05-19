@@ -8,6 +8,12 @@ import java.util.List;
     description = "Таблица посещаемости: студенты × занятия с существующими ячейками"
 )
 public record AttendanceTableResponse(
+    @Schema(
+        description = "Аудитория таблицы — группы и подгруппы, покрываемые разрешением " +
+            "(для построения заголовка таблицы)."
+    )
+    List<AttendanceAudienceScope> audience,
+
     @Schema(description = "Строки таблицы — студенты")
     List<AttendanceTableStudent> students,
 

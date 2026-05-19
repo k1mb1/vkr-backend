@@ -1,0 +1,17 @@
+package com.github.k1mb1.vkr_backend.attendance.checkin.web.responses;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.UUID;
+
+@Schema(description = "Одна аудиторная единица опроса — группа и опционально подгруппа")
+public record CheckInAudienceScope(
+    @Schema(description = "ID группы") UUID groupId,
+
+    @Schema(description = "Название группы") String groupName,
+
+    @Schema(description = "ID подгруппы (null = вся группа)")
+    UUID allowedSubgroupId,
+
+    @Schema(description = "Индекс подгруппы (null = вся группа)")
+    Integer allowedSubgroupIndex
+) {}

@@ -31,7 +31,7 @@ public class LessonController {
     final LessonApi lessonApi;
 
     @Operation(
-        summary = "Получить список занятий по permissionId преподавателя"
+        summary = "Получить список занятий по permissionId"
     )
     @GetMapping
     public ResponseEntity<List<LessonResponse>> getLessons(

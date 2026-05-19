@@ -9,10 +9,11 @@ import java.util.UUID;
 @Builder
 @Schema(description = "Фильтр для поиска занятий")
 public record LessonFilter(
-    @NotNull
     @Schema(
-        description = "ID права преподавателя на предмет",
+        description = "ID разрешения преподавателя. Вернёт занятия по предмету, у которых либо allGroups=true, " +
+            "либо есть scope, попадающий хотя бы в один scope разрешения.",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
+    @NotNull
     UUID permissionId
 ) {}

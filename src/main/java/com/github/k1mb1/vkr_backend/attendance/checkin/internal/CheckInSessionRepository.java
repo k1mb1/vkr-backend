@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -18,17 +19,30 @@ interface CheckInSessionRepository
         """
         SELECT s FROM CheckInSession s
         JOIN FETCH s.lesson l
-        JOIN FETCH l.subject
-        JOIN FETCH l.group
-        LEFT JOIN FETCH l.subgroup
-        JOIN FETCH s.permission p
-        LEFT JOIN FETCH p.allowedSubgroup
+        JOIN FETCH l.subject subj
+        LEFT JOIN FETCH subj.groups
+        LEFT JOIN FETCH l.scopes ls
+        LEFT JOIN FETCH ls.group
+        LEFT JOIN FETCH ls.allowedSubgroup
         WHERE s.id = :id
         """
     )
     Optional<CheckInSession> findByIdWithDetails(@Param("id") UUID id);
 
-    Optional<CheckInSession> findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(UUID lessonId);
+    Optional<CheckInSession> findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(
+        UUID lessonId
+    );
 
-    List<CheckInSession> findByPermissionIdOrderByStartedAtDesc(UUID permissionId);
+    @Query(
+        """
+        SELECT s FROM CheckInSession s
+        JOIN FETCH s.lesson l
+        JOIN FETCH l.subject
+        WHERE l.id IN :lessonIds
+        ORDER BY s.startedAt DESC
+        """
+    )
+    List<CheckInSession> findByLessonIdInOrderByStartedAtDesc(
+        @Param("lessonIds") Collection<UUID> lessonIds
+    );
 }

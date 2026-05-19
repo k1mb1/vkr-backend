@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.UUID;
 
 @Service
@@ -47,17 +48,25 @@ class SubjectService
     @Transactional
     @Override
     public SubjectResponse createSubject(CreateSubjectRequest request) {
-        var subject = subjectRepository.save(Subject.builder()
-                                                 .name(request.name())
-                                                 .description(request.description())
-                                                 .build());
+        var subject = Subject.builder()
+            .name(request.name())
+            .description(request.description())
+            .build();
 
-        permissionRepository.save(TeacherSubjectPermission.builder()
-                                      .subject(subject)
-                                      .group(groupReferenceService.getGroupReferenceById(request.groupId()))
-                                      .teacher(teacherReferenceService.getTeacherReferenceById(
-                                          request.teacherId()))
-                                      .build());
+        for (var groupId : new HashSet<>(request.groupIds())) {
+            subject.getGroups().add(groupReferenceService.getGroupReferenceById(groupId));
+        }
+
+        subject = subjectRepository.save(subject);
+
+        var teacher = teacherReferenceService.getTeacherReferenceById(request.teacherId());
+        var permission = TeacherSubjectPermission.builder()
+            .teacher(teacher)
+            .subject(subject)
+            .allPermissions(true)
+            .build();
+
+        permissionRepository.save(permission);
 
         return subjectMapper.toFullResponse(subject);
     }

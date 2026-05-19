@@ -2,7 +2,6 @@ package com.github.k1mb1.vkr_backend.attendance.checkin.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -19,7 +18,6 @@ import java.time.Instant;
 @Table(
     name = "check_in_sessions", indexes = {
     @Index(name = "idx_check_in_sessions_lesson", columnList = "lesson_id"),
-    @Index(name = "idx_check_in_sessions_permission", columnList = "permission_id"),
 }
 )
 @Getter
@@ -33,10 +31,6 @@ public class CheckInSession
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)
     Lesson lesson;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "permission_id", nullable = false)
-    TeacherSubjectPermission permission;
 
     @Column(name = "started_at", nullable = false, columnDefinition = "timestamptz")
     Instant startedAt;

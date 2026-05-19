@@ -2,20 +2,20 @@ package com.github.k1mb1.vkr_backend.lesson.web.requests;
 
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Schema(
     description = """
     Запрос на частичное обновление занятия (PATCH).
     Семантика: поле = null или отсутствует — значение не изменяется.
-    Очистка существующих значений (например, "отвязать подгруппу") через этот эндпоинт не поддерживается.
+    Если передан allGroups=false, то scopes должен быть непустым.
     """
 )
 public record UpdateLessonRequest(
     @Schema(description = "ID предмета (null — не менять)") UUID subjectId,
-
-    @Schema(description = "ID группы (null — не менять)") UUID groupId,
 
     @Schema(description = "Тип занятия (null — не менять)") LessonType type,
 
@@ -24,8 +24,13 @@ public record UpdateLessonRequest(
 
     @Schema(description = "Тема занятия (null — не менять)") String topic,
 
+    @Schema(description = "true = все группы предмета (null — не менять)")
+    Boolean allGroups,
+
     @Schema(
-        description = "ID подгруппы (null — не менять; очистить через этот эндпоинт нельзя)"
+        description = "Список scopes (null — не менять). " +
+            "Если задан вместе с allGroups=false, должен быть непустым."
     )
-    UUID subgroupId
+    @Valid
+    List<LessonScopeRequest> scopes
 ) {}

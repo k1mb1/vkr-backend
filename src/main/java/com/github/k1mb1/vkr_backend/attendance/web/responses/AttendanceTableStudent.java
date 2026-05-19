@@ -12,6 +12,15 @@ public record AttendanceTableStudent(
     @Schema(description = "Имя студента")
     String username,
 
+    @Schema(description = "ID группы студента")
+    UUID groupId,
+
+    @Schema(description = "Название группы студента")
+    String groupName,
+
     @Schema(description = "ID подгруппы (null = без подгруппы)")
-    UUID subgroupId
+    UUID subgroupId,
+
+    @Schema(description = "Индекс подгруппы (null = без подгруппы)")
+    Integer subgroupIndex
 ) {}

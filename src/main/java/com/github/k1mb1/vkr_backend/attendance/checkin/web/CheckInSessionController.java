@@ -45,7 +45,7 @@ public class CheckInSessionController {
         return ResponseEntity.ok(checkInSessionApi.get(id));
     }
 
-    @Operation(summary = "Список check-in сессий по permissionId")
+    @Operation(summary = "Список check-in сессий по permissionId (по предмету разрешения)")
     @GetMapping
     public ResponseEntity<List<CheckInSessionResponse>> list(
         @RequestParam UUID permissionId

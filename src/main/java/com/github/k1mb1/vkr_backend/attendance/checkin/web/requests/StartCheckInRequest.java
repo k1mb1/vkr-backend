@@ -11,14 +11,9 @@ import java.util.UUID;
 public record StartCheckInRequest(
     @NotNull
     @Schema(
-        description = "ID права преподавателя на предмет",
+        description = "ID занятия. Аудитория опроса совпадает с аудиторией занятия " +
+            "(все группы и подгруппы, заданные в lesson scopes; либо все группы предмета при allGroups=true).",
         requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    UUID permissionId,
-
-    @NotNull
-    @Schema(
-        description = "ID занятия", requiredMode = Schema.RequiredMode.REQUIRED
     )
     UUID lessonId,
 

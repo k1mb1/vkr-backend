@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Schema(description = "Информация о занятии")
@@ -18,18 +19,6 @@ public record LessonResponse(
     @Schema(description = "Название предмета")
     String subjectName,
 
-    @Schema(description = "ID группы")
-    UUID groupId,
-
-    @Schema(description = "Название группы")
-    String groupName,
-
-    @Schema(description = "ID подгруппы (null для всей группы)")
-    UUID subgroupId,
-
-    @Schema(description = "Индекс подгруппы (null для всей группы)")
-    Integer subgroupIndex,
-
     @Schema(description = "Тип занятия")
     LessonType type,
 
@@ -38,6 +27,12 @@ public record LessonResponse(
 
     @Schema(description = "Тема занятия")
     String topic,
+
+    @Schema(description = "true = занятие охватывает все группы предмета")
+    boolean allGroups,
+
+    @Schema(description = "Список scopes занятия (группа + опц. подгруппа)")
+    List<LessonScopeResponse> scopes,
 
     @Schema(description = "Дата создания")
     Instant createdAt,

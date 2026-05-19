@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionStat
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Schema(description = "Состояние check-in сессии для преподавателя")
@@ -14,8 +15,17 @@ public record CheckInSessionResponse(
     @Schema(description = "ID занятия")
     UUID lessonId,
 
-    @Schema(description = "ID права преподавателя на предмет")
-    UUID permissionId,
+    @Schema(
+        description = "Признак, что занятие охватывает все группы предмета. " +
+            "Дублирует lesson.allGroups для удобства клиента."
+    )
+    boolean allGroups,
+
+    @Schema(
+        description = "Аудитория опроса — копия lesson scopes (группа + опц. подгруппа). " +
+            "Если allGroups=true, содержит по одной записи на каждую группу предмета."
+    )
+    List<CheckInAudienceScope> audience,
 
     @Schema(description = "Момент запуска")
     Instant startedAt,

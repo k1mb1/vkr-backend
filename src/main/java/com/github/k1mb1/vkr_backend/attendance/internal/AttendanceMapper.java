@@ -17,7 +17,10 @@ interface AttendanceMapper {
     @Mapping(target = "lessonId", source = "lesson.id")
     AttendanceCellResponse toCell(Attendance attendance);
 
+    @Mapping(target = "groupId", source = "group.id")
+    @Mapping(target = "groupName", source = "group.name")
     @Mapping(target = "subgroupId", source = "subgroup.id")
+    @Mapping(target = "subgroupIndex", source = "subgroup.index")
     AttendanceTableStudent toTableStudent(Student student);
 
     AttendanceTableLesson toTableLesson(Lesson lesson);

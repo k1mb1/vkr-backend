@@ -7,3 +7,17 @@ databaseChangeLog:
       file: db/changelog/v0/20260517020000-lessons-simplify.sql
   - include:
       file: db/changelog/v0/20260517100000-checkin-sessions.sql
+  - include:
+      file: db/changelog/v0/20260518000000-permission-multiple-groups.sql
+  - include:
+      file: db/changelog/v0/20260518100000-permission-scopes.sql
+  - include:
+      file: db/changelog/v0/20260518200000-permission-all-groups.sql
+  - include:
+      file: db/changelog/v0/20260519000000-scope-lesson-type.sql
+  - include:
+      file: db/changelog/v0/20260520000000-lesson-scopes.sql
+  - include:
+      file: db/changelog/v0/20260521000000-permission-all-permissions-and-subject-groups.sql
+  - include:
+      file: db/changelog/v0/20260522000000-checkin-session-per-lesson.sql
