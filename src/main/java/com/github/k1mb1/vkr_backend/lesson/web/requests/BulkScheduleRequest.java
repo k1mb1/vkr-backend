@@ -7,6 +7,7 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -17,8 +18,7 @@ import java.util.UUID;
 )
 public record BulkScheduleRequest(
     @Schema(
-        description = "ID предмета",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID предмета", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
     UUID subjectId,
@@ -31,16 +31,13 @@ public record BulkScheduleRequest(
     Boolean allGroups,
 
     @Schema(
-        description = "Список scopes (group + опц. подгруппа). " +
-            "Обязателен и должен быть непустым при allGroups=false. " +
-            "При allGroups=true игнорируется."
+        description = "Список scopes (group + опц. подгруппа). " + "Обязателен и должен быть непустым при allGroups=false. " + "При allGroups=true игнорируется."
     )
     @Valid
     List<LessonScopeRequest> scopes,
 
     @Schema(
-        description = "Список шаблонов расписания",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Список шаблонов расписания", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotEmpty
     List<@Valid Entry> schedules
@@ -54,22 +51,19 @@ public record BulkScheduleRequest(
     @Schema(description = "Элемент шаблона расписания")
     public record Entry(
         @Schema(
-            description = "Тип занятия",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            description = "Тип занятия", requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull
         LessonType type,
 
         @Schema(
-            description = "Дата начала (первая неделя)",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            description = "Дата начала (первая неделя)", requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull
         LocalDate startDate,
 
         @Schema(
-            description = "Общее количество занятий",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            description = "Общее количество занятий", requiredMode = Schema.RequiredMode.REQUIRED
         )
         @NotNull
         @Min(1)

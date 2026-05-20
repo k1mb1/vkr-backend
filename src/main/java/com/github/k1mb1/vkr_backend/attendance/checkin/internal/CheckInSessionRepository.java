@@ -17,17 +17,19 @@ interface CheckInSessionRepository
 
     @Query(
         """
-        SELECT s FROM CheckInSession s
-        JOIN FETCH s.lesson l
-        JOIN FETCH l.subject subj
-        LEFT JOIN FETCH subj.groups
-        LEFT JOIN FETCH l.scopes ls
-        LEFT JOIN FETCH ls.group
-        LEFT JOIN FETCH ls.allowedSubgroup
-        WHERE s.id = :id
-        """
+            SELECT s FROM CheckInSession s
+            JOIN FETCH s.lesson l
+            JOIN FETCH l.subject subj
+            LEFT JOIN FETCH subj.groups
+            LEFT JOIN FETCH l.scopes ls
+            LEFT JOIN FETCH ls.group
+            LEFT JOIN FETCH ls.allowedSubgroup
+            WHERE s.id = :id
+            """
     )
-    Optional<CheckInSession> findByIdWithDetails(@Param("id") UUID id);
+    Optional<CheckInSession> findByIdWithDetails(
+        @Param("id") UUID id
+    );
 
     Optional<CheckInSession> findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(
         UUID lessonId
@@ -35,12 +37,12 @@ interface CheckInSessionRepository
 
     @Query(
         """
-        SELECT s FROM CheckInSession s
-        JOIN FETCH s.lesson l
-        JOIN FETCH l.subject
-        WHERE l.id IN :lessonIds
-        ORDER BY s.startedAt DESC
-        """
+            SELECT s FROM CheckInSession s
+            JOIN FETCH s.lesson l
+            JOIN FETCH l.subject
+            WHERE l.id IN :lessonIds
+            ORDER BY s.startedAt DESC
+            """
     )
     List<CheckInSession> findByLessonIdInOrderByStartedAtDesc(
         @Param("lessonIds") Collection<UUID> lessonIds

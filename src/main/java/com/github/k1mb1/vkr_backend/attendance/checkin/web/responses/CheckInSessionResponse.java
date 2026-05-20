@@ -16,14 +16,12 @@ public record CheckInSessionResponse(
     UUID lessonId,
 
     @Schema(
-        description = "Признак, что занятие охватывает все группы предмета. " +
-            "Дублирует lesson.allGroups для удобства клиента."
+        description = "Признак, что занятие охватывает все группы предмета. " + "Дублирует lesson.allGroups для удобства клиента."
     )
     boolean allGroups,
 
     @Schema(
-        description = "Аудитория опроса — копия lesson scopes (группа + опц. подгруппа). " +
-            "Если allGroups=true, содержит по одной записи на каждую группу предмета."
+        description = "Аудитория опроса — копия lesson scopes (группа + опц. подгруппа). " + "Если allGroups=true, содержит по одной записи на каждую группу предмета."
     )
     List<CheckInAudienceScope> audience,
 

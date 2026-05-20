@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.subject.web.responses;
 
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.UUID;
 
 @Schema(

@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(
-    description = "Сверочный пред-просмотр результатов check-in. Преподаватель видит, "
-        + "что попадёт в основную посещаемость после подтверждения."
+    description = "Сверочный пред-просмотр результатов check-in. Преподаватель видит, " + "что попадёт в основную посещаемость после подтверждения."
 )
 public record CheckInPreviewResponse(
     @Schema(description = "Состояние сессии")

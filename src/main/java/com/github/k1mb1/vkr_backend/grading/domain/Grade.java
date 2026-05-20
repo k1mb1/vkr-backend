@@ -1,0 +1,46 @@
+package com.github.k1mb1.vkr_backend.grading.domain;
+
+import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
+import com.github.k1mb1.vkr_backend.student.domain.Student;
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+
+@Hidden
+@Entity
+@Table(
+    name = "grades", indexes = {
+    @Index(name = "idx_grades_lesson_id", columnList = "lesson_id"),
+    @Index(name = "idx_grades_student_id", columnList = "student_id"),
+    @Index(name = "idx_grades_assignment_id", columnList = "assignment_id"),
+}
+)
+@Getter
+@Setter
+@SuperBuilder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class Grade
+    extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "student_id", nullable = false)
+    Student student;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "lesson_id", nullable = false)
+    Lesson lesson;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignment_id")
+    Assignment assignment;
+
+    @Column(nullable = false) int score;
+
+    @Column(columnDefinition = "text") String comment;
+}

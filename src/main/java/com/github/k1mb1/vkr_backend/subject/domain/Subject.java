@@ -4,15 +4,12 @@ import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+
+import java.util.HashSet;
+import java.util.Set;
 
 // @SQLRestriction скрывает архивные subjects во всех SELECT'ах автоматически.
 // Для доступа к архивным используй native query в репозитории.

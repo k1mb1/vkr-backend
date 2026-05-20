@@ -4,18 +4,15 @@ import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Hidden
 @Entity
@@ -48,13 +45,10 @@ public class Lesson
 
     @Column(columnDefinition = "text") String topic;
 
-    @Column(name = "all_groups", nullable = false)
-    boolean allGroups;
+    @Column(name = "all_groups", nullable = false) boolean allGroups;
 
     @OneToMany(
-        mappedBy = "lesson",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
+        mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true
     )
     @Builder.Default
     Set<LessonScope> scopes = new HashSet<>();

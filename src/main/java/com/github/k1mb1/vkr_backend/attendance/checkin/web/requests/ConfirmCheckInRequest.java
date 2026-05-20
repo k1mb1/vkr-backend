@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(
-    description = "Подтверждение результатов check-in. Записи без отметки трактуются как ABSENT. "
-        + "В overrides можно изменить статус или добавить комментарий перед переносом в основную посещаемость."
+    description = "Подтверждение результатов check-in. Записи без отметки трактуются как ABSENT. " + "В overrides можно изменить статус или добавить комментарий перед переносом в основную посещаемость."
 )
 public record ConfirmCheckInRequest(
     @Valid

@@ -9,8 +9,7 @@ import java.util.List;
 )
 public record AttendanceTableResponse(
     @Schema(
-        description = "Аудитория таблицы — группы и подгруппы, покрываемые разрешением " +
-            "(для построения заголовка таблицы)."
+        description = "Аудитория таблицы — группы и подгруппы, покрываемые разрешением " + "(для построения заголовка таблицы)."
     )
     List<AttendanceAudienceScope> audience,
 

@@ -21,7 +21,8 @@ import org.hibernate.annotations.SQLRestriction;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class LessonScope extends ArchivableEntity {
+public class LessonScope
+    extends ArchivableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)

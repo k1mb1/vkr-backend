@@ -21,11 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -48,14 +44,12 @@ class AttendanceService
     @Override
     public AttendanceTableResponse getAttendanceTable(AttendanceFilter filter) {
         var permission = permissionRepository.findByIdWithDetails(filter.permissionId())
-            .orElseThrow(() -> new EntityNotFoundException(
-                "TeacherSubjectPermission not found: " + filter.permissionId()));
+            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + filter.permissionId()));
 
         var lessons = lessonRepository.findAll(
-                LessonSpecifications.forPermission(permission),
-                Sort.by("startedAt"))
-            .stream()
-            .toList();
+            LessonSpecifications.forPermission(permission),
+            Sort.by("startedAt")
+        ).stream().toList();
 
         var students = unionStudentsAcross(lessons);
         var audience = audienceOf(permission);
@@ -118,20 +112,29 @@ class AttendanceService
 
     private List<AttendanceAudienceScope> audienceOf(TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
-            return permission.getSubject().getGroups().stream()
+            return permission.getSubject()
+                .getGroups()
+                .stream()
                 .sorted(Comparator.comparing(g -> g.getName()))
                 .map(g -> new AttendanceAudienceScope(g.getId(), g.getName(), null, null))
                 .toList();
         }
-        return permission.getScopes().stream()
-            .sorted(Comparator
-                .comparing((com.github.k1mb1.vkr_backend.subject.domain.PermissionScope s) -> s.getGroup().getName())
-                .thenComparing(s -> s.getAllowedSubgroup() == null ? -1 : s.getAllowedSubgroup().getIndex()))
+        return permission.getScopes()
+            .stream()
+            .sorted(Comparator.comparing((com.github.k1mb1.vkr_backend.subject.domain.PermissionScope s) -> s.getGroup()
+                    .getName())
+                        .thenComparing(s -> s.getAllowedSubgroup() == null
+                                            ? -1
+                                            : s.getAllowedSubgroup().getIndex()))
             .map(s -> new AttendanceAudienceScope(
                 s.getGroup().getId(),
                 s.getGroup().getName(),
-                s.getAllowedSubgroup() != null ? s.getAllowedSubgroup().getId() : null,
-                s.getAllowedSubgroup() != null ? s.getAllowedSubgroup().getIndex() : null
+                s.getAllowedSubgroup() != null
+                ? s.getAllowedSubgroup().getId()
+                : null,
+                s.getAllowedSubgroup() != null
+                ? s.getAllowedSubgroup().getIndex()
+                : null
             ))
             .toList();
     }

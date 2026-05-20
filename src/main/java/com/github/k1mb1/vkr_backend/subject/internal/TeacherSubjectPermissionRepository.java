@@ -60,7 +60,9 @@ public interface TeacherSubjectPermissionRepository
             WHERE p.id = :id
             """
     )
-    Optional<TeacherSubjectPermission> findByIdWithDetails(@Param("id") UUID id);
+    Optional<TeacherSubjectPermission> findByIdWithDetails(
+        @Param("id") UUID id
+    );
 
     boolean existsByTeacherIdAndSubjectId(UUID teacherId, UUID subjectId);
 }

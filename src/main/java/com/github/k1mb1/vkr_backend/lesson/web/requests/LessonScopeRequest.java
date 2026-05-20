@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.lesson.web.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.UUID;
 
 @Schema(
@@ -9,8 +10,7 @@ import java.util.UUID;
 )
 public record LessonScopeRequest(
     @Schema(
-        description = "ID группы",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID группы", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
     UUID groupId,

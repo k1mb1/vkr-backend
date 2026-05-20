@@ -24,5 +24,7 @@ public interface PermissionScopeRepository
             WHERE s.id = :id
             """
     )
-    Optional<PermissionScope> findByIdWithDetails(@Param("id") UUID id);
+    Optional<PermissionScope> findByIdWithDetails(
+        @Param("id") UUID id
+    );
 }

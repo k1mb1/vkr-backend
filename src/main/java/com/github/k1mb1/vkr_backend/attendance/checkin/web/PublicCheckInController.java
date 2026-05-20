@@ -29,7 +29,9 @@ public class PublicCheckInController {
 
     @Operation(summary = "Получить состояние сессии и список студентов")
     @GetMapping("/{id}")
-    public ResponseEntity<PublicCheckInSessionResponse> get(@PathVariable UUID id) {
+    public ResponseEntity<PublicCheckInSessionResponse> get(
+        @PathVariable UUID id
+    ) {
         return ResponseEntity.ok(checkInSessionApi.getPublic(id));
     }
 

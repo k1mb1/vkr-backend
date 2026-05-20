@@ -4,19 +4,17 @@ import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class LessonStudentsService implements LessonStudentsApi {
+class LessonStudentsService
+    implements LessonStudentsApi {
 
     final StudentRepository studentRepository;
 
@@ -33,10 +31,11 @@ class LessonStudentsService implements LessonStudentsApi {
             for (var scope : lesson.getScopes()) {
                 var groupId = scope.getGroup().getId();
                 var scopeStudents = scope.getAllowedSubgroup() != null
-                    ? studentRepository.findByGroupIdAndSubgroupIdAndArchivedAtIsNull(
-                        groupId, scope.getAllowedSubgroup().getId()
-                      )
-                    : studentRepository.findByGroupIdAndArchivedAtIsNull(groupId);
+                                    ? studentRepository.findByGroupIdAndSubgroupIdAndArchivedAtIsNull(
+                    groupId,
+                    scope.getAllowedSubgroup().getId()
+                )
+                                    : studentRepository.findByGroupIdAndArchivedAtIsNull(groupId);
                 for (var s : scopeStudents) {
                     seen.putIfAbsent(s.getId(), s);
                 }

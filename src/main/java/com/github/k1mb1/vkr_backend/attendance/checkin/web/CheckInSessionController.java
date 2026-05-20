@@ -20,8 +20,7 @@ import java.util.UUID;
     value = "/api/check-in-sessions", produces = MediaType.APPLICATION_JSON_VALUE
 )
 @Tag(
-    name = "Check-in sessions",
-    description = "Опросы по посещаемости (преподавательская сторона)"
+    name = "Check-in sessions", description = "Опросы по посещаемости (преподавательская сторона)"
 )
 @RestController
 @RequiredArgsConstructor
@@ -41,7 +40,9 @@ public class CheckInSessionController {
 
     @Operation(summary = "Получить состояние одной check-in сессии")
     @GetMapping("/{id}")
-    public ResponseEntity<CheckInSessionResponse> get(@PathVariable UUID id) {
+    public ResponseEntity<CheckInSessionResponse> get(
+        @PathVariable UUID id
+    ) {
         return ResponseEntity.ok(checkInSessionApi.get(id));
     }
 
@@ -57,7 +58,9 @@ public class CheckInSessionController {
         summary = "Сверочный пред-просмотр (что попадёт в основную посещаемость)"
     )
     @GetMapping("/{id}/preview")
-    public ResponseEntity<CheckInPreviewResponse> preview(@PathVariable UUID id) {
+    public ResponseEntity<CheckInPreviewResponse> preview(
+        @PathVariable UUID id
+    ) {
         return ResponseEntity.ok(checkInSessionApi.preview(id));
     }
 
@@ -76,7 +79,9 @@ public class CheckInSessionController {
 
     @Operation(summary = "Отменить check-in сессию (без переноса в посещаемость)")
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<CheckInSessionResponse> cancel(@PathVariable UUID id) {
+    public ResponseEntity<CheckInSessionResponse> cancel(
+        @PathVariable UUID id
+    ) {
         return ResponseEntity.ok(checkInSessionApi.cancel(id));
     }
 }

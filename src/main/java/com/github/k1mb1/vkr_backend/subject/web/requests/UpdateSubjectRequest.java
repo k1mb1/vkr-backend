@@ -7,15 +7,14 @@ import lombok.Builder;
 @Builder
 @Schema(
     description = """
-    Запрос на частичное обновление предмета (PATCH).
-    Семантика: поле = null или отсутствует — значение не изменяется.
-    Исключение: name обязателен (валидируется как @NotBlank).
-    """
+        Запрос на частичное обновление предмета (PATCH).
+        Семантика: поле = null или отсутствует — значение не изменяется.
+        Исключение: name обязателен (валидируется как @NotBlank).
+        """
 )
 public record UpdateSubjectRequest(
     @Schema(
-        description = "Название предмета",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Название предмета", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotBlank
     String name,

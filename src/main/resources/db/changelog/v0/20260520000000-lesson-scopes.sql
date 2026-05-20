@@ -14,8 +14,7 @@ CREATE TABLE lesson_scopes
 CREATE INDEX idx_lesson_scopes_lesson ON lesson_scopes (lesson_id);
 CREATE INDEX idx_lesson_scopes_group ON lesson_scopes (group_id);
 CREATE UNIQUE INDEX uk_lesson_scopes_active
-    ON lesson_scopes (lesson_id, group_id, allowed_subgroup_id)
-        NULLS NOT DISTINCT
+    ON lesson_scopes (lesson_id, group_id, allowed_subgroup_id) NULLS NOT DISTINCT
     WHERE archived_at IS NULL;
 --rollback DROP TABLE lesson_scopes;
 
@@ -44,18 +43,19 @@ ALTER TABLE check_in_sessions
 
 --changeset k1mb1:023-migrate-check-in-sessions-scope
 UPDATE check_in_sessions s
-SET lesson_scope_id = ls.id
-FROM lesson_scopes ls,
+SET lesson_scope_id = ls.id FROM lesson_scopes ls,
      teacher_subject_permission_scopes ps
 WHERE s.scope_id = ps.id
   AND ls.lesson_id = s.lesson_id
   AND ls.group_id = ps.group_id
-  AND ls.allowed_subgroup_id IS NOT DISTINCT FROM ps.allowed_subgroup_id
-  AND ls.archived_at IS NULL;
+  AND ls.allowed_subgroup_id IS NOT DISTINCT
+FROM ps.allowed_subgroup_id
+    AND ls.archived_at IS NULL;
 --rollback SELECT 1; -- non-reversible data migration
 
 --changeset k1mb1:024-finalize-check-in-sessions-lesson-scope
-ALTER TABLE check_in_sessions ALTER COLUMN lesson_scope_id SET NOT NULL;
+ALTER TABLE check_in_sessions
+    ALTER COLUMN lesson_scope_id SET NOT NULL;
 ALTER TABLE check_in_sessions DROP COLUMN scope_id;
 DROP INDEX IF EXISTS idx_check_in_sessions_scope;
 CREATE INDEX IF NOT EXISTS idx_check_in_sessions_lesson_scope ON check_in_sessions (lesson_scope_id);
@@ -65,8 +65,10 @@ CREATE INDEX IF NOT EXISTS idx_check_in_sessions_lesson_scope ON check_in_sessio
 DROP INDEX IF EXISTS idx_lessons_group_id;
 DROP INDEX IF EXISTS idx_lessons_subgroup_id;
 ALTER TABLE lessons
-    DROP COLUMN group_id,
-    DROP COLUMN subgroup_id;
+DROP
+COLUMN group_id,
+    DROP
+COLUMN subgroup_id;
 --rollback ALTER TABLE lessons ADD COLUMN group_id UUID REFERENCES groups (id) ON DELETE CASCADE;
 --rollback ALTER TABLE lessons ADD COLUMN subgroup_id UUID REFERENCES subgroups (id) ON DELETE SET NULL;
 --rollback CREATE INDEX idx_lessons_group_id ON lessons (group_id);

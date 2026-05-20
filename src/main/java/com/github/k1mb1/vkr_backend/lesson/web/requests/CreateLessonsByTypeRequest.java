@@ -5,14 +5,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+
 import java.util.List;
 import java.util.UUID;
 
 @Schema(description = "Запрос на создание занятий по количеству типов")
 public record CreateLessonsByTypeRequest(
     @Schema(
-        description = "ID предмета",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID предмета", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
     UUID subjectId,
@@ -25,23 +25,19 @@ public record CreateLessonsByTypeRequest(
     Boolean allGroups,
 
     @Schema(
-        description = "Список scopes (group + опц. подгруппа). " +
-            "Обязателен и должен быть непустым при allGroups=false. " +
-            "При allGroups=true игнорируется."
+        description = "Список scopes (group + опц. подгруппа). " + "Обязателен и должен быть непустым при allGroups=false. " + "При allGroups=true игнорируется."
     )
     @Valid
     List<LessonScopeRequest> scopes,
 
     @Schema(
-        description = "Количество лекций",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Количество лекций", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @PositiveOrZero
     int lectureCount,
 
     @Schema(
-        description = "Количество практик",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "Количество практик", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @PositiveOrZero
     int practiceCount

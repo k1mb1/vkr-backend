@@ -23,19 +23,21 @@ import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class CheckInSessionService implements CheckInSessionApi {
+class CheckInSessionService
+    implements CheckInSessionApi {
 
     final CheckInSessionRepository sessionRepository;
 
@@ -53,24 +55,28 @@ class CheckInSessionService implements CheckInSessionApi {
 
     final AttendanceApi attendanceApi;
 
+    private static AttendanceStatus proposedAttendanceStatus(
+        CheckInRecordStatus status
+    ) {
+        if (status == null) {
+            return AttendanceStatus.ABSENT;
+        }
+        return switch (status) {
+            case PRESENT -> AttendanceStatus.PRESENT;
+            case LATE -> AttendanceStatus.LATE;
+        };
+    }
+
     @Transactional
     @Override
     public CheckInSessionResponse start(StartCheckInRequest request) {
-        var lesson = lessonRepository
-            .findByIdWithDetails(request.lessonId())
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "Lesson not found: " + request.lessonId()
-                )
-            );
+        var lesson = lessonRepository.findByIdWithDetails(request.lessonId())
+            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + request.lessonId()));
 
-        sessionRepository
-            .findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(lesson.getId())
+        sessionRepository.findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(lesson.getId())
             .ifPresent(existing -> {
                 throw new IllegalStateException(
-                    "Active check-in session already exists for lesson: " +
-                        lesson.getId()
-                );
+                    "Active check-in session already exists for lesson: " + lesson.getId());
             });
 
         var session = CheckInSession.builder()
@@ -80,10 +86,7 @@ class CheckInSessionService implements CheckInSessionApi {
             .lateSeconds(request.lateSeconds())
             .build();
 
-        return mapper.toResponse(
-            sessionRepository.save(session),
-            Instant.now()
-        );
+        return mapper.toResponse(sessionRepository.save(session), Instant.now());
     }
 
     @Override
@@ -94,16 +97,10 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Override
     public List<CheckInSessionResponse> listForPermission(UUID permissionId) {
-        var permission = permissionRepository
-            .findByIdWithDetails(permissionId)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "TeacherSubjectPermission not found: " + permissionId
-                )
-            );
+        var permission = permissionRepository.findByIdWithDetails(permissionId)
+            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + permissionId));
 
-        var lessonIds = lessonRepository
-            .findAll(LessonSpecifications.forPermission(permission))
+        var lessonIds = lessonRepository.findAll(LessonSpecifications.forPermission(permission))
             .stream()
             .map(Lesson::getId)
             .toList();
@@ -112,8 +109,7 @@ class CheckInSessionService implements CheckInSessionApi {
         }
 
         var now = Instant.now();
-        return sessionRepository
-            .findByLessonIdInOrderByStartedAtDesc(lessonIds)
+        return sessionRepository.findByLessonIdInOrderByStartedAtDesc(lessonIds)
             .stream()
             .map(s -> mapper.toResponse(s, now))
             .toList();
@@ -125,66 +121,50 @@ class CheckInSessionService implements CheckInSessionApi {
         var students = lessonStudentsApi.studentsOf(session.getLesson());
         var recordsByStudent = recordsByStudentId(sessionId);
 
-        var rows = students
-            .stream()
-            .map(student -> {
-                var record = recordsByStudent.get(student.getId());
-                var checkInStatus = record != null ? record.getStatus() : null;
-                var checkedInAt =
-                    record != null ? record.getCheckedInAt() : null;
-                var proposed = proposedAttendanceStatus(checkInStatus);
-                return new CheckInPreviewResponse.Row(
-                    student.getId(),
-                    student.getUsername(),
-                    checkInStatus,
-                    checkedInAt,
-                    proposed
-                );
-            })
-            .toList();
+        var rows = students.stream().map(student -> {
+            var record = recordsByStudent.get(student.getId());
+            var checkInStatus = record != null
+                                ? record.getStatus()
+                                : null;
+            var checkedInAt = record != null
+                              ? record.getCheckedInAt()
+                              : null;
+            var proposed = proposedAttendanceStatus(checkInStatus);
+            return new CheckInPreviewResponse.Row(
+                student.getId(),
+                                                  student.getUsername(),
+                                                  checkInStatus,
+                                                  checkedInAt,
+                                                  proposed
+            );
+        }).toList();
 
-        return new CheckInPreviewResponse(
-            mapper.toResponse(session, Instant.now()),
-            rows
-        );
+        return new CheckInPreviewResponse(mapper.toResponse(session, Instant.now()), rows);
     }
 
     @Transactional
     @Override
-    public CheckInSessionResponse confirm(
-        UUID sessionId,
-        ConfirmCheckInRequest request
-    ) {
+    public CheckInSessionResponse confirm(UUID sessionId, ConfirmCheckInRequest request) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
-            throw new IllegalStateException(
-                "Session already confirmed: " + sessionId
-            );
+            throw new IllegalStateException("Session already confirmed: " + sessionId);
         }
         if (session.getCancelledAt() != null) {
-            throw new IllegalStateException(
-                "Session is cancelled: " + sessionId
-            );
+            throw new IllegalStateException("Session is cancelled: " + sessionId);
         }
 
         var students = lessonStudentsApi.studentsOf(session.getLesson());
-        var studentIds = students
-            .stream()
+        var studentIds = students.stream()
             .map(Student::getId)
             .collect(java.util.stream.Collectors.toSet());
         var recordsByStudent = recordsByStudentId(sessionId);
 
-        var overridesByStudent = new HashMap<
-            UUID,
-            ConfirmCheckInRequest.Override
-        >();
+        var overridesByStudent = new HashMap<UUID, ConfirmCheckInRequest.Override>();
         if (request != null && request.overrides() != null) {
             for (var ov : request.overrides()) {
                 if (!studentIds.contains(ov.studentId())) {
                     throw new IllegalArgumentException(
-                        "Override references student not in lesson audience: " +
-                            ov.studentId()
-                    );
+                        "Override references student not in lesson audience: " + ov.studentId());
                 }
                 overridesByStudent.put(ov.studentId(), ov);
             }
@@ -200,26 +180,21 @@ class CheckInSessionService implements CheckInSessionApi {
                 comment = override.comment();
             } else {
                 var record = recordsByStudent.get(student.getId());
-                status = proposedAttendanceStatus(
-                    record != null ? record.getStatus() : null
-                );
+                status = proposedAttendanceStatus(record != null
+                                                  ? record.getStatus()
+                                                  : null);
                 comment = null;
             }
-            attendanceApi.upsert(
-                new UpsertAttendanceRequest(
-                    student.getId(),
-                    lessonId,
-                    status,
-                    comment
-                )
-            );
+            attendanceApi.upsert(new UpsertAttendanceRequest(
+                student.getId(),
+                                                             lessonId,
+                                                             status,
+                                                             comment
+            ));
         }
 
         session.setConfirmedAt(Instant.now());
-        return mapper.toResponse(
-            sessionRepository.save(session),
-            Instant.now()
-        );
+        return mapper.toResponse(sessionRepository.save(session), Instant.now());
     }
 
     @Transactional
@@ -227,9 +202,7 @@ class CheckInSessionService implements CheckInSessionApi {
     public CheckInSessionResponse cancel(UUID sessionId) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
-            throw new IllegalStateException(
-                "Cannot cancel a confirmed session: " + sessionId
-            );
+            throw new IllegalStateException("Cannot cancel a confirmed session: " + sessionId);
         }
         if (session.getCancelledAt() == null) {
             session.setCancelledAt(Instant.now());
@@ -245,18 +218,19 @@ class CheckInSessionService implements CheckInSessionApi {
         var recordsByStudent = recordsByStudentId(sessionId);
         var now = Instant.now();
 
-        var rows = students
-            .stream()
-            .map(student -> {
-                var record = recordsByStudent.get(student.getId());
-                return new PublicCheckInSessionResponse.Student(
-                    student.getId(),
-                    student.getUsername(),
-                    record != null ? record.getStatus() : null,
-                    record != null ? record.getCheckedInAt() : null
-                );
-            })
-            .toList();
+        var rows = students.stream().map(student -> {
+            var record = recordsByStudent.get(student.getId());
+            return new PublicCheckInSessionResponse.Student(
+                student.getId(),
+                student.getUsername(),
+                record != null
+                ? record.getStatus()
+                : null,
+                record != null
+                ? record.getCheckedInAt()
+                : null
+            );
+        }).toList();
 
         return new PublicCheckInSessionResponse(
             session.getId(),
@@ -272,31 +246,19 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
-    public CheckInRecordResponse checkIn(
-        UUID sessionId,
-        StudentCheckInRequest request
-    ) {
+    public CheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
         var session = loadSession(sessionId);
         var now = Instant.now();
         var state = session.stateAt(now);
-        if (
-            state != CheckInSessionState.OPEN &&
-            state != CheckInSessionState.LATE_WINDOW
-        ) {
-            throw new IllegalStateException(
-                "Check-in is closed for session: " + sessionId
-            );
+        if (state != CheckInSessionState.OPEN && state != CheckInSessionState.LATE_WINDOW) {
+            throw new IllegalStateException("Check-in is closed for session: " + sessionId);
         }
 
         var studentId = request.studentId();
         var students = lessonStudentsApi.studentsOf(session.getLesson());
-        var inScope = students
-            .stream()
-            .anyMatch(s -> s.getId().equals(studentId));
+        var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
         if (!inScope) {
-            throw new IllegalArgumentException(
-                "Student is not part of this lesson audience: " + studentId
-            );
+            throw new IllegalArgumentException("Student is not part of this lesson audience: " + studentId);
         }
 
         var status = session.statusForCheckInAt(now);
@@ -304,15 +266,12 @@ class CheckInSessionService implements CheckInSessionApi {
             throw new IllegalStateException("Check-in window has elapsed");
         }
 
-        var record = recordRepository
-            .findBySessionIdAndStudentId(sessionId, studentId)
-            .orElseGet(() ->
-                CheckInRecord.builder()
-                    .session(session)
-                    .student(studentRepository.getReferenceById(studentId))
-                    .checkedInAt(now)
-                    .build()
-            );
+        var record = recordRepository.findBySessionIdAndStudentId(sessionId, studentId)
+            .orElseGet(() -> CheckInRecord.builder()
+                .session(session)
+                .student(studentRepository.getReferenceById(studentId))
+                .checkedInAt(now)
+                .build());
 
         // first check-in wins; do not downgrade PRESENT to LATE on repeated submission
         if (record.getId() == null) {
@@ -324,13 +283,8 @@ class CheckInSessionService implements CheckInSessionApi {
     }
 
     private CheckInSession loadSession(UUID sessionId) {
-        return sessionRepository
-            .findByIdWithDetails(sessionId)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "CheckInSession not found: " + sessionId
-                )
-            );
+        return sessionRepository.findByIdWithDetails(sessionId)
+            .orElseThrow(() -> new EntityNotFoundException("CheckInSession not found: " + sessionId));
     }
 
     private Map<UUID, CheckInRecord> recordsByStudentId(UUID sessionId) {
@@ -339,17 +293,5 @@ class CheckInSessionService implements CheckInSessionApi {
             map.put(r.getStudent().getId(), r);
         }
         return map;
-    }
-
-    private static AttendanceStatus proposedAttendanceStatus(
-        CheckInRecordStatus status
-    ) {
-        if (status == null) {
-            return AttendanceStatus.ABSENT;
-        }
-        return switch (status) {
-            case PRESENT -> AttendanceStatus.PRESENT;
-            case LATE -> AttendanceStatus.LATE;
-        };
     }
 }

@@ -32,20 +32,19 @@ public class CheckInSession
     @JoinColumn(name = "lesson_id", nullable = false)
     Lesson lesson;
 
-    @Column(name = "started_at", nullable = false, columnDefinition = "timestamptz")
-    Instant startedAt;
+    @Column(
+        name = "started_at",
+        nullable = false,
+        columnDefinition = "timestamptz"
+    ) Instant startedAt;
 
-    @Column(name = "on_time_seconds", nullable = false)
-    int onTimeSeconds;
+    @Column(name = "on_time_seconds", nullable = false) int onTimeSeconds;
 
-    @Column(name = "late_seconds", nullable = false)
-    int lateSeconds;
+    @Column(name = "late_seconds", nullable = false) int lateSeconds;
 
-    @Column(name = "confirmed_at", columnDefinition = "timestamptz")
-    Instant confirmedAt;
+    @Column(name = "confirmed_at", columnDefinition = "timestamptz") Instant confirmedAt;
 
-    @Column(name = "cancelled_at", columnDefinition = "timestamptz")
-    Instant cancelledAt;
+    @Column(name = "cancelled_at", columnDefinition = "timestamptz") Instant cancelledAt;
 
     public Instant onTimeEndsAt() {
         return startedAt.plusSeconds(onTimeSeconds);
@@ -83,6 +82,8 @@ public class CheckInSession
 
     public Duration remainingTotal(Instant now) {
         var end = lateEndsAt();
-        return now.isBefore(end) ? Duration.between(now, end) : Duration.ZERO;
+        return now.isBefore(end)
+               ? Duration.between(now, end)
+               : Duration.ZERO;
     }
 }

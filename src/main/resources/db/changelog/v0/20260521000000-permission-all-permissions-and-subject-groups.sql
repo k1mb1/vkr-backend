@@ -21,14 +21,12 @@ SELECT DISTINCT p.subject_id, ps.group_id
 FROM teacher_subject_permissions p
          JOIN teacher_subject_permission_scopes ps ON ps.permission_id = p.id
 WHERE p.archived_at IS NULL
-  AND ps.archived_at IS NULL
-ON CONFLICT DO NOTHING;
+  AND ps.archived_at IS NULL ON CONFLICT DO NOTHING;
 --rollback SELECT 1; -- non-reversible data migration
 
 --changeset k1mb1:029-archive-scopes-for-all-permissions
 UPDATE teacher_subject_permission_scopes s
-SET archived_at = now()
-FROM teacher_subject_permissions p
+SET archived_at = now() FROM teacher_subject_permissions p
 WHERE s.permission_id = p.id
   AND p.all_permissions = true
   AND s.archived_at IS NULL;

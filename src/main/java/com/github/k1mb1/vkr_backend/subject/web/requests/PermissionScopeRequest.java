@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.subject.web.requests;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.UUID;
 
 @Schema(
@@ -10,8 +11,7 @@ import java.util.UUID;
 )
 public record PermissionScopeRequest(
     @Schema(
-        description = "ID группы",
-        requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID группы", requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
     UUID groupId,

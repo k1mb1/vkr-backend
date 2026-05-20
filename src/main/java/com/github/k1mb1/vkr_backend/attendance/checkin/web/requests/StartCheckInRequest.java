@@ -11,8 +11,7 @@ import java.util.UUID;
 public record StartCheckInRequest(
     @NotNull
     @Schema(
-        description = "ID занятия. Аудитория опроса совпадает с аудиторией занятия " +
-            "(все группы и подгруппы, заданные в lesson scopes; либо все группы предмета при allGroups=true).",
+        description = "ID занятия. Аудитория опроса совпадает с аудиторией занятия " + "(все группы и подгруппы, заданные в lesson scopes; либо все группы предмета при allGroups=true).",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     UUID lessonId,
@@ -21,7 +20,8 @@ public record StartCheckInRequest(
     @Min(1)
     @Schema(
         description = "Длительность основного окна (секунды). Студенты, отметившиеся здесь, получат статус PRESENT",
-        requiredMode = Schema.RequiredMode.REQUIRED, example = "600"
+        requiredMode = Schema.RequiredMode.REQUIRED,
+        example = "600"
     )
     Integer onTimeSeconds,
 
@@ -29,7 +29,8 @@ public record StartCheckInRequest(
     @PositiveOrZero
     @Schema(
         description = "Дополнительное окно для опоздавших (секунды). Отметившиеся здесь получат статус LATE",
-        requiredMode = Schema.RequiredMode.REQUIRED, example = "600"
+        requiredMode = Schema.RequiredMode.REQUIRED,
+        example = "600"
     )
     Integer lateSeconds
 ) {}

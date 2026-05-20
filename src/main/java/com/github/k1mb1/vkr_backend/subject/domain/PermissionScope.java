@@ -24,7 +24,8 @@ import org.hibernate.type.SqlTypes;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class PermissionScope extends ArchivableEntity {
+public class PermissionScope
+    extends ArchivableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "permission_id", nullable = false)

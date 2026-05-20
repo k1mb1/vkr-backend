@@ -10,9 +10,7 @@ import java.util.UUID;
 @Schema(description = "Фильтр для получения посещаемости")
 public record AttendanceFilter(
     @Schema(
-        description = "ID разрешения преподавателя. Вернёт таблицу по предмету разрешения: " +
-            "студенты — объединение по scopes разрешения, занятия — те, у которых allGroups=true " +
-            "или есть scope, пересекающийся хотя бы с одним scope разрешения.",
+        description = "ID разрешения преподавателя. Вернёт таблицу по предмету разрешения: " + "студенты — объединение по scopes разрешения, занятия — те, у которых allGroups=true " + "или есть scope, пересекающийся хотя бы с одним scope разрешения.",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull

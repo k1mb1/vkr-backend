@@ -13,53 +13,44 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateTeacherSubjectPer
 import com.github.k1mb1.vkr_backend.subject.web.responses.TeacherSubjectPermissionResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
+class TeacherSubjectPermissionService
+    implements TeacherSubjectPermissionsApi {
 
     final TeacherSubjectPermissionRepository permissionRepository;
+
     final TeacherReferenceService teacherReferenceService;
+
     final GroupReferenceService groupReferenceService;
+
     final SubjectRepository subjectRepository;
+
     final TeacherSubjectPermissionMapper permissionMapper;
 
     @Override
     public List<TeacherSubjectPermissionResponse> getPermissionsBySubject(
         UUID subjectId
     ) {
-        return permissionRepository
-            .findBySubjectIdFetchDetails(subjectId)
+        return permissionRepository.findBySubjectIdFetchDetails(subjectId)
             .stream()
             .map(this::toResponse)
             .toList();
     }
 
     @Override
-    public TeacherSubjectPermissionResponse getPermission(
-        UUID subjectId,
-        UUID teacherId
-    ) {
-        return permissionRepository
-            .findBySubjectIdAndTeacherIdFetchDetails(subjectId, teacherId)
+    public TeacherSubjectPermissionResponse getPermission(UUID subjectId, UUID teacherId) {
+        return permissionRepository.findBySubjectIdAndTeacherIdFetchDetails(subjectId, teacherId)
             .map(this::toResponse)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "TeacherSubjectPermission not found for subjectId=" +
-                        subjectId +
-                        ", teacherId=" +
-                        teacherId
-                )
-            );
+            .orElseThrow(() -> new EntityNotFoundException(
+                "TeacherSubjectPermission not found for subjectId=" + subjectId + ", teacherId=" + teacherId));
     }
 
     @Transactional
@@ -67,40 +58,23 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
     public TeacherSubjectPermissionResponse create(
         CreateTeacherSubjectPermissionRequest request
     ) {
-        if (
-            permissionRepository.existsByTeacherIdAndSubjectId(
-                request.teacherId(),
-                request.subjectId()
-            )
-        ) {
-            throw new IllegalStateException(
-                "Permission already exists for teacherId=" +
-                    request.teacherId() +
-                    ", subjectId=" +
-                    request.subjectId()
-            );
+        if (permissionRepository.existsByTeacherIdAndSubjectId(
+            request.teacherId(),
+            request.subjectId()
+        )) {
+            throw new IllegalStateException("Permission already exists for teacherId=" + request.teacherId() + ", subjectId=" + request.subjectId());
         }
         validateScopesForAllPermissions(request.allPermissions(), request.scopes());
 
         var subject = subjectRepository.getReferenceById(request.subjectId());
         var permission = TeacherSubjectPermission.builder()
-            .teacher(
-                teacherReferenceService.getTeacherReferenceById(
-                    request.teacherId()
-                )
-            )
+            .teacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()))
             .subject(subject)
             .allPermissions(request.allPermissions())
             .build();
 
-        if (
-            !request.allPermissions() &&
-            request.scopes() != null &&
-            !request.scopes().isEmpty()
-        ) {
-            permission
-                .getScopes()
-                .addAll(buildScopes(permission, request.scopes()));
+        if (!request.allPermissions() && request.scopes() != null && !request.scopes().isEmpty()) {
+            permission.getScopes().addAll(buildScopes(permission, request.scopes()));
         }
 
         return toResponse(permissionRepository.save(permission));
@@ -112,36 +86,19 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
         UUID id,
         UpdateTeacherSubjectPermissionRequest request
     ) {
-        var permission = permissionRepository
-            .findByIdWithDetails(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "TeacherSubjectPermission not found: " + id
-                )
-            );
+        var permission = permissionRepository.findByIdWithDetails(id)
+            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + id));
 
-        if (
-            request.teacherId() != null &&
-            !request.teacherId().equals(permission.getTeacher().getId())
-        ) {
-            if (
-                permissionRepository.existsByTeacherIdAndSubjectId(
-                    request.teacherId(),
-                    permission.getSubject().getId()
-                )
-            ) {
-                throw new IllegalStateException(
-                    "Permission already exists for teacherId=" +
-                        request.teacherId() +
-                        ", subjectId=" +
-                        permission.getSubject().getId()
-                );
+        if (request.teacherId() != null && !request.teacherId()
+            .equals(permission.getTeacher().getId())) {
+            if (permissionRepository.existsByTeacherIdAndSubjectId(
+                request.teacherId(),
+                permission.getSubject().getId()
+            )) {
+                throw new IllegalStateException("Permission already exists for teacherId=" + request.teacherId() + ", subjectId=" + permission.getSubject()
+                    .getId());
             }
-            permission.setTeacher(
-                teacherReferenceService.getTeacherReferenceById(
-                    request.teacherId()
-                )
-            );
+            permission.setTeacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()));
         }
         if (request.allPermissions() != null) {
             permission.setAllPermissions(request.allPermissions());
@@ -152,13 +109,10 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
         if (request.scopes() != null) {
             if (permission.isAllPermissions()) {
                 throw new IllegalArgumentException(
-                    "scopes must not be provided when allPermissions=true"
-                );
+                    "scopes must not be provided when allPermissions=true");
             }
             if (request.scopes().isEmpty()) {
-                throw new IllegalArgumentException(
-                    "scopes must be non-empty when provided"
-                );
+                throw new IllegalArgumentException("scopes must be non-empty when provided");
             }
             var newScopes = buildScopes(permission, request.scopes());
             permission.getScopes().clear();
@@ -171,13 +125,8 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
     @Transactional
     @Override
     public void delete(UUID id) {
-        var permission = permissionRepository
-            .findById(id)
-            .orElseThrow(() ->
-                new EntityNotFoundException(
-                    "TeacherSubjectPermission not found: " + id
-                )
-            );
+        var permission = permissionRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + id));
         permission.archive();
         permissionRepository.save(permission);
     }
@@ -187,9 +136,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
         List<PermissionScopeRequest> scopes
     ) {
         if (!allPermissions && (scopes == null || scopes.isEmpty())) {
-            throw new IllegalArgumentException(
-                "scopes must be non-empty when allPermissions=false"
-            );
+            throw new IllegalArgumentException("scopes must be non-empty when allPermissions=false");
         }
     }
 
@@ -207,60 +154,31 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
         var result = new ArrayList<PermissionScope>();
         for (var req : requests) {
             if (!subjectGroupIds.contains(req.groupId())) {
-                throw new IllegalArgumentException(
-                    "Group " + req.groupId() + " is not attached to subject " + subject.getId()
-                );
+                throw new IllegalArgumentException("Group " + req.groupId() + " is not attached to subject " + subject.getId());
             }
-            var group = groupReferenceService.getGroupReferenceById(
-                req.groupId()
-            );
-            Subgroup allowedSubgroup =
-                req.allowedSubgroupId() != null
-                    ? groupReferenceService.getSubgroupReferenceById(
-                          req.allowedSubgroupId()
-                      )
-                    : null;
+            var group = groupReferenceService.getGroupReferenceById(req.groupId());
+            Subgroup allowedSubgroup = req.allowedSubgroupId() != null
+                                       ? groupReferenceService.getSubgroupReferenceById(req.allowedSubgroupId())
+                                       : null;
             validateSubgroupBelongsToGroup(allowedSubgroup, group);
 
-            var key =
-                req.groupId() +
-                "|" +
-                req.allowedSubgroupId() +
-                "|" +
-                req.allowedLessonType();
+            var key = req.groupId() + "|" + req.allowedSubgroupId() + "|" + req.allowedLessonType();
             if (!seen.add(key)) {
-                throw new IllegalArgumentException(
-                    "Duplicate scope in request: groupId=" +
-                        req.groupId() +
-                        ", allowedSubgroupId=" +
-                        req.allowedSubgroupId() +
-                        ", allowedLessonType=" +
-                        req.allowedLessonType()
-                );
+                throw new IllegalArgumentException("Duplicate scope in request: groupId=" + req.groupId() + ", allowedSubgroupId=" + req.allowedSubgroupId() + ", allowedLessonType=" + req.allowedLessonType());
             }
-            result.add(
-                PermissionScope.builder()
-                    .permission(permission)
-                    .group(group)
-                    .allowedSubgroup(allowedSubgroup)
-                    .allowedLessonType(req.allowedLessonType())
-                    .build()
-            );
+            result.add(PermissionScope.builder()
+                           .permission(permission)
+                           .group(group)
+                           .allowedSubgroup(allowedSubgroup)
+                           .allowedLessonType(req.allowedLessonType())
+                           .build());
         }
         return result;
     }
 
-    private void validateSubgroupBelongsToGroup(
-        Subgroup subgroup,
-        Group group
-    ) {
-        if (
-            subgroup != null &&
-            !Objects.equals(subgroup.getGroup().getId(), group.getId())
-        ) {
-            throw new IllegalArgumentException(
-                "Subgroup does not belong to the specified group"
-            );
+    private void validateSubgroupBelongsToGroup(Subgroup subgroup, Group group) {
+        if (subgroup != null && !Objects.equals(subgroup.getGroup().getId(), group.getId())) {
+            throw new IllegalArgumentException("Subgroup does not belong to the specified group");
         }
     }
 

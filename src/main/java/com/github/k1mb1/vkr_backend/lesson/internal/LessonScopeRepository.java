@@ -15,13 +15,15 @@ public interface LessonScopeRepository
 
     @Query(
         """
-        SELECT ls FROM LessonScope ls
-        JOIN FETCH ls.lesson l
-        JOIN FETCH l.subject
-        JOIN FETCH ls.group
-        LEFT JOIN FETCH ls.allowedSubgroup
-        WHERE ls.id = :id
-        """
+            SELECT ls FROM LessonScope ls
+            JOIN FETCH ls.lesson l
+            JOIN FETCH l.subject
+            JOIN FETCH ls.group
+            LEFT JOIN FETCH ls.allowedSubgroup
+            WHERE ls.id = :id
+            """
     )
-    Optional<LessonScope> findByIdWithDetails(@Param("id") UUID id);
+    Optional<LessonScope> findByIdWithDetails(
+        @Param("id") UUID id
+    );
 }

@@ -8,8 +8,7 @@ public final class ErrorMessages {
 
     public static final String MALFORMED_BODY = "Malformed request body";
 
-    public static final String INVALID_PARAM =
-        "Invalid value for parameter '%s'";
+    public static final String INVALID_PARAM = "Invalid value for parameter '%s'";
 
     public static final String ACCESS_DENIED = "Access denied";
 
@@ -17,6 +16,5 @@ public final class ErrorMessages {
 
     public static final String INTERNAL_ERROR = "An unexpected error occurred";
 
-    public static final String DATA_INTEGRITY_VIOLATION =
-        "Resource conflict: duplicate or invalid reference";
+    public static final String DATA_INTEGRITY_VIOLATION = "Resource conflict: duplicate or invalid reference";
 }

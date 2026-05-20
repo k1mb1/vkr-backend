@@ -10,5 +10,6 @@ public record FieldError(
     @Schema(description = "Имя нарушенного ограничения", example = "NotBlank")
     String code,
 
-    @Schema(description = "Человекочитаемое сообщение") String message
+    @Schema(description = "Человекочитаемое сообщение")
+    String message
 ) {}
