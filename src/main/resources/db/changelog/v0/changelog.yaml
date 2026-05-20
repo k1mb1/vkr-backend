@@ -21,3 +21,7 @@ databaseChangeLog:
       file: db/changelog/v0/20260521000000-permission-all-permissions-and-subject-groups.sql
   - include:
       file: db/changelog/v0/20260522000000-checkin-session-per-lesson.sql
+  - include:
+      file: db/changelog/v0/20260523000000-grades.sql
+  - include:
+      file: db/changelog/v0/20260523100000-grades-fix-schema.sql
