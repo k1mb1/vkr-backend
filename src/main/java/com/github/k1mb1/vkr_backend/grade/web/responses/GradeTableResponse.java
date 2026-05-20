@@ -12,6 +12,9 @@ public record GradeTableResponse(
     @Schema(description = "Строки таблицы — студенты")
     List<GradeTableStudent> students,
 
+    @Schema(description = "Занятия, к которым относятся задания (для построения шапки таблицы)")
+    List<GradeTableLesson> lessons,
+
     @Schema(description = "Колонки таблицы — задания")
     List<GradeTableColumn> columns,
 

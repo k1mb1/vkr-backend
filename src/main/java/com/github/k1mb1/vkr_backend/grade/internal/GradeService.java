@@ -74,6 +74,7 @@ class GradeService
         return new GradeTableResponse(
             audience,
             students.stream().map(gradeMapper::toTableStudent).toList(),
+            lessons.stream().map(gradeMapper::toTableLesson).toList(),
             assignments.stream().map(assignmentMapper::toColumn).toList(),
             grades.stream().map(gradeMapper::toCell).toList()
         );
