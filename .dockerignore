@@ -2,8 +2,8 @@
 *
 
 # Include what we need
-!**/src
-!.mvn
-!**/pom.xml
+!src/**
+!.mvn/**
+!pom.xml
 !mvnw
 !lombok.config
