@@ -24,7 +24,7 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
 
     static final String[] PUBLIC_ENDPOINTS = {
-        "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs"
+        "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs",
     };
 
     private final JwtAuthConverter jwtAuthConverter;
@@ -40,7 +40,7 @@ public class SecurityConfig {
         return http.cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests.requestMatchers(
-                PUBLIC_ENDPOINTS).permitAll().anyRequest().permitAll())
+                PUBLIC_ENDPOINTS).permitAll().anyRequest().authenticated())
             .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(
                 STATELESS))
             .oauth2ResourceServer(oauth2ResourceServer -> oauth2ResourceServer.jwt(jwt -> jwt.jwtAuthenticationConverter(
