@@ -22,8 +22,8 @@ public final class LessonSpecifications {
     /**
      * Lessons that satisfy a single permission scope:
      * - same subject;
-     * - lesson.allGroups OR exists lesson_scope matching scope.group
-     * (and matching subgroup if scope restricts it),
+     * - exists lesson_scope matching the permission scope (group + optional subgroup) OR
+     * a lesson_scope with allGroups=true;
      * - lesson.type matches scope.allowedLessonType if restricted.
      */
     public static Specification<Lesson> forPermissionScope(PermissionScope scope) {
@@ -40,19 +40,22 @@ public final class LessonSpecifications {
             scopeMatch.select(ls.get("id"));
             List<Predicate> scopePredicates = new ArrayList<>();
             scopePredicates.add(cb.equal(ls.get("lesson"), root));
-            scopePredicates.add(cb.equal(ls.get("group").get("id"), scope.getGroup().getId()));
+            Predicate groupMatch = cb.equal(ls.get("group").get("id"), scope.getGroup().getId());
             if (scope.getAllowedSubgroup() != null) {
-                scopePredicates.add(cb.or(
-                    cb.isNull(ls.get("allowedSubgroup")),
-                    cb.equal(
-                        ls.get("allowedSubgroup").get("id"),
-                        scope.getAllowedSubgroup().getId()
+                groupMatch = cb.and(
+                    groupMatch, cb.or(
+                        cb.isNull(ls.get("allowedSubgroup")),
+                        cb.equal(
+                            ls.get("allowedSubgroup").get("id"),
+                            scope.getAllowedSubgroup().getId()
+                        )
                     )
-                ));
+                );
             }
+            scopePredicates.add(cb.or(cb.isTrue(ls.get("allGroups")), groupMatch));
             scopeMatch.where(scopePredicates.toArray(new Predicate[0]));
 
-            predicates.add(cb.or(cb.isTrue(root.get("allGroups")), cb.exists(scopeMatch)));
+            predicates.add(cb.exists(scopeMatch));
 
             var allowedLessonType = scope.getAllowedLessonType();
             if (allowedLessonType != null) {
@@ -69,7 +72,7 @@ public final class LessonSpecifications {
     /**
      * Lessons visible to a teacher under a given permission:
      * - same subject;
-     * - lesson.allGroups OR exists lesson_scope intersecting any of the permission's scopes
+     * - exists lesson_scope with allGroups=true OR intersecting any of the permission's scopes
      * by group (and matching subgroup when restricted).
      */
     public static Specification<Lesson> forPermission(
@@ -89,6 +92,7 @@ public final class LessonSpecifications {
                 scopeMatch.select(ls.get("id"));
 
                 List<Predicate> orParts = new ArrayList<>();
+                orParts.add(cb.isTrue(ls.get("allGroups")));
                 for (var ps : permission.getScopes()) {
                     List<Predicate> parts = new ArrayList<>();
                     parts.add(cb.equal(ls.get("group").get("id"), ps.getGroup().getId()));
@@ -103,12 +107,10 @@ public final class LessonSpecifications {
                     }
                     orParts.add(cb.and(parts.toArray(new Predicate[0])));
                 }
-                Predicate scopeIntersect = orParts.isEmpty()
-                                           ? cb.disjunction()
-                                           : cb.or(orParts.toArray(new Predicate[0]));
+                Predicate scopeIntersect = cb.or(orParts.toArray(new Predicate[0]));
                 scopeMatch.where(cb.equal(ls.get("lesson"), root), scopeIntersect);
 
-                predicates.add(cb.or(cb.isTrue(root.get("allGroups")), cb.exists(scopeMatch)));
+                predicates.add(cb.exists(scopeMatch));
             }
 
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
@@ -119,16 +121,13 @@ public final class LessonSpecifications {
     }
 
     /**
-     * Convenience: distinct group ids covered by the permission (when allPermissions=false, from
-     * scopes; when allPermissions=true, from the subject's attached groups).
+     * Distinct group ids covered by the permission's explicit scopes. Returns an empty set when
+     * allPermissions=true — callers must short-circuit on allPermissions before using this and
+     * treat allPermissions as "no group filter".
      */
     public static Set<UUID> permissionGroupIds(TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
-            return permission.getSubject()
-                .getGroups()
-                .stream()
-                .map(g -> g.getId())
-                .collect(Collectors.toSet());
+            return Set.of();
         }
         return permission.getScopes()
             .stream()

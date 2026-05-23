@@ -2,26 +2,18 @@ package com.github.k1mb1.vkr_backend.lesson.web.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 @Schema(
-    description = "Проведение занятия: группа (опц. подгруппа) или все группы + дата"
+    description = "Аудитория проведения занятия без даты: группа (опц. подгруппа) или все группы"
 )
-public record LessonScopeRequest(
+public record LessonAudienceRequest(
     @Schema(description = "ID группы. null допустим только если allGroups=true")
     UUID groupId,
 
     @Schema(description = "ID разрешённой подгруппы (null = вся группа)")
     UUID allowedSubgroupId,
-
-    @Schema(
-        description = "Дата проведения", requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotNull
-    LocalDate startedAt,
 
     @Schema(description = "true = проведение для всех групп предмета сразу (groupId должен быть null)")
     boolean allGroups

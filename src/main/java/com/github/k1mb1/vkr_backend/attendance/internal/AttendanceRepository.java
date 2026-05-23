@@ -12,10 +12,10 @@ import java.util.UUID;
 @Repository
 interface AttendanceRepository
     extends JpaRepository<Attendance, UUID> {
-    List<Attendance> findByLessonIdInAndStudentIdIn(
-        Collection<UUID> lessonIds,
+    List<Attendance> findByLessonScopeIdInAndStudentIdIn(
+        Collection<UUID> lessonScopeIds,
         Collection<UUID> studentIds
     );
 
-    Optional<Attendance> findByStudentIdAndLessonId(UUID studentId, UUID lessonId);
+    Optional<Attendance> findByStudentIdAndLessonScopeId(UUID studentId, UUID lessonScopeId);
 }

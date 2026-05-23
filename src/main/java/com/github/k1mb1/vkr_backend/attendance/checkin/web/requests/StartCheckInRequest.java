@@ -11,10 +11,10 @@ import java.util.UUID;
 public record StartCheckInRequest(
     @NotNull
     @Schema(
-        description = "ID занятия. Аудитория опроса совпадает с аудиторией занятия " + "(все группы и подгруппы, заданные в lesson scopes; либо все группы предмета при allGroups=true).",
+        description = "ID конкретного проведения занятия (lesson_scope). " + "Аудитория опроса совпадает с группой/подгруппой этого scope (или со всеми группами предмета при allGroups=true).",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    UUID lessonId,
+    UUID lessonScopeId,
 
     @NotNull
     @Min(1)

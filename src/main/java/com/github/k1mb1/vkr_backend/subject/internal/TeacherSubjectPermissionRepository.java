@@ -1,9 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,55 +13,26 @@ import java.util.UUID;
 public interface TeacherSubjectPermissionRepository
     extends JpaRepository<TeacherSubjectPermission, UUID> {
 
-    @Query(
-        """
-            SELECT DISTINCT p FROM TeacherSubjectPermission p
-            JOIN FETCH p.teacher
-            JOIN FETCH p.subject subj
-            LEFT JOIN FETCH subj.groups
-            LEFT JOIN FETCH p.scopes s
-            LEFT JOIN FETCH s.group
-            LEFT JOIN FETCH s.allowedSubgroup
-            WHERE p.subject.id = :subjectId
-            """
+    @EntityGraph(
+        attributePaths = {
+            "teacher", "subject", "scopes", "scopes.group", "scopes.allowedSubgroup"
+        }
     )
-    List<TeacherSubjectPermission> findBySubjectIdFetchDetails(
-        @Param("subjectId") UUID subjectId
-    );
+    List<TeacherSubjectPermission> findAllBySubjectId(UUID subjectId);
 
-    @Query(
-        """
-            SELECT DISTINCT p FROM TeacherSubjectPermission p
-            JOIN FETCH p.teacher
-            JOIN FETCH p.subject subj
-            LEFT JOIN FETCH subj.groups
-            LEFT JOIN FETCH p.scopes s
-            LEFT JOIN FETCH s.group
-            LEFT JOIN FETCH s.allowedSubgroup
-            WHERE p.subject.id = :subjectId
-              AND p.teacher.id = :teacherId
-            """
+    @EntityGraph(
+        attributePaths = {
+            "teacher", "subject", "scopes", "scopes.group", "scopes.allowedSubgroup"
+        }
     )
-    Optional<TeacherSubjectPermission> findBySubjectIdAndTeacherIdFetchDetails(
-        @Param("subjectId") UUID subjectId,
-        @Param("teacherId") UUID teacherId
-    );
+    Optional<TeacherSubjectPermission> findBySubjectIdAndTeacherId(UUID subjectId, UUID teacherId);
 
-    @Query(
-        """
-            SELECT DISTINCT p FROM TeacherSubjectPermission p
-            JOIN FETCH p.teacher
-            JOIN FETCH p.subject subj
-            LEFT JOIN FETCH subj.groups
-            LEFT JOIN FETCH p.scopes s
-            LEFT JOIN FETCH s.group
-            LEFT JOIN FETCH s.allowedSubgroup
-            WHERE p.id = :id
-            """
+    @EntityGraph(
+        attributePaths = {
+            "teacher", "subject", "scopes", "scopes.group", "scopes.allowedSubgroup"
+        }
     )
-    Optional<TeacherSubjectPermission> findByIdWithDetails(
-        @Param("id") UUID id
-    );
+    Optional<TeacherSubjectPermission> findWithDetailsById(UUID id);
 
     boolean existsByTeacherIdAndSubjectId(UUID teacherId, UUID subjectId);
 }

@@ -10,7 +10,6 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,7 +18,6 @@ import java.util.Set;
 @Table(
     name = "lessons", indexes = {
     @Index(name = "idx_lessons_subject_id", columnList = "subject_id"),
-    @Index(name = "idx_lessons_started_at", columnList = "started_at"),
 }
 )
 @SQLRestriction("archived_at IS NULL")
@@ -41,11 +39,9 @@ public class Lesson
     )
     LessonType type;
 
-    @Column(name = "started_at", nullable = false) LocalDate startedAt;
+    @Column(name = "order_index", nullable = false) int orderIndex;
 
     @Column(columnDefinition = "text") String topic;
-
-    @Column(name = "all_groups", nullable = false) boolean allGroups;
 
     @OneToMany(
         mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true

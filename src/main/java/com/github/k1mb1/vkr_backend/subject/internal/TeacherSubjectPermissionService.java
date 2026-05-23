@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
+import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
@@ -39,7 +40,7 @@ class TeacherSubjectPermissionService
     public List<TeacherSubjectPermissionResponse> getPermissionsBySubject(
         UUID subjectId
     ) {
-        return permissionRepository.findBySubjectIdFetchDetails(subjectId)
+        return permissionRepository.findAllBySubjectId(subjectId)
             .stream()
             .map(this::toResponse)
             .toList();
@@ -47,7 +48,7 @@ class TeacherSubjectPermissionService
 
     @Override
     public TeacherSubjectPermissionResponse getPermission(UUID subjectId, UUID teacherId) {
-        return permissionRepository.findBySubjectIdAndTeacherIdFetchDetails(subjectId, teacherId)
+        return permissionRepository.findBySubjectIdAndTeacherId(subjectId, teacherId)
             .map(this::toResponse)
             .orElseThrow(() -> new EntityNotFoundException(
                 "TeacherSubjectPermission not found for subjectId=" + subjectId + ", teacherId=" + teacherId));
@@ -86,8 +87,8 @@ class TeacherSubjectPermissionService
         UUID id,
         UpdateTeacherSubjectPermissionRequest request
     ) {
-        var permission = permissionRepository.findByIdWithDetails(id)
-            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + id));
+        var permission = permissionRepository.findWithDetailsById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", id));
 
         if (request.teacherId() != null && !request.teacherId()
             .equals(permission.getTeacher().getId())) {
@@ -126,7 +127,7 @@ class TeacherSubjectPermissionService
     @Override
     public void delete(UUID id) {
         var permission = permissionRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", id));
         permission.archive();
         permissionRepository.save(permission);
     }

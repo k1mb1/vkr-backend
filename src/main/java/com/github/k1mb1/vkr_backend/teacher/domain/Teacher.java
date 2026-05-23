@@ -36,5 +36,5 @@ public class Teacher
 
     @Column(nullable = false) String username;
 
-    @Column(nullable = false) String email;
+    @Column(nullable = false, columnDefinition = "citext") String email;
 }

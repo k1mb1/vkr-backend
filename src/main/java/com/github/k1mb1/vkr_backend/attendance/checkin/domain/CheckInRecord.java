@@ -45,8 +45,6 @@ public class CheckInRecord
     CheckInRecordStatus status;
 
     @Column(
-        name = "checked_in_at",
-        nullable = false,
-        columnDefinition = "timestamptz"
+        name = "checked_in_at", nullable = false, columnDefinition = "timestamptz"
     ) Instant checkedInAt;
 }

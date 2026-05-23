@@ -12,16 +12,17 @@ public record CheckInSessionResponse(
     @Schema(description = "ID сессии")
     UUID id,
 
-    @Schema(description = "ID занятия")
+    @Schema(description = "ID шаблона занятия")
     UUID lessonId,
 
-    @Schema(
-        description = "Признак, что занятие охватывает все группы предмета. " + "Дублирует lesson.allGroups для удобства клиента."
-    )
+    @Schema(description = "ID проведения занятия (lesson_scope)")
+    UUID lessonScopeId,
+
+    @Schema(description = "Признак, что проведение охватывает все группы предмета.")
     boolean allGroups,
 
     @Schema(
-        description = "Аудитория опроса — копия lesson scopes (группа + опц. подгруппа). " + "Если allGroups=true, содержит по одной записи на каждую группу предмета."
+        description = "Аудитория опроса — копия аудитории lesson scope. " + "Если allGroups=true, содержит по одной записи на каждую группу предмета."
     )
     List<CheckInAudienceScope> audience,
 

@@ -12,6 +12,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.time.LocalDate;
+
 @Hidden
 @Entity
 @Table(name = "lesson_scopes")
@@ -28,11 +30,18 @@ public class LessonScope
     @JoinColumn(name = "lesson_id", nullable = false)
     Lesson lesson;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
     Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "allowed_subgroup_id")
     Subgroup allowedSubgroup;
+
+    @Column(name = "started_at", nullable = false) LocalDate startedAt;
+
+    // Data-shape flag for THIS lesson: when true the lesson is held jointly for all groups of
+    // the subject (group and allowedSubgroup must be null). Unrelated to
+    // TeacherSubjectPermission.allPermissions, which controls authorization scope.
+    @Column(name = "all_groups", nullable = false) boolean allGroups;
 }

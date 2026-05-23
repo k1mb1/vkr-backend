@@ -4,9 +4,7 @@ import com.github.k1mb1.vkr_backend.grading.domain.Assignment;
 import com.github.k1mb1.vkr_backend.grading.domain.Grade;
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.grading.web.responses.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableLesson;
 import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableStudent;
-import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -29,6 +27,4 @@ interface GradingMapper {
     @Mapping(target = "subgroupId", source = "subgroup.id")
     @Mapping(target = "subgroupIndex", source = "subgroup.index")
     GradingTableStudent toTableStudent(Student student);
-
-    GradingTableLesson toTableLesson(Lesson lesson);
 }

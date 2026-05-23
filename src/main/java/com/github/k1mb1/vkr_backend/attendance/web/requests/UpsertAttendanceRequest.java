@@ -16,9 +16,10 @@ public record UpsertAttendanceRequest(
 
     @NotNull
     @Schema(
-        description = "ID занятия", requiredMode = Schema.RequiredMode.REQUIRED
+        description = "ID проведения занятия (lesson_scope)",
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
-    UUID lessonId,
+    UUID lessonScopeId,
 
     @NotNull
     @Schema(description = "Статус", requiredMode = Schema.RequiredMode.REQUIRED)

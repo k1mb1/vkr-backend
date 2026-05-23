@@ -13,8 +13,8 @@ public record AttendanceCellResponse(
     @Schema(description = "ID студента")
     UUID studentId,
 
-    @Schema(description = "ID занятия")
-    UUID lessonId,
+    @Schema(description = "ID проведения занятия (lesson_scope)")
+    UUID lessonScopeId,
 
     @Schema(description = "Статус")
     AttendanceStatus status,

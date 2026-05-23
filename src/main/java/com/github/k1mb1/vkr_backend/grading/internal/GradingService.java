@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.grading.internal;
 
+import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.domain.Assignment;
 import com.github.k1mb1.vkr_backend.grading.domain.Grade;
@@ -7,12 +8,10 @@ import com.github.k1mb1.vkr_backend.grading.web.filters.GradingFilter;
 import com.github.k1mb1.vkr_backend.grading.web.requests.CreateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.web.requests.UpdateAssignmentRequest;
 import com.github.k1mb1.vkr_backend.grading.web.requests.UpsertGradeRequest;
-import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
-import com.github.k1mb1.vkr_backend.grading.web.responses.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.grading.web.responses.GradingAudienceScope;
-import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableResponse;
+import com.github.k1mb1.vkr_backend.grading.web.responses.*;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
+import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
@@ -20,12 +19,11 @@ import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -48,15 +46,31 @@ class GradingService
 
     final LessonStudentsApi lessonStudentsApi;
 
+    static LocalDate earliestStartedAt(Lesson lesson) {
+        return lesson.getScopes()
+            .stream()
+            .map(LessonScope::getStartedAt)
+            .filter(Objects::nonNull)
+            .min(Comparator.naturalOrder())
+            .orElse(null);
+    }
+
     @Override
     public GradingTableResponse getGradingTable(GradingFilter filter) {
-        var permission = permissionRepository.findByIdWithDetails(filter.permissionId())
-            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + filter.permissionId()));
+        var permission = permissionRepository.findWithDetailsById(filter.permissionId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "TeacherSubjectPermission",
+                filter.permissionId()
+            ));
 
-        var lessons = lessonRepository.findAll(
-            LessonSpecifications.forPermission(permission),
-            Sort.by("startedAt")
-        ).stream().toList();
+        var lessons = lessonRepository.findAll(LessonSpecifications.forPermission(permission))
+            .stream()
+            .sorted(Comparator.comparing(
+                    GradingService::earliestStartedAt,
+                    Comparator.nullsLast(Comparator.naturalOrder())
+                )
+                        .thenComparingInt(Lesson::getOrderIndex))
+            .toList();
 
         var students = unionStudentsAcross(lessons);
         var audience = audienceOf(permission);
@@ -84,9 +98,37 @@ class GradingService
         return new GradingTableResponse(
             audience,
             students.stream().map(gradingMapper::toTableStudent).toList(),
-            lessons.stream().map(gradingMapper::toTableLesson).toList(),
+            lessons.stream().map(this::toGradingLesson).toList(),
             assignments.stream().map(gradingMapper::toAssignmentResponse).toList(),
             grades.stream().map(gradingMapper::toCell).toList()
+        );
+    }
+
+    private GradingTableLesson toGradingLesson(Lesson lesson) {
+        var scopes = lesson.getScopes()
+            .stream()
+            .sorted(Comparator.comparing(
+                (LessonScope s) -> s.getStartedAt(),
+                Comparator.nullsLast(Comparator.naturalOrder())
+            ))
+            .map(s -> new GradingTableLesson.Scope(
+                s.getId(),
+                s.getGroup() != null
+                ? s.getGroup().getId()
+                : null,
+                s.getAllowedSubgroup() != null
+                ? s.getAllowedSubgroup().getId()
+                : null,
+                s.getStartedAt(),
+                s.isAllGroups()
+            ))
+            .toList();
+        return new GradingTableLesson(
+            lesson.getId(),
+                                      lesson.getType(),
+                                      lesson.getOrderIndex(),
+                                      lesson.getTopic(),
+                                      scopes
         );
     }
 
@@ -96,7 +138,10 @@ class GradingService
         Assignment assignment = null;
         if (request.assignmentId() != null) {
             assignment = assignmentRepository.findById(request.assignmentId())
-                .orElseThrow(() -> new EntityNotFoundException("Assignment not found: " + request.assignmentId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Assignment",
+                    request.assignmentId()
+                ));
             if (!assignment.getLesson().getId().equals(request.lessonId())) {
                 throw new IllegalArgumentException("Assignment " + assignment.getId() + " does not belong to lesson " + request.lessonId());
             }
@@ -164,7 +209,7 @@ class GradingService
     @Override
     public AssignmentResponse updateAssignment(UUID id, UpdateAssignmentRequest request) {
         var assignment = assignmentRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Assignment not found: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Assignment", id));
         assignment.setOrder(request.order());
         assignment.setMaxPoints(request.maxPoints());
         assignment.setRequired(request.required());
@@ -175,7 +220,7 @@ class GradingService
     @Override
     public void deleteAssignment(UUID id) {
         if (!assignmentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Assignment not found: " + id);
+            throw new ResourceNotFoundException("Assignment", id);
         }
         assignmentRepository.deleteById(id);
     }
@@ -194,12 +239,7 @@ class GradingService
 
     private List<GradingAudienceScope> audienceOf(TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
-            return permission.getSubject()
-                .getGroups()
-                .stream()
-                .sorted(Comparator.comparing(g -> g.getName()))
-                .map(g -> new GradingAudienceScope(g.getId(), g.getName(), null, null))
-                .toList();
+            return List.of();
         }
         return permission.getScopes()
             .stream()

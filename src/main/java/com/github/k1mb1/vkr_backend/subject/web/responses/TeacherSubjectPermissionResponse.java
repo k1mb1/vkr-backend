@@ -21,12 +21,12 @@ public record TeacherSubjectPermissionResponse(
     UUID subjectId,
 
     @Schema(
-        description = "true = преподаватель имеет доступ ко всем группам предмета"
+        description = "true = у преподавателя полный доступ к предмету (любая группа/подгруппа/тип занятия). " + "В этом случае scopes возвращается пустым — клиент должен брать аудиторию из subject.groups напрямую."
     )
     boolean allPermissions,
 
     @Schema(
-        description = "Список scope'ов (группа с полным списком подгрупп + опц. разрешённая подгруппа + опц. тип занятия). " + "При allPermissions=true scope'ы синтезируются из групп предмета (по одному на группу, без ограничений по подгруппе и типу)."
+        description = "Список scope'ов (группа с полным списком подгрупп + опц. разрешённая подгруппа + опц. тип занятия). " + "Пустой список при allPermissions=true."
     )
     List<PermissionScopeResponse> scopes,
 

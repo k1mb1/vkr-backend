@@ -35,8 +35,7 @@ public record CreateAssignmentsRequest(
         int maxPoints,
 
         @Schema(
-            description = "Обязательное ли задание",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            description = "Обязательное ли задание", requiredMode = Schema.RequiredMode.REQUIRED
         )
         boolean required
     ) {}

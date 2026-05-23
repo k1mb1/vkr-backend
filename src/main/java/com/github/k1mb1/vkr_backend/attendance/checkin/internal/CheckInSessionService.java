@@ -15,14 +15,15 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSess
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
+import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
-import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
+import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,8 @@ class CheckInSessionService
     final CheckInRecordRepository recordRepository;
 
     final LessonRepository lessonRepository;
+
+    final LessonScopeRepository lessonScopeRepository;
 
     final TeacherSubjectPermissionRepository permissionRepository;
 
@@ -70,17 +73,20 @@ class CheckInSessionService
     @Transactional
     @Override
     public CheckInSessionResponse start(StartCheckInRequest request) {
-        var lesson = lessonRepository.findByIdWithDetails(request.lessonId())
-            .orElseThrow(() -> new EntityNotFoundException("Lesson not found: " + request.lessonId()));
+        var scope = lessonScopeRepository.findWithDetailsById(request.lessonScopeId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "LessonScope",
+                request.lessonScopeId()
+            ));
 
-        sessionRepository.findByLessonIdAndConfirmedAtIsNullAndCancelledAtIsNull(lesson.getId())
+        sessionRepository.findByLessonScopeIdAndConfirmedAtIsNullAndCancelledAtIsNull(scope.getId())
             .ifPresent(existing -> {
                 throw new IllegalStateException(
-                    "Active check-in session already exists for lesson: " + lesson.getId());
+                    "Active check-in session already exists for lesson scope: " + scope.getId());
             });
 
         var session = CheckInSession.builder()
-            .lesson(lesson)
+            .lessonScope(scope)
             .startedAt(Instant.now())
             .onTimeSeconds(request.onTimeSeconds())
             .lateSeconds(request.lateSeconds())
@@ -97,19 +103,23 @@ class CheckInSessionService
 
     @Override
     public List<CheckInSessionResponse> listForPermission(UUID permissionId) {
-        var permission = permissionRepository.findByIdWithDetails(permissionId)
-            .orElseThrow(() -> new EntityNotFoundException("TeacherSubjectPermission not found: " + permissionId));
+        var permission = permissionRepository.findWithDetailsById(permissionId)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "TeacherSubjectPermission",
+                permissionId
+            ));
 
-        var lessonIds = lessonRepository.findAll(LessonSpecifications.forPermission(permission))
-            .stream()
-            .map(Lesson::getId)
+        var lessons = lessonRepository.findAll(LessonSpecifications.forPermission(permission));
+        var scopeIds = lessons.stream()
+            .flatMap(l -> l.getScopes().stream())
+            .map(LessonScope::getId)
             .toList();
-        if (lessonIds.isEmpty()) {
+        if (scopeIds.isEmpty()) {
             return List.of();
         }
 
         var now = Instant.now();
-        return sessionRepository.findByLessonIdInOrderByStartedAtDesc(lessonIds)
+        return sessionRepository.findByLessonScopeIdInOrderByStartedAtDesc(scopeIds)
             .stream()
             .map(s -> mapper.toResponse(s, now))
             .toList();
@@ -118,7 +128,7 @@ class CheckInSessionService
     @Override
     public CheckInPreviewResponse preview(UUID sessionId) {
         var session = loadSession(sessionId);
-        var students = lessonStudentsApi.studentsOf(session.getLesson());
+        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
         var recordsByStudent = recordsByStudentId(sessionId);
 
         var rows = students.stream().map(student -> {
@@ -153,7 +163,7 @@ class CheckInSessionService
             throw new IllegalStateException("Session is cancelled: " + sessionId);
         }
 
-        var students = lessonStudentsApi.studentsOf(session.getLesson());
+        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
         var studentIds = students.stream()
             .map(Student::getId)
             .collect(java.util.stream.Collectors.toSet());
@@ -170,7 +180,7 @@ class CheckInSessionService
             }
         }
 
-        var lessonId = session.getLesson().getId();
+        var scopeId = session.getLessonScope().getId();
         for (var student : students) {
             var override = overridesByStudent.get(student.getId());
             AttendanceStatus status;
@@ -187,7 +197,7 @@ class CheckInSessionService
             }
             attendanceApi.upsert(new UpsertAttendanceRequest(
                 student.getId(),
-                                                             lessonId,
+                                                             scopeId,
                                                              status,
                                                              comment
             ));
@@ -214,7 +224,9 @@ class CheckInSessionService
     @Override
     public PublicCheckInSessionResponse getPublic(UUID sessionId) {
         var session = loadSession(sessionId);
-        var students = lessonStudentsApi.studentsOf(session.getLesson());
+        var scope = session.getLessonScope();
+        var lesson = scope.getLesson();
+        var students = lessonStudentsApi.studentsOf(scope);
         var recordsByStudent = recordsByStudentId(sessionId);
         var now = Instant.now();
 
@@ -234,8 +246,8 @@ class CheckInSessionService
 
         return new PublicCheckInSessionResponse(
             session.getId(),
-            session.getLesson().getTopic(),
-            mapper.audienceOf(session.getLesson()),
+            lesson.getTopic(),
+            mapper.audienceOf(scope),
             session.stateAt(now),
             session.onTimeEndsAt(),
             session.lateEndsAt(),
@@ -255,7 +267,7 @@ class CheckInSessionService
         }
 
         var studentId = request.studentId();
-        var students = lessonStudentsApi.studentsOf(session.getLesson());
+        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
         var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
         if (!inScope) {
             throw new IllegalArgumentException("Student is not part of this lesson audience: " + studentId);
@@ -283,8 +295,8 @@ class CheckInSessionService
     }
 
     private CheckInSession loadSession(UUID sessionId) {
-        return sessionRepository.findByIdWithDetails(sessionId)
-            .orElseThrow(() -> new EntityNotFoundException("CheckInSession not found: " + sessionId));
+        return sessionRepository.findWithDetailsById(sessionId)
+            .orElseThrow(() -> new ResourceNotFoundException("CheckInSession", sessionId));
     }
 
     private Map<UUID, CheckInRecord> recordsByStudentId(UUID sessionId) {

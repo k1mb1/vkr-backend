@@ -43,24 +43,19 @@ interface TeacherSubjectPermissionMapper {
     default PermissionScopeResponse toScopeResponse(PermissionScope scope) {
         return new PermissionScopeResponse(
             scope.getId(),
-                                           toGroup(scope.getGroup()),
-                                           toSubgroup(scope.getAllowedSubgroup()),
-                                           scope.getAllowedLessonType()
+            toGroup(scope.getGroup()),
+            toSubgroup(scope.getAllowedSubgroup()),
+            scope.getAllowedLessonType()
         );
     }
 
-    default PermissionScopeResponse syntheticScopeForGroup(Group group) {
-        return new PermissionScopeResponse(null, toGroup(group), null, null);
-    }
-
+    /**
+     * Scopes for the response: empty when allPermissions=true (teacher sees the whole subject;
+     * the client should consult subject.groups directly). Otherwise the explicit per-group scopes.
+     */
     default List<PermissionScopeResponse> scopesForPermission(TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
-            return permission.getSubject()
-                .getGroups()
-                .stream()
-                .sorted(Comparator.comparing(Group::getName))
-                .map(this::syntheticScopeForGroup)
-                .toList();
+            return List.of();
         }
         return permission.getScopes()
             .stream()

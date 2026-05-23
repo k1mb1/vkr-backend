@@ -31,6 +31,9 @@ public class TeacherSubjectPermission
     @JoinColumn(name = "subject_id", nullable = false)
     Subject subject;
 
+    // Authorization-level flag: when true the teacher has full access to the subject and
+    // `scopes` must stay empty. Distinct from LessonScope.allGroups which is a data-shape flag
+    // describing a single lesson held jointly for all groups of the subject.
     @Column(name = "all_permissions", nullable = false) boolean allPermissions;
 
     @OneToMany(

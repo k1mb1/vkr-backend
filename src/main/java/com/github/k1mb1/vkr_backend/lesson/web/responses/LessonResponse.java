@@ -4,11 +4,10 @@ import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-@Schema(description = "Информация о занятии")
+@Schema(description = "Информация о занятии (шаблон без даты — даты в scopes)")
 public record LessonResponse(
     @Schema(description = "ID занятия")
     UUID id,
@@ -22,16 +21,13 @@ public record LessonResponse(
     @Schema(description = "Тип занятия")
     LessonType type,
 
-    @Schema(description = "Дата занятия")
-    LocalDate startedAt,
+    @Schema(description = "Порядковый номер занятия в рамках (предмет, тип)")
+    int orderIndex,
 
     @Schema(description = "Тема занятия")
     String topic,
 
-    @Schema(description = "true = занятие охватывает все группы предмета")
-    boolean allGroups,
-
-    @Schema(description = "Список scopes занятия (группа + опц. подгруппа)")
+    @Schema(description = "Список проведений занятия (группа/подгруппа + дата)")
     List<LessonScopeResponse> scopes,
 
     @Schema(description = "Дата создания")

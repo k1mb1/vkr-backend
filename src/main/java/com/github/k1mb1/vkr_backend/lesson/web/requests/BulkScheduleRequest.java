@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.lesson.web.requests;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(
-    description = "Запрос на массовое создание занятий по недельному шаблону"
+    description = "Запрос на массовое создание шаблонов занятий по недельному шаблону. " + "Для каждой даты создаётся один шаблон занятия и по одному scope на каждую указанную аудиторию."
 )
 public record BulkScheduleRequest(
     @Schema(
@@ -24,17 +23,12 @@ public record BulkScheduleRequest(
     UUID subjectId,
 
     @Schema(
-        description = "true = занятия охватывают все группы предмета; false = только перечисленные в scopes",
+        description = "Аудитории, для которых создавать scope-проведения (группа+опц.подгруппа или allGroups). " + "Должен содержать хотя бы один элемент.",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    @NotNull
-    Boolean allGroups,
-
-    @Schema(
-        description = "Список scopes (group + опц. подгруппа). " + "Обязателен и должен быть непустым при allGroups=false. " + "При allGroups=true игнорируется."
-    )
+    @NotEmpty
     @Valid
-    List<LessonScopeRequest> scopes,
+    List<LessonAudienceRequest> audiences,
 
     @Schema(
         description = "Список шаблонов расписания", requiredMode = Schema.RequiredMode.REQUIRED
@@ -42,12 +36,6 @@ public record BulkScheduleRequest(
     @NotEmpty
     List<@Valid Entry> schedules
 ) {
-    @Schema(hidden = true)
-    @AssertTrue(message = "scopes must be non-empty when allGroups=false")
-    public boolean hasScopesWhenNotAllGroups() {
-        return Boolean.TRUE.equals(allGroups) || (scopes != null && !scopes.isEmpty());
-    }
-
     @Schema(description = "Элемент шаблона расписания")
     public record Entry(
         @Schema(

@@ -9,7 +9,7 @@ import java.util.List;
 )
 public record AttendanceTableResponse(
     @Schema(
-        description = "Аудитория таблицы — группы и подгруппы, покрываемые разрешением " + "(для построения заголовка таблицы)."
+        description = "Аудитория таблицы — группы/подгруппы из scope'ов разрешения. " + "Пустой список при allPermissions=true: клиент должен взять группы из subject.groups."
     )
     List<AttendanceAudienceScope> audience,
 

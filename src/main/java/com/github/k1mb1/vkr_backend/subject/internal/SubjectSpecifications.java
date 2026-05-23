@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
+import com.github.k1mb1.vkr_backend.common.persistence.Specs;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter;
@@ -9,17 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 record SubjectSpecifications(SubjectFilter filter) {
     public Specification<Subject> toSpecification() {
-        return nameContainsSpec().and(hasTeacherSpec());
-    }
-
-    private Specification<Subject> nameContainsSpec() {
-        return (root, query, cb) -> {
-            if (filter.name() == null) {
-                return null;
-            }
-            var pattern = "%" + filter.name().toLowerCase() + "%";
-            return cb.like(cb.lower(root.get("name")), pattern);
-        };
+        return Specs.<Subject>containsIgnoreCase("name", filter.name()).and(hasTeacherSpec());
     }
 
     private Specification<Subject> hasTeacherSpec() {

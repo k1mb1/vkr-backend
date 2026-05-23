@@ -32,7 +32,6 @@ interface LessonMapper {
     @Mapping(target = "archivedAt", ignore = true)
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "scopes", ignore = true)
-    @Mapping(target = "allGroups", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(
         UpdateLessonRequest request,

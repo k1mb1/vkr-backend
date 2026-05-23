@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.attendance.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
-import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
+import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.*;
@@ -17,9 +17,9 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(
     name = "attendances", uniqueConstraints = @UniqueConstraint(
-    name = "uk_attendance_student_lesson", columnNames = { "student_id", "lesson_id" }
+    name = "uk_attendance_student_lesson_scope", columnNames = { "student_id", "lesson_scope_id" }
 ), indexes = {
-    @Index(name = "idx_attendances_lesson_id", columnList = "lesson_id"),
+    @Index(name = "idx_attendances_lesson_scope_id", columnList = "lesson_scope_id"),
     @Index(name = "idx_attendances_student_id", columnList = "student_id"),
 }
 )
@@ -36,8 +36,8 @@ public class Attendance
     Student student;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "lesson_id", nullable = false)
-    Lesson lesson;
+    @JoinColumn(name = "lesson_scope_id", nullable = false)
+    LessonScope lessonScope;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "attendance_status")

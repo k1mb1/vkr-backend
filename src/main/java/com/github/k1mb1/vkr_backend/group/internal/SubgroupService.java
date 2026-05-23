@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.group.internal;
 
+import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.group.SubgroupsApi;
 import com.github.k1mb1.vkr_backend.group.web.response.SubgroupResponse;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ class SubgroupService
     @Override
     public List<SubgroupResponse> getSubgroups(UUID groupId) {
         if (!groupRepository.existsById(groupId)) {
-            throw new EntityNotFoundException("Group not found: " + groupId);
+            throw new ResourceNotFoundException("Group", groupId);
         }
         return subgroupRepository.findByGroupIdOrderByIndex(groupId)
             .stream()
