@@ -2,23 +2,29 @@ package com.github.k1mb1.vkr_backend.subject.web.requests;
 
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
 @Schema(
-    description = "Один scope права: группа + опциональная подгруппа + опциональный тип занятия"
+    description = "Один scope права: группа (или все группы) + опциональный тип занятия. " + "Подгруппа допустима только внутри конкретной группы."
 )
 public record PermissionScopeRequest(
-    @Schema(
-        description = "ID группы", requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotNull
-    UUID groupId,
-
-    @Schema(description = "ID разрешённой подгруппы (null = вся группа)")
-    UUID allowedSubgroupId,
+    @Schema(description = "Группа scope'а; null = все группы предмета (тогда подгруппу указать нельзя)")
+    @Valid
+    PermissionScopeGroupRef group,
 
     @Schema(description = "Разрешённый тип занятия (null = все типы)")
     LessonType allowedLessonType
-) {}
+) {
+    @Schema(description = "Группа + опциональная подгруппа")
+    public record PermissionScopeGroupRef(
+        @Schema(description = "ID группы", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull
+        UUID groupId,
+
+        @Schema(description = "ID разрешённой подгруппы (null = вся группа)")
+        UUID allowedSubgroupId
+    ) {}
+}

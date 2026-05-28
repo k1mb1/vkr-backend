@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.attendance.internal;
 import com.github.k1mb1.vkr_backend.attendance.AttendanceApi;
 import com.github.k1mb1.vkr_backend.attendance.domain.Attendance;
 import com.github.k1mb1.vkr_backend.attendance.web.filters.AttendanceFilter;
+import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.web.responses.AttendanceAudienceScope;
 import com.github.k1mb1.vkr_backend.attendance.web.responses.AttendanceCellResponse;
@@ -53,13 +54,69 @@ class AttendanceService
                 filter.permissionId()
             ));
 
-        var lessons = lessonRepository.findAll(LessonSpecifications.forPermission(permission));
-        var scopes = visibleScopesIn(lessons, permission);
+        var lessons = resolveLessons(permission, filter);
+        var scopes = resolveScopes(lessons, permission, filter);
 
         var students = unionStudentsAcrossScopes(scopes);
         var audience = audienceOf(permission);
 
         return buildTable(audience, students, scopes);
+    }
+
+    private List<Lesson> resolveLessons(
+        TeacherSubjectPermission permission,
+        AttendanceFilter filter
+    ) {
+        if (filter.lessonScopeId() != null) {
+            var scope = lessonScopeRepository.findById(filter.lessonScopeId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "LessonScope",
+                    filter.lessonScopeId()
+                ));
+            assertSameSubject(scope.getLesson(), permission);
+            assertLessonMatch(scope.getLesson(), filter.lessonId());
+            return List.of(scope.getLesson());
+        }
+        if (filter.lessonId() != null) {
+            var lesson = lessonRepository.findById(filter.lessonId())
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", filter.lessonId()));
+            assertSameSubject(lesson, permission);
+            return List.of(lesson);
+        }
+        return lessonRepository.findAll(LessonSpecifications.forPermission(permission));
+    }
+
+    private List<LessonScope> resolveScopes(
+        List<Lesson> lessons,
+        TeacherSubjectPermission permission,
+        AttendanceFilter filter
+    ) {
+        var visible = visibleScopesIn(lessons, permission);
+        if (filter.lessonScopeId() == null) {
+            return visible;
+        }
+        var narrowed = visible.stream()
+            .filter(s -> s.getId().equals(filter.lessonScopeId()))
+            .toList();
+        if (narrowed.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Scope " + filter.lessonScopeId() + " is not visible under permission " + permission.getId());
+        }
+        return narrowed;
+    }
+
+    private void assertSameSubject(Lesson lesson, TeacherSubjectPermission permission) {
+        if (!lesson.getSubject().getId().equals(permission.getSubject().getId())) {
+            throw new IllegalArgumentException(
+                "Lesson " + lesson.getId() + " does not belong to subject of permission " + permission.getId());
+        }
+    }
+
+    private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
+        if (requestedLessonId != null && !scopeLesson.getId().equals(requestedLessonId)) {
+            throw new IllegalArgumentException(
+                "lessonScopeId belongs to lesson " + scopeLesson.getId() + " but lessonId=" + requestedLessonId);
+        }
     }
 
     private AttendanceTableResponse buildTable(
@@ -87,47 +144,48 @@ class AttendanceService
 
     @Transactional
     @Override
-    public AttendanceCellResponse upsert(UpsertAttendanceRequest request) {
-        var attendance = attendanceRepository.findByStudentIdAndLessonScopeId(
-                request.studentId(),
-                request.lessonScopeId()
-            )
-            .orElseGet(() -> Attendance.builder()
-                .student(studentRepository.getReferenceById(request.studentId()))
-                .lessonScope(lessonScopeRepository.getReferenceById(request.lessonScopeId()))
+    public List<AttendanceCellResponse> upsertAll(BulkUpsertAttendanceRequest request) {
+        var items = request.items();
+        var seen = new HashSet<String>();
+        for (var item : items) {
+            var key = item.studentId() + "|" + item.lessonScopeId();
+            if (!seen.add(key)) {
+                throw new IllegalArgumentException(
+                    "Duplicate (studentId, lessonScopeId) in request: " + item.studentId() + ", " + item.lessonScopeId());
+            }
+        }
+
+        var studentIds = items.stream().map(UpsertAttendanceRequest::studentId).distinct().toList();
+        var scopeIds = items.stream().map(UpsertAttendanceRequest::lessonScopeId).distinct().toList();
+        var existing = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(scopeIds, studentIds);
+        var existingByKey = new HashMap<String, Attendance>();
+        for (var a : existing) {
+            existingByKey.put(a.getStudent().getId() + "|" + a.getLessonScope().getId(), a);
+        }
+
+        var saved = new ArrayList<Attendance>(items.size());
+        for (var item : items) {
+            var key = item.studentId() + "|" + item.lessonScopeId();
+            var attendance = existingByKey.computeIfAbsent(key, k -> Attendance.builder()
+                .student(studentRepository.getReferenceById(item.studentId()))
+                .lessonScope(lessonScopeRepository.getReferenceById(item.lessonScopeId()))
                 .build());
+            attendance.setStatus(item.status());
+            attendance.setComment(item.comment());
+            saved.add(attendance);
+        }
 
-        attendance.setStatus(request.status());
-        attendance.setComment(request.comment());
-
-        return attendanceMapper.toCell(attendanceRepository.save(attendance));
+        var persisted = attendanceRepository.saveAll(saved);
+        return persisted.stream().map(attendanceMapper::toCell).toList();
     }
 
     private List<LessonScope> visibleScopesIn(
         List<Lesson> lessons,
         TeacherSubjectPermission permission
     ) {
-        var permittedGroupIds = LessonSpecifications.permissionGroupIds(permission);
-        var subgroupRestrictions = subgroupRestrictionsByGroup(permission);
         var result = new ArrayList<LessonScope>();
         for (var lesson : lessons) {
-            for (var scope : lesson.getScopes()) {
-                if (scope.isAllGroups()) {
-                    result.add(scope);
-                    continue;
-                }
-                if (scope.getGroup() == null) {
-                    continue;
-                }
-                if (permission.isAllPermissions() || permittedGroupIds.contains(scope.getGroup()
-                                                                                    .getId())) {
-                    var allowedSubgroupId = subgroupRestrictions.get(scope.getGroup().getId());
-                    if (allowedSubgroupId == null || scope.getAllowedSubgroup() == null || allowedSubgroupId.equals(
-                        scope.getAllowedSubgroup().getId())) {
-                        result.add(scope);
-                    }
-                }
-            }
+            result.addAll(LessonSpecifications.visibleScopes(lesson, permission));
         }
         result.sort(Comparator.comparing(
                 (LessonScope s) -> s.getStartedAt(),
@@ -135,21 +193,6 @@ class AttendanceService
             )
                         .thenComparing(s -> s.getLesson().getOrderIndex()));
         return result;
-    }
-
-    private Map<UUID, UUID> subgroupRestrictionsByGroup(TeacherSubjectPermission permission) {
-        if (permission.isAllPermissions()) {
-            return Map.of();
-        }
-        var map = new HashMap<UUID, UUID>();
-        for (var ps : permission.getScopes()) {
-            if (ps.getAllowedSubgroup() != null) {
-                map.putIfAbsent(ps.getGroup().getId(), ps.getAllowedSubgroup().getId());
-            } else {
-                map.put(ps.getGroup().getId(), null);
-            }
-        }
-        return map;
     }
 
     private List<Student> unionStudentsAcrossScopes(List<LessonScope> scopes) {
@@ -165,7 +208,7 @@ class AttendanceService
     }
 
     private List<AttendanceAudienceScope> audienceOf(TeacherSubjectPermission permission) {
-        if (permission.isAllPermissions()) {
+        if (LessonSpecifications.permissionAllowsAllGroups(permission)) {
             return List.of();
         }
         return permission.getScopes()

@@ -10,9 +10,15 @@ import java.util.UUID;
 @Schema(description = "Фильтр для получения таблицы оценок")
 public record GradingFilter(
     @Schema(
-        description = "ID разрешения преподавателя. Вернёт таблицу по предмету разрешения: " + "студенты — объединение по scopes разрешения, занятия — те, у которых allGroups=true " + "или есть scope, пересекающийся хотя бы с одним scope разрешения.",
+        description = "ID разрешения преподавателя (обязательно — определяет, что видно). " + "Без других фильтров вернёт полную таблицу по предмету разрешения.",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull
-    UUID permissionId
+    UUID permissionId,
+
+    @Schema(description = "ID занятия. Если задан — таблица только по этому занятию")
+    UUID lessonId,
+
+    @Schema(description = "ID конкретного scope. Если задан — таблица только по уроку этого scope")
+    UUID lessonScopeId
 ) {}

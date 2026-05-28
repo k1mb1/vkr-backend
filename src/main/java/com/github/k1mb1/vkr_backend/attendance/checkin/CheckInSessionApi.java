@@ -1,10 +1,9 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin;
 
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.filters.CheckInSessionFilter;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.ConfirmCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StartCheckInRequest;
-import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StudentCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInPreviewResponse;
-import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInRecordResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
 
@@ -17,7 +16,7 @@ public interface CheckInSessionApi {
 
     CheckInSessionResponse get(UUID sessionId);
 
-    List<CheckInSessionResponse> listForPermission(UUID permissionId);
+    List<CheckInSessionResponse> list(CheckInSessionFilter filter);
 
     CheckInPreviewResponse preview(UUID sessionId);
 
@@ -26,6 +25,4 @@ public interface CheckInSessionApi {
     CheckInSessionResponse cancel(UUID sessionId);
 
     PublicCheckInSessionResponse getPublic(UUID sessionId);
-
-    CheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request);
 }

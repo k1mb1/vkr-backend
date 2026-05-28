@@ -9,11 +9,13 @@ import com.github.k1mb1.vkr_backend.group.web.requests.StudentGroupMemberRequest
 import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupWithSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.student.StudentApi;
 import com.github.k1mb1.vkr_backend.student.internal.StudentMapper;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
+import com.github.k1mb1.vkr_backend.subject.internal.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,8 @@ class GroupService
     final GroupRepository groupRepository;
 
     final SubgroupRepository subgroupRepository;
+
+    final SubjectRepository subjectRepository;
 
     final StudentApi studentApi;
 
@@ -164,5 +168,45 @@ class GroupService
     public Page<GroupPageResponse> getGroupPage(GroupFilter filter, Pageable pageable) {
         return groupRepository.findAll(new GroupSpecifications(filter).toSpecification(), pageable)
             .map(groupMapper::toPageResponse);
+    }
+
+    @Override
+    public List<GroupWithSubgroupsResponse> getGroupsBySubjectId(UUID subjectId) {
+        return groupRepository.findBySubjectId(subjectId)
+            .stream()
+            .map(group -> groupMapper.toWithSubgroupsResponse(
+                group,
+                group.getSubgroups().stream().map(subgroupMapper::toResponse).toList()
+            ))
+            .toList();
+    }
+
+    @Transactional
+    @Override
+    public GroupResponse attachToSubject(UUID groupId, UUID subjectId) {
+        var group = groupRepository.findById(groupId)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + groupId));
+        var subject = subjectRepository.findById(subjectId)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + subjectId));
+        if (!subject.getGroups().add(group)) {
+            throw new IllegalStateException(
+                "Group " + groupId + " is already attached to subject " + subjectId);
+        }
+        subjectRepository.save(subject);
+        return toResponse(group);
+    }
+
+    @Transactional
+    @Override
+    public void detachFromSubject(UUID groupId, UUID subjectId) {
+        var group = groupRepository.findById(groupId)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + groupId));
+        var subject = subjectRepository.findById(subjectId)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + subjectId));
+        if (!subject.getGroups().remove(group)) {
+            throw new jakarta.persistence.EntityNotFoundException(
+                "Group " + groupId + " is not attached to subject " + subjectId);
+        }
+        subjectRepository.save(subject);
     }
 }

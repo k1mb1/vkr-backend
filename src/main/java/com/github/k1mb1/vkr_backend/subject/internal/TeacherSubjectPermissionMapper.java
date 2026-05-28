@@ -32,6 +32,9 @@ interface TeacherSubjectPermissionMapper {
     }
 
     default PermissionScopeGroupResponse toGroup(Group group) {
+        if (group == null) {
+            return null;
+        }
         var subgroups = group.getSubgroups()
             .stream()
             .sorted(Comparator.comparing(Subgroup::getIndex))
@@ -51,7 +54,8 @@ interface TeacherSubjectPermissionMapper {
 
     /**
      * Scopes for the response: empty when allPermissions=true (teacher sees the whole subject;
-     * the client should consult subject.groups directly). Otherwise the explicit per-group scopes.
+     * the client should consult subject.groups directly). Otherwise the explicit per-group scopes;
+     * all-groups scopes (group=null) sort first.
      */
     default List<PermissionScopeResponse> scopesForPermission(TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
@@ -59,7 +63,12 @@ interface TeacherSubjectPermissionMapper {
         }
         return permission.getScopes()
             .stream()
-            .sorted(Comparator.comparing((PermissionScope s) -> s.getGroup().getName()))
+            .sorted(Comparator.comparing(
+                (PermissionScope s) -> s.getGroup() == null
+                                       ? null
+                                       : s.getGroup().getName(),
+                Comparator.nullsFirst(Comparator.naturalOrder())
+            ))
             .map(this::toScopeResponse)
             .toList();
     }

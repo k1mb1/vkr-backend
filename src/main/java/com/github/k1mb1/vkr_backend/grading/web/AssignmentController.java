@@ -2,7 +2,6 @@ package com.github.k1mb1.vkr_backend.grading.web;
 
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.web.requests.CreateAssignmentsRequest;
-import com.github.k1mb1.vkr_backend.grading.web.requests.UpdateAssignmentRequest;
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,26 +45,21 @@ public class AssignmentController {
         return ResponseEntity.ok(gradingApi.createAssignments(request));
     }
 
-    @Operation(summary = "Обновить задание")
-    @PutMapping("/{id}")
-    public ResponseEntity<AssignmentResponse> update(
-        @PathVariable UUID id,
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Поля задания", required = true
-        )
-        UpdateAssignmentRequest request
-    ) {
-        return ResponseEntity.ok(gradingApi.updateAssignment(id, request));
-    }
-
     @Operation(summary = "Удалить задание (связанные оценки удаляются каскадно)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
         @PathVariable UUID id
     ) {
         gradingApi.deleteAssignment(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Удалить все задания занятия (связанные оценки удаляются каскадно)")
+    @DeleteMapping("/lessons/{lessonId}")
+    public ResponseEntity<Void> deleteAllOfLesson(
+        @PathVariable UUID lessonId
+    ) {
+        gradingApi.deleteAssignmentsOfLesson(lessonId);
         return ResponseEntity.noContent().build();
     }
 }

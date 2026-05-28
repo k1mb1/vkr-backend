@@ -1,8 +1,9 @@
 package com.github.k1mb1.vkr_backend.lesson.internal;
 
+import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
-import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
+import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonHeaderRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonScopeResponse;
 import org.mapstruct.BeanMapping;
@@ -15,10 +16,21 @@ import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 @Mapper(componentModel = SPRING)
 interface LessonMapper {
-    @Mapping(target = "subjectId", source = "subject.id")
-    @Mapping(target = "subjectName", source = "subject.name")
+    @Mapping(target = "id", source = "lesson.id")
+    @Mapping(target = "subjectId", source = "lesson.subject.id")
+    @Mapping(target = "subjectName", source = "lesson.subject.name")
+    @Mapping(target = "type", source = "lesson.type")
+    @Mapping(target = "orderIndex", source = "lesson.orderIndex")
+    @Mapping(target = "topic", source = "lesson.topic")
+    @Mapping(target = "createdAt", source = "lesson.createdAt")
+    @Mapping(target = "updatedAt", source = "lesson.updatedAt")
     @Mapping(target = "scopes", source = "scopes")
-    LessonResponse toResponse(Lesson lesson);
+    @Mapping(target = "assignments", source = "assignments")
+    LessonResponse toResponse(
+        Lesson lesson,
+        java.util.List<LessonScope> scopes,
+        java.util.List<AssignmentResponse> assignments
+    );
 
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")
@@ -34,7 +46,7 @@ interface LessonMapper {
     @Mapping(target = "scopes", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(
-        UpdateLessonRequest request,
+        UpdateLessonHeaderRequest request,
         @MappingTarget Lesson lesson
     );
 }

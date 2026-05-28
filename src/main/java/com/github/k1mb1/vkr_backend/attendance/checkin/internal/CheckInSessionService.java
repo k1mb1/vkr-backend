@@ -5,24 +5,24 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecord;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordStatus;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSession;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.filters.CheckInSessionFilter;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.ConfirmCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StartCheckInRequest;
-import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StudentCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInPreviewResponse;
-import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInRecordResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
+import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
+import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
+import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
-import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,8 +49,6 @@ class CheckInSessionService
     final LessonScopeRepository lessonScopeRepository;
 
     final TeacherSubjectPermissionRepository permissionRepository;
-
-    final StudentRepository studentRepository;
 
     final LessonStudentsApi lessonStudentsApi;
 
@@ -102,18 +100,14 @@ class CheckInSessionService
     }
 
     @Override
-    public List<CheckInSessionResponse> listForPermission(UUID permissionId) {
-        var permission = permissionRepository.findWithDetailsById(permissionId)
+    public List<CheckInSessionResponse> list(CheckInSessionFilter filter) {
+        var permission = permissionRepository.findWithDetailsById(filter.permissionId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "TeacherSubjectPermission",
-                permissionId
+                filter.permissionId()
             ));
 
-        var lessons = lessonRepository.findAll(LessonSpecifications.forPermission(permission));
-        var scopeIds = lessons.stream()
-            .flatMap(l -> l.getScopes().stream())
-            .map(LessonScope::getId)
-            .toList();
+        var scopeIds = resolveScopeIds(permission, filter);
         if (scopeIds.isEmpty()) {
             return List.of();
         }
@@ -123,6 +117,47 @@ class CheckInSessionService
             .stream()
             .map(s -> mapper.toResponse(s, now))
             .toList();
+    }
+
+    private List<UUID> resolveScopeIds(
+        TeacherSubjectPermission permission,
+        CheckInSessionFilter filter
+    ) {
+        if (filter.lessonScopeId() != null) {
+            var scope = lessonScopeRepository.findById(filter.lessonScopeId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "LessonScope",
+                    filter.lessonScopeId()
+                ));
+            assertSameSubject(scope.getLesson(), permission);
+            assertLessonMatch(scope.getLesson(), filter.lessonId());
+            return List.of(scope.getId());
+        }
+        if (filter.lessonId() != null) {
+            var lesson = lessonRepository.findById(filter.lessonId())
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", filter.lessonId()));
+            assertSameSubject(lesson, permission);
+            return lesson.getScopes().stream().map(LessonScope::getId).toList();
+        }
+        return lessonRepository.findAll(LessonSpecifications.forPermission(permission))
+            .stream()
+            .flatMap(l -> LessonSpecifications.visibleScopes(l, permission).stream())
+            .map(LessonScope::getId)
+            .toList();
+    }
+
+    private void assertSameSubject(Lesson lesson, TeacherSubjectPermission permission) {
+        if (!lesson.getSubject().getId().equals(permission.getSubject().getId())) {
+            throw new IllegalArgumentException(
+                "Lesson " + lesson.getId() + " does not belong to subject of permission " + permission.getId());
+        }
+    }
+
+    private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
+        if (requestedLessonId != null && !scopeLesson.getId().equals(requestedLessonId)) {
+            throw new IllegalArgumentException(
+                "lessonScopeId belongs to lesson " + scopeLesson.getId() + " but lessonId=" + requestedLessonId);
+        }
     }
 
     @Override
@@ -181,6 +216,7 @@ class CheckInSessionService
         }
 
         var scopeId = session.getLessonScope().getId();
+        var items = new java.util.ArrayList<UpsertAttendanceRequest>(students.size());
         for (var student : students) {
             var override = overridesByStudent.get(student.getId());
             AttendanceStatus status;
@@ -195,12 +231,10 @@ class CheckInSessionService
                                                   : null);
                 comment = null;
             }
-            attendanceApi.upsert(new UpsertAttendanceRequest(
-                student.getId(),
-                                                             scopeId,
-                                                             status,
-                                                             comment
-            ));
+            items.add(new UpsertAttendanceRequest(student.getId(), scopeId, status, comment));
+        }
+        if (!items.isEmpty()) {
+            attendanceApi.upsertAll(new BulkUpsertAttendanceRequest(items));
         }
 
         session.setConfirmedAt(Instant.now());
@@ -254,44 +288,6 @@ class CheckInSessionService
             now,
             rows
         );
-    }
-
-    @Transactional
-    @Override
-    public CheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
-        var session = loadSession(sessionId);
-        var now = Instant.now();
-        var state = session.stateAt(now);
-        if (state != CheckInSessionState.OPEN && state != CheckInSessionState.LATE_WINDOW) {
-            throw new IllegalStateException("Check-in is closed for session: " + sessionId);
-        }
-
-        var studentId = request.studentId();
-        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
-        var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
-        if (!inScope) {
-            throw new IllegalArgumentException("Student is not part of this lesson audience: " + studentId);
-        }
-
-        var status = session.statusForCheckInAt(now);
-        if (status == null) {
-            throw new IllegalStateException("Check-in window has elapsed");
-        }
-
-        var record = recordRepository.findBySessionIdAndStudentId(sessionId, studentId)
-            .orElseGet(() -> CheckInRecord.builder()
-                .session(session)
-                .student(studentRepository.getReferenceById(studentId))
-                .checkedInAt(now)
-                .build());
-
-        // first check-in wins; do not downgrade PRESENT to LATE on repeated submission
-        if (record.getId() == null) {
-            record.setStatus(status);
-            record.setCheckedInAt(now);
-        }
-
-        return mapper.toRecordResponse(recordRepository.save(record));
     }
 
     private CheckInSession loadSession(UUID sessionId) {

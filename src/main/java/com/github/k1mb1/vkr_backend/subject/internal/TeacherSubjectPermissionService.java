@@ -154,18 +154,26 @@ class TeacherSubjectPermissionService
         var seen = new HashSet<String>();
         var result = new ArrayList<PermissionScope>();
         for (var req : requests) {
-            if (!subjectGroupIds.contains(req.groupId())) {
-                throw new IllegalArgumentException("Group " + req.groupId() + " is not attached to subject " + subject.getId());
+            Group group = null;
+            Subgroup allowedSubgroup = null;
+            UUID groupId = null;
+            UUID subgroupId = null;
+            if (req.group() != null) {
+                groupId = req.group().groupId();
+                subgroupId = req.group().allowedSubgroupId();
+                if (!subjectGroupIds.contains(groupId)) {
+                    throw new IllegalArgumentException("Group " + groupId + " is not attached to subject " + subject.getId());
+                }
+                group = groupReferenceService.getGroupReferenceById(groupId);
+                if (subgroupId != null) {
+                    allowedSubgroup = groupReferenceService.getSubgroupReferenceById(subgroupId);
+                    validateSubgroupBelongsToGroup(allowedSubgroup, group);
+                }
             }
-            var group = groupReferenceService.getGroupReferenceById(req.groupId());
-            Subgroup allowedSubgroup = req.allowedSubgroupId() != null
-                                       ? groupReferenceService.getSubgroupReferenceById(req.allowedSubgroupId())
-                                       : null;
-            validateSubgroupBelongsToGroup(allowedSubgroup, group);
 
-            var key = req.groupId() + "|" + req.allowedSubgroupId() + "|" + req.allowedLessonType();
+            var key = groupId + "|" + subgroupId + "|" + req.allowedLessonType();
             if (!seen.add(key)) {
-                throw new IllegalArgumentException("Duplicate scope in request: groupId=" + req.groupId() + ", allowedSubgroupId=" + req.allowedSubgroupId() + ", allowedLessonType=" + req.allowedLessonType());
+                throw new IllegalArgumentException("Duplicate scope in request: groupId=" + groupId + ", allowedSubgroupId=" + subgroupId + ", allowedLessonType=" + req.allowedLessonType());
             }
             result.add(PermissionScope.builder()
                            .permission(permission)

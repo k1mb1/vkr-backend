@@ -27,3 +27,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260524000000-lessons-as-templates.sql
   - include:
       file: db/changelog/v0/20260525000000-schema-review-improvements.sql
+  - include:
+      file: db/changelog/v0/20260526000000-permission-scope-group-nullable.sql

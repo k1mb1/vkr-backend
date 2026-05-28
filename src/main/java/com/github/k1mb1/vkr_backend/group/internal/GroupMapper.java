@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.group.internal;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupWithSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.SubgroupResponse;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
 import org.mapstruct.BeanMapping;
@@ -30,6 +31,14 @@ interface GroupMapper {
         Group group,
         List<SubgroupResponse> subgroups,
         List<StudentResponse> students
+    );
+
+    @Mapping(target = "id", source = "group.id")
+    @Mapping(target = "name", source = "group.name")
+    @Mapping(target = "subgroups", source = "subgroups")
+    GroupWithSubgroupsResponse toWithSubgroupsResponse(
+        Group group,
+        List<SubgroupResponse> subgroups
     );
 }
 

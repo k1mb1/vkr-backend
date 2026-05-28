@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -15,7 +14,7 @@ interface AssignmentRepository
 
     List<Assignment> findByLessonIdInOrderByLessonIdAscOrderAsc(Collection<UUID> lessonIds);
 
-    Optional<Assignment> findByLessonIdAndOrder(UUID lessonId, int order);
-
     boolean existsByLessonId(UUID lessonId);
+
+    long deleteByLessonId(UUID lessonId);
 }

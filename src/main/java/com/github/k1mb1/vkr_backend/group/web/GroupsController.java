@@ -6,6 +6,7 @@ import com.github.k1mb1.vkr_backend.group.web.requests.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
+import com.github.k1mb1.vkr_backend.group.web.response.GroupWithSubgroupsResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -81,6 +83,16 @@ public class GroupsController {
         return ResponseEntity.ok(groupsApi.getGroupById(id));
     }
 
+    @Operation(summary = "Получить группы, привязанные к предмету (с подгруппами, без студентов)")
+    @GetMapping("/by-subject")
+    public ResponseEntity<List<GroupWithSubgroupsResponse>> getGroupsBySubject(
+        @Parameter(description = "ID предмета")
+        @RequestParam
+        UUID subjectId
+    ) {
+        return ResponseEntity.ok(groupsApi.getGroupsBySubjectId(subjectId));
+    }
+
     @Operation(summary = "Удалить группу")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteGroup(
@@ -89,6 +101,33 @@ public class GroupsController {
         UUID id
     ) {
         groupsApi.deleteGroup(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Прикрепить группу к предмету")
+    @PostMapping("/{groupId}/subjects/{subjectId}")
+    public ResponseEntity<GroupResponse> attachToSubject(
+        @Parameter(description = "ID группы")
+        @PathVariable
+        UUID groupId,
+        @Parameter(description = "ID предмета")
+        @PathVariable
+        UUID subjectId
+    ) {
+        return ResponseEntity.ok(groupsApi.attachToSubject(groupId, subjectId));
+    }
+
+    @Operation(summary = "Открепить группу от предмета")
+    @DeleteMapping("/{groupId}/subjects/{subjectId}")
+    public ResponseEntity<Void> detachFromSubject(
+        @Parameter(description = "ID группы")
+        @PathVariable
+        UUID groupId,
+        @Parameter(description = "ID предмета")
+        @PathVariable
+        UUID subjectId
+    ) {
+        groupsApi.detachFromSubject(groupId, subjectId);
         return ResponseEntity.noContent().build();
     }
 }

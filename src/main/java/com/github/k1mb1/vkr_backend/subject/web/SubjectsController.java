@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.subject.web;
 
+import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.subject.SubjectsApi;
 import com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.web.requests.CreateSubjectRequest;

@@ -2,7 +2,7 @@ package com.github.k1mb1.vkr_backend.grading.web;
 
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.web.filters.GradingFilter;
-import com.github.k1mb1.vkr_backend.grading.web.requests.UpsertGradeRequest;
+import com.github.k1mb1.vkr_backend.grading.web.requests.BulkUpsertGradesRequest;
 import com.github.k1mb1.vkr_backend.grading.web.responses.GradeCellResponse;
 import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +13,8 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequestMapping(
     value = "/api/grades", produces = MediaType.APPLICATION_JSON_VALUE
@@ -38,17 +40,17 @@ public class GradingController {
     }
 
     @Operation(
-        summary = "Проставить или обновить оценку для пары (студент, занятие [+ задание])"
+        summary = "Массовое создание/обновление ячеек оценок"
     )
     @PutMapping
-    public ResponseEntity<GradeCellResponse> upsertGrade(
+    public ResponseEntity<List<GradeCellResponse>> upsertGrades(
         @Valid
         @RequestBody
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Ячейка оценки", required = true
+            description = "Список ячеек оценок", required = true
         )
-        UpsertGradeRequest request
+        BulkUpsertGradesRequest request
     ) {
-        return ResponseEntity.ok(gradingApi.upsertGrade(request));
+        return ResponseEntity.ok(gradingApi.upsertGrades(request));
     }
 }

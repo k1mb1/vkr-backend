@@ -31,8 +31,8 @@ public class PermissionScope
     @JoinColumn(name = "permission_id", nullable = false)
     TeacherSubjectPermission permission;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "group_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
     Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)

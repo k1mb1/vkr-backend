@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.web;
 
 import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionApi;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.filters.CheckInSessionFilter;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.ConfirmCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StartCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInPreviewResponse;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,12 +48,15 @@ public class CheckInSessionController {
         return ResponseEntity.ok(checkInSessionApi.get(id));
     }
 
-    @Operation(summary = "Список check-in сессий по permissionId (по предмету разрешения)")
+    @Operation(summary = "Список check-in сессий с фильтрами по предмету разрешения / занятию / scope")
     @GetMapping
     public ResponseEntity<List<CheckInSessionResponse>> list(
-        @RequestParam UUID permissionId
+        @ParameterObject
+        @Valid
+        @ModelAttribute
+        CheckInSessionFilter filter
     ) {
-        return ResponseEntity.ok(checkInSessionApi.listForPermission(permissionId));
+        return ResponseEntity.ok(checkInSessionApi.list(filter));
     }
 
     @Operation(

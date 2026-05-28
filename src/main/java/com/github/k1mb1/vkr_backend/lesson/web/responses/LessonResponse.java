@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.lesson.web.responses;
 
+import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -29,6 +30,9 @@ public record LessonResponse(
 
     @Schema(description = "Список проведений занятия (группа/подгруппа + дата)")
     List<LessonScopeResponse> scopes,
+
+    @Schema(description = "Задания занятия, отсортированы по order (пустой список — заданий нет)")
+    List<AssignmentResponse> assignments,
 
     @Schema(description = "Дата создания")
     Instant createdAt,

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -16,6 +15,4 @@ interface AttendanceRepository
         Collection<UUID> lessonScopeIds,
         Collection<UUID> studentIds
     );
-
-    Optional<Attendance> findByStudentIdAndLessonScopeId(UUID studentId, UUID lessonScopeId);
 }

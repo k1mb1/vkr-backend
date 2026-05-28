@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.web;
 
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordsApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StudentCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInRecordResponse;
@@ -27,6 +28,8 @@ public class PublicCheckInController {
 
     final CheckInSessionApi checkInSessionApi;
 
+    final CheckInRecordsApi checkInRecordsApi;
+
     @Operation(summary = "Получить состояние сессии и список студентов")
     @GetMapping("/{id}")
     public ResponseEntity<PublicCheckInSessionResponse> get(
@@ -43,6 +46,6 @@ public class PublicCheckInController {
         @RequestBody
         StudentCheckInRequest request
     ) {
-        return ResponseEntity.ok(checkInSessionApi.checkIn(id, request));
+        return ResponseEntity.ok(checkInRecordsApi.checkIn(id, request));
     }
 }

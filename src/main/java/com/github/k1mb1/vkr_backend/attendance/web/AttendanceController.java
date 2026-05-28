@@ -2,7 +2,7 @@ package com.github.k1mb1.vkr_backend.attendance.web;
 
 import com.github.k1mb1.vkr_backend.attendance.AttendanceApi;
 import com.github.k1mb1.vkr_backend.attendance.web.filters.AttendanceFilter;
-import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
+import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.web.responses.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.attendance.web.responses.AttendanceTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +13,8 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RequestMapping(
     value = "/api/attendances", produces = MediaType.APPLICATION_JSON_VALUE
@@ -38,17 +40,17 @@ public class AttendanceController {
     }
 
     @Operation(
-        summary = "Проставить или обновить отметку для пары (студент, занятие)"
+        summary = "Массовое создание/обновление ячеек посещаемости"
     )
     @PutMapping
-    public ResponseEntity<AttendanceCellResponse> upsert(
+    public ResponseEntity<List<AttendanceCellResponse>> upsertAll(
         @Valid
         @RequestBody
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Ячейка посещаемости", required = true
+            description = "Список ячеек", required = true
         )
-        UpsertAttendanceRequest request
+        BulkUpsertAttendanceRequest request
     ) {
-        return ResponseEntity.ok(attendanceApi.upsert(request));
+        return ResponseEntity.ok(attendanceApi.upsertAll(request));
     }
 }

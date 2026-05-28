@@ -2,8 +2,7 @@ package com.github.k1mb1.vkr_backend.lesson.web;
 
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.web.filters.LessonFilter;
-import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkScheduleRequest;
-import com.github.k1mb1.vkr_backend.lesson.web.requests.CreateLessonsByTypeRequest;
+import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkCreateLessonsRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,8 +42,21 @@ public class LessonController {
         return ResponseEntity.ok(lessonApi.getLessons(filter));
     }
 
-    @Operation(summary = "Частично обновить занятие")
-    @PatchMapping("/{id}")
+    @Operation(summary = "Получить занятие по ID")
+    @GetMapping("/{id}")
+    public ResponseEntity<LessonResponse> getLessonById(
+        @Parameter(description = "ID занятия")
+        @PathVariable
+        UUID id
+    ) {
+        return ResponseEntity.ok(lessonApi.getLessonById(id));
+    }
+
+    @Operation(
+        summary = "Обновить занятие целиком одним запросом",
+        description = "В body можно передать любую комбинацию из header / scopes / assignments — null = не трогать. Транзакция атомарная."
+    )
+    @PutMapping("/{id}")
     public ResponseEntity<LessonResponse> updateLesson(
         @Parameter(description = "ID занятия")
         @PathVariable
@@ -70,31 +82,16 @@ public class LessonController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Массовое создание занятий по недельному шаблону")
-    @PostMapping("/bulk-schedule")
-    public ResponseEntity<List<LessonResponse>> bulkScheduleLessons(
+    @Operation(summary = "Массовое создание занятий: N лекций + M практик с allGroups-scope")
+    @PostMapping("/bulk")
+    public ResponseEntity<List<LessonResponse>> bulkCreate(
         @Valid
         @RequestBody
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Шаблон расписания", required = true
+            description = "Параметры массового создания", required = true
         )
-        BulkScheduleRequest request
+        BulkCreateLessonsRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(lessonApi.bulkScheduleLessons(request));
-    }
-
-    @Operation(summary = "Создать занятия по количеству типов")
-    @PostMapping("/by-type")
-    public ResponseEntity<List<LessonResponse>> createLessonsByType(
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Количество занятий по типам", required = true
-        )
-        CreateLessonsByTypeRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(lessonApi.createLessonsByType(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(lessonApi.bulkCreate(request));
     }
 }
