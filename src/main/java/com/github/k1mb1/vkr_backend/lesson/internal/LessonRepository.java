@@ -45,4 +45,18 @@ public interface LessonRepository
         @Param("type") LessonType type,
         @Param("afterIndex") int afterIndex
     );
+
+    @Modifying
+    @Query(
+        """
+            UPDATE Lesson l SET l.active = false
+            WHERE l.subject.id = :subjectId AND l.type = :type AND l.active = true
+            """
+    )
+    int clearActiveForSubjectAndType(
+        @Param("subjectId") UUID subjectId,
+        @Param("type") LessonType type
+    );
+
+    Optional<Lesson> findBySubjectIdAndTypeAndActiveTrue(UUID subjectId, LessonType type);
 }

@@ -28,6 +28,9 @@ public record LessonResponse(
     @Schema(description = "Тема занятия")
     String topic,
 
+    @Schema(description = "Активное (текущее) занятие — точка отсчёта для понижения балла. Не более одного на (предмет, тип)")
+    boolean active,
+
     @Schema(description = "Список проведений занятия (группа/подгруппа + дата)")
     List<LessonScopeResponse> scopes,
 

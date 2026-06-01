@@ -22,6 +22,7 @@ interface LessonMapper {
     @Mapping(target = "type", source = "lesson.type")
     @Mapping(target = "orderIndex", source = "lesson.orderIndex")
     @Mapping(target = "topic", source = "lesson.topic")
+    @Mapping(target = "active", source = "lesson.active")
     @Mapping(target = "createdAt", source = "lesson.createdAt")
     @Mapping(target = "updatedAt", source = "lesson.updatedAt")
     @Mapping(target = "scopes", source = "scopes")

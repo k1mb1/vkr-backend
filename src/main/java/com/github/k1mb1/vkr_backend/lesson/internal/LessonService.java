@@ -94,6 +94,23 @@ class LessonService
 
     @Transactional
     @Override
+    public LessonResponse setActive(UUID id, boolean active) {
+        var lesson = lessonRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+
+        if (active) {
+            // Не более одного активного занятия на (предмет, тип) — снимаем флаг с остальных того же типа.
+            lessonRepository.clearActiveForSubjectAndType(lesson.getSubject().getId(), lesson.getType());
+            lessonRepository.flush();
+        }
+        lesson.setActive(active);
+        lessonRepository.save(lesson);
+
+        return getLessonById(id);
+    }
+
+    @Transactional
+    @Override
     public void deleteLesson(UUID id) {
         var lesson = lessonRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));

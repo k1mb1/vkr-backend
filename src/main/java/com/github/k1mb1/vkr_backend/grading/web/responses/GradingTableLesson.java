@@ -21,6 +21,9 @@ public record GradingTableLesson(
     @Schema(description = "Тема")
     String topic,
 
+    @Schema(description = "Активное (текущее) занятие — точка отсчёта для понижения балла")
+    boolean active,
+
     @Schema(description = "Проведения этого занятия для соответствующих групп")
     List<Scope> scopes
 ) {

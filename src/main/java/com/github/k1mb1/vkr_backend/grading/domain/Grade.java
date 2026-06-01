@@ -40,6 +40,17 @@ public class Grade
     @JoinColumn(name = "assignment_id")
     Assignment assignment;
 
+    // Активное занятие (того же типа, что и занятие задания) на момент выставления —
+    // след для UI; фиксируется при создании ячейки. null для оценок вне задания.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "awarded_lesson_id")
+    Lesson awardedLesson;
+
+    // Знаковое смещение сдачи в занятиях своего типа: активное.orderIndex - задание.orderIndex.
+    // >0 — позже срока (штраф), <0 — раньше (бонус), 0 — вовремя. Зафиксировано при создании ячейки.
+    // null — оценка вне задания или активного занятия не было. Фронт по нему применяет политику.
+    @Column(name = "lessons_offset") Integer lessonsOffset;
+
     @Column(nullable = false) int score;
 
     @Column(columnDefinition = "text") String comment;

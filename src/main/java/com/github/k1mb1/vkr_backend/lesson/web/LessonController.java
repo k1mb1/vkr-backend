@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.lesson.web;
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.web.filters.LessonFilter;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkCreateLessonsRequest;
+import com.github.k1mb1.vkr_backend.lesson.web.requests.SetActiveLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -69,6 +70,25 @@ public class LessonController {
         UpdateLessonRequest request
     ) {
         return ResponseEntity.ok(lessonApi.updateLesson(id, request));
+    }
+
+    @Operation(
+        summary = "Пометить занятие активным (текущим) или снять отметку",
+        description = "Активное занятие — точка отсчёта для понижения балла. Не более одного активного на (предмет, тип)."
+    )
+    @PatchMapping("/{id}/active")
+    public ResponseEntity<LessonResponse> setActive(
+        @Parameter(description = "ID занятия")
+        @PathVariable
+        UUID id,
+        @Valid
+        @RequestBody
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Флаг активности занятия", required = true
+        )
+        SetActiveLessonRequest request
+    ) {
+        return ResponseEntity.ok(lessonApi.setActive(id, request.active()));
     }
 
     @Operation(summary = "Удалить занятие")

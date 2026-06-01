@@ -17,6 +17,7 @@ interface GradingMapper {
     @Mapping(target = "studentId", source = "student.id")
     @Mapping(target = "lessonId", source = "lesson.id")
     @Mapping(target = "assignmentId", source = "assignment.id")
+    @Mapping(target = "awardedLessonId", source = "awardedLesson.id")
     GradeCellResponse toCell(Grade grade);
 
     @Mapping(target = "lessonId", source = "lesson.id")

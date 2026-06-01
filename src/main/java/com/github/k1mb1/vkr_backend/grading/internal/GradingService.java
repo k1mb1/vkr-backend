@@ -1,5 +1,7 @@
 package com.github.k1mb1.vkr_backend.grading.internal;
 
+import com.github.k1mb1.vkr_backend.attendance.AttendanceApi;
+import com.github.k1mb1.vkr_backend.attendance.AttendanceSummary;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.domain.Assignment;
@@ -18,7 +20,11 @@ import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
+import com.github.k1mb1.vkr_backend.subject.domain.AttendancePolicy;
+import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
+import com.github.k1mb1.vkr_backend.subject.web.responses.AttendancePolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +53,8 @@ class GradingService
     final LessonScopeRepository lessonScopeRepository;
 
     final StudentRepository studentRepository;
+
+    final AttendanceApi attendanceApi;
 
     final LessonStudentsApi lessonStudentsApi;
 
@@ -85,8 +93,43 @@ class GradingService
 
         var students = unionStudentsAcrossScopes(visibleScopesByLesson.values());
         var audience = audienceOf(permission);
+        var penaltyPolicy = toPenaltyPolicyResponse(permission.getSubject().getPenaltyPolicy());
+        var attendancePolicy = toAttendancePolicyResponse(permission.getSubject().getAttendancePolicy());
 
-        return buildTable(audience, students, visibleScopesByLesson);
+        return buildTable(penaltyPolicy, attendancePolicy, audience, students, visibleScopesByLesson);
+    }
+
+    private AttendancePolicyResponse toAttendancePolicyResponse(AttendancePolicy policy) {
+        if (policy == null) {
+            return new AttendancePolicyResponse(false, null, null, null, null);
+        }
+        return new AttendancePolicyResponse(
+            policy.isEnabled(),
+            policy.getPointsPresent(),
+            policy.getPointsLate(),
+            policy.getPointsAbsent(),
+            policy.getPointsExcused()
+        );
+    }
+
+    private PenaltyPolicyResponse toPenaltyPolicyResponse(PenaltyPolicy policy) {
+        if (policy == null) {
+            return new PenaltyPolicyResponse(false, null, null, null, null, null, false, null, null, null, null, null);
+        }
+        return new PenaltyPolicyResponse(
+            policy.isEnabled(),
+            policy.getOperation(),
+            policy.getStep(),
+            policy.getGracePeriodLessons(),
+            policy.getIntervalLessons(),
+            policy.getMaxReductions(),
+            policy.isBonusEnabled(),
+            policy.getBonusOperation(),
+            policy.getBonusStep(),
+            policy.getBonusGracePeriodLessons(),
+            policy.getBonusIntervalLessons(),
+            policy.getBonusMaxIncreases()
+        );
     }
 
     private List<Lesson> resolveLessons(
@@ -127,12 +170,18 @@ class GradingService
     }
 
     private GradingTableResponse buildTable(
+        PenaltyPolicyResponse penaltyPolicy,
+        AttendancePolicyResponse attendancePolicy,
         List<GradingAudienceScope> audience,
         List<Student> students,
         java.util.Map<Lesson, List<LessonScope>> visibleScopesByLesson
     ) {
         var studentIds = students.stream().map(Student::getId).toList();
         var lessonIds = visibleScopesByLesson.keySet().stream().map(Lesson::getId).toList();
+        var scopeIds = visibleScopesByLesson.values().stream()
+            .flatMap(List::stream)
+            .map(LessonScope::getId)
+            .toList();
 
         var assignments = lessonIds.isEmpty()
                           ? List.<Assignment>of()
@@ -143,7 +192,24 @@ class GradingService
                      ? List.<Grade>of()
                      : gradeRepository.findByLessonIdInAndStudentIdIn(lessonIds, studentIds);
 
+        var attendanceByStudent = attendanceApi.summarize(scopeIds, studentIds);
+        var attendance = students.stream()
+            .map(s -> {
+                var sum = attendanceByStudent.getOrDefault(s.getId(), new AttendanceSummary(0, 0, 0, 0));
+                return new StudentAttendanceResponse(
+                    s.getId(),
+                    sum.present(),
+                    sum.late(),
+                    sum.absent(),
+                    sum.excused()
+                );
+            })
+            .toList();
+
         return new GradingTableResponse(
+            penaltyPolicy,
+            attendancePolicy,
+            attendance,
             audience,
             students.stream().map(gradingMapper::toTableStudent).toList(),
             visibleScopesByLesson.entrySet()
@@ -178,6 +244,7 @@ class GradingService
                                       lesson.getType(),
                                       lesson.getOrderIndex(),
                                       lesson.getTopic(),
+                                      lesson.isActive(),
                                       scopes
         );
     }
@@ -238,16 +305,43 @@ class GradingService
             existingByKey.put(g.getStudent().getId() + "|" + g.getLesson().getId() + "|" + aId, g);
         }
 
+        // Кэш активного занятия по (subjectId|type) — для новых ячеек с заданием.
+        var activeCache = new HashMap<String, Optional<Lesson>>();
+
         var toSave = new ArrayList<Grade>(items.size());
         for (var item : items) {
             var key = item.studentId() + "|" + item.lessonId() + "|" + item.assignmentId();
             var assignmentRef = item.assignmentId() != null
                                 ? assignmentsById.get(item.assignmentId())
                                 : null;
+
+            // Смещение сдачи фиксируем один раз при создании ячейки и только для оценок с заданием:
+            // знаковая разница orderIndex внутри типа занятия задания от активного занятия этого типа.
+            Lesson awarded = null;
+            Integer lessonsOffset = null;
+            if (assignmentRef != null) {
+                var dueLesson = assignmentRef.getLesson();
+                var active = activeCache.computeIfAbsent(
+                    dueLesson.getSubject().getId() + "|" + dueLesson.getType(),
+                    k -> lessonRepository.findBySubjectIdAndTypeAndActiveTrue(
+                        dueLesson.getSubject().getId(),
+                        dueLesson.getType()
+                    )
+                );
+                if (active.isPresent()) {
+                    awarded = active.get();
+                    lessonsOffset = awarded.getOrderIndex() - dueLesson.getOrderIndex();
+                }
+            }
+            final var awardedLesson = awarded;
+            final var offset = lessonsOffset;
+
             var grade = existingByKey.computeIfAbsent(key, k -> Grade.builder()
                 .student(studentRepository.getReferenceById(item.studentId()))
                 .lesson(lessonRepository.getReferenceById(item.lessonId()))
                 .assignment(assignmentRef)
+                .awardedLesson(awardedLesson)
+                .lessonsOffset(offset)
                 .build());
             grade.setScore(item.score());
             grade.setComment(item.comment());

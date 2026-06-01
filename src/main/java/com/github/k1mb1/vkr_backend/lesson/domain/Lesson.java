@@ -43,6 +43,10 @@ public class Lesson
 
     @Column(columnDefinition = "text") String topic;
 
+    // Маркер «текущего/активного» занятия — точка отсчёта для понижения балла.
+    // Не более одного активного занятия на предмет (partial unique index).
+    @Column(name = "active", nullable = false) boolean active;
+
     @OneToMany(
         mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true
     )

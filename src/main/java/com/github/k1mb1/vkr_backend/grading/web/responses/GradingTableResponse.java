@@ -1,5 +1,7 @@
 package com.github.k1mb1.vkr_backend.grading.web.responses;
 
+import com.github.k1mb1.vkr_backend.subject.web.responses.AttendancePolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -8,6 +10,21 @@ import java.util.List;
     description = "Таблица оценок: студенты × (задания + extra-колонка) с существующими ячейками"
 )
 public record GradingTableResponse(
+    @Schema(
+        description = "Политика понижения за просрочку и бонуса за раннюю сдачу. Если включена — "
+            + "фронт применяет её к каждой ячейке по её lessonsOffset."
+    )
+    PenaltyPolicyResponse penaltyPolicy,
+
+    @Schema(
+        description = "Связка посещаемости с баллом. Если enabled=true — фронт считает вклад "
+            + "посещаемости по сводке attendance ниже."
+    )
+    AttendancePolicyResponse attendancePolicy,
+
+    @Schema(description = "Сводка посещаемости по студентам (по занятиям этой таблицы) для расчёта вклада")
+    List<StudentAttendanceResponse> attendance,
+
     @Schema(
         description = "Аудитория таблицы — группы/подгруппы из scope'ов разрешения. " + "Пустой список при allPermissions=true: клиент должен взять группы из subject.groups."
     )

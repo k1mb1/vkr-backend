@@ -13,6 +13,8 @@ public interface LessonApi {
 
     LessonResponse updateLesson(UUID id, UpdateLessonRequest request);
 
+    LessonResponse setActive(UUID id, boolean active);
+
     void deleteLesson(UUID id);
 
     List<LessonResponse> getLessons(LessonFilter filter);

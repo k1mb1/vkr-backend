@@ -37,4 +37,15 @@ public class Subject
     )
     @Builder.Default
     Set<Group> groups = new HashSet<>();
+
+    // Политика понижения за просрочку и бонуса за раннюю сдачу (опциональная фича).
+    // Расчёт итогового балла делается на фронте — здесь только параметры.
+    @Embedded
+    @Builder.Default
+    PenaltyPolicy penaltyPolicy = PenaltyPolicy.builder().build();
+
+    // Связка посещаемости с баллом (опциональная фича). Расчёт на фронте.
+    @Embedded
+    @Builder.Default
+    AttendancePolicy attendancePolicy = AttendancePolicy.builder().build();
 }

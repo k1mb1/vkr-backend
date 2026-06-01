@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.attendance.internal;
 
 import com.github.k1mb1.vkr_backend.attendance.AttendanceApi;
+import com.github.k1mb1.vkr_backend.attendance.AttendanceSummary;
 import com.github.k1mb1.vkr_backend.attendance.domain.Attendance;
 import com.github.k1mb1.vkr_backend.attendance.web.filters.AttendanceFilter;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendanceRequest;
@@ -177,6 +178,31 @@ class AttendanceService
 
         var persisted = attendanceRepository.saveAll(saved);
         return persisted.stream().map(attendanceMapper::toCell).toList();
+    }
+
+    @Override
+    public Map<UUID, AttendanceSummary> summarize(
+        Collection<UUID> lessonScopeIds,
+        Collection<UUID> studentIds
+    ) {
+        if (lessonScopeIds.isEmpty() || studentIds.isEmpty()) {
+            return Map.of();
+        }
+        var rows = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(lessonScopeIds, studentIds);
+        // [present, late, absent, excused] на студента
+        var counts = new HashMap<UUID, int[]>();
+        for (var a : rows) {
+            var c = counts.computeIfAbsent(a.getStudent().getId(), k -> new int[4]);
+            switch (a.getStatus()) {
+                case PRESENT -> c[0]++;
+                case LATE -> c[1]++;
+                case ABSENT -> c[2]++;
+                case EXCUSED -> c[3]++;
+            }
+        }
+        var result = new HashMap<UUID, AttendanceSummary>();
+        counts.forEach((id, c) -> result.put(id, new AttendanceSummary(c[0], c[1], c[2], c[3])));
+        return result;
     }
 
     private List<LessonScope> visibleScopesIn(

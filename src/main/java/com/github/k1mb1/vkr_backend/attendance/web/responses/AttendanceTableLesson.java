@@ -26,6 +26,9 @@ public record AttendanceTableLesson(
     @Schema(description = "Тема")
     String topic,
 
+    @Schema(description = "Активное (текущее) занятие — точка отсчёта для понижения/бонуса. Не более одного на (предмет, тип)")
+    boolean active,
+
     @Schema(description = "ID группы (null = все группы)")
     UUID groupId,
 

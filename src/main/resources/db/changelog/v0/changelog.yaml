@@ -29,3 +29,11 @@ databaseChangeLog:
       file: db/changelog/v0/20260525000000-schema-review-improvements.sql
   - include:
       file: db/changelog/v0/20260526000000-permission-scope-group-nullable.sql
+  - include:
+      file: db/changelog/v0/20260527000000-grading-penalty-policy.sql
+  - include:
+      file: db/changelog/v0/20260528000000-penalty-model-rework.sql
+  - include:
+      file: db/changelog/v0/20260529000000-early-bonus.sql
+  - include:
+      file: db/changelog/v0/20260530000000-attendance-policy.sql

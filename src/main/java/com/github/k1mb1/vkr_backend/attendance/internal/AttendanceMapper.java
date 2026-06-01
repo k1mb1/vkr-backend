@@ -29,6 +29,7 @@ interface AttendanceMapper {
     @Mapping(target = "type", source = "lesson.type")
     @Mapping(target = "orderIndex", source = "lesson.orderIndex")
     @Mapping(target = "topic", source = "lesson.topic")
+    @Mapping(target = "active", source = "lesson.active")
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")
     @Mapping(target = "allowedSubgroupId", source = "allowedSubgroup.id")
