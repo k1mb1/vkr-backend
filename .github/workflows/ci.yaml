@@ -47,8 +47,11 @@ jobs:
 
       # ubuntu-latest ships with a running Docker daemon, so the Testcontainers
       # tests (@SpringBootTest context load + the full-stack integration test) run here.
-      - name: Build, test & package
-        run: ./mvnw ${MAVEN_CLI_OPTS} clean verify
+      # NB: use 'test' (not 'verify'/'package') — the spring-boot process-aot goal binds
+      # to prepare-package and would emit hundreds of AOT *__BeanDefinitions classes into
+      # target/classes, which JaCoCo would then count as uncovered and wreck the metric.
+      - name: Build & test (with coverage)
+        run: ./mvnw ${MAVEN_CLI_OPTS} clean test jacoco:report
 
       - name: Publish test results
         uses: dorny/test-reporter@v2
@@ -75,16 +78,20 @@ jobs:
         if: ${{ !cancelled() }}
         shell: bash
         run: |
+          total=$(grep -rhoE 'Tests run: [0-9]+' target/surefire-reports/*.txt 2>/dev/null \
+            | awk '{s+=$3} END {print s+0}')
+          cov=""
+          if [ -f target/site/jacoco/jacoco.csv ]; then
+            cov=$(awk -F, 'NR>1 {im+=$4;ic+=$5; lm+=$8;lc+=$9}
+              END { if (im+ic>0) printf "instruction %.1f%% | line %.1f%% (%d/%d lines)",
+                    100*ic/(ic+im), 100*lc/(lc+lm), lc, lc+lm }' target/site/jacoco/jacoco.csv)
+          fi
+          # Print to the build log (visible in Actions) AND the run summary.
+          echo "BUILD SUMMARY :: tests=${total} :: coverage=${cov:-n/a}"
           {
             echo "## Build summary"
-            total=$(grep -rhoE 'Tests run: [0-9]+' target/surefire-reports/*.txt 2>/dev/null \
-              | awk '{s+=$3} END {print s+0}')
             echo "- Tests executed: **${total}**"
-            if [ -f target/site/jacoco/jacoco.csv ]; then
-              awk -F, 'NR>1 {lm+=$8; lc+=$9} END {
-                if (lm+lc>0) printf "- Line coverage: **%.1f%%**\n", 100*lc/(lm+lc)
-              }' target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
-            fi
+            echo "- Coverage: **${cov:-n/a}**"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test reports
