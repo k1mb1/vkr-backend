@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSession;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInAudienceScope;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSessionResponse;
@@ -13,6 +16,7 @@ import java.util.List;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = SPRING)
 interface CheckInSessionMapper {
 

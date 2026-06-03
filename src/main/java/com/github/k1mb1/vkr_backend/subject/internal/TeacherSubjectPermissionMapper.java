@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
@@ -16,6 +19,7 @@ import java.util.List;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = SPRING)
 interface TeacherSubjectPermissionMapper {
     @Mapping(target = "teacherId", source = "teacher.id")

@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.student.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
@@ -11,6 +14,7 @@ import java.util.UUID;
 
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = "spring")
 public interface StudentMapper {
     @Named("subgroupRef")

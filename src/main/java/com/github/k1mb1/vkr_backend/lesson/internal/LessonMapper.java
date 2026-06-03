@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.lesson.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
@@ -14,6 +17,7 @@ import org.mapstruct.MappingTarget;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = SPRING)
 interface LessonMapper {
     @Mapping(target = "id", source = "lesson.id")

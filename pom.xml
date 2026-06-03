@@ -157,16 +157,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.13</version>
-                <configuration>
-                    <!-- Mapping layer is declarative MapStruct code (generated *Impl plus
-                         the mapper interfaces); it is exercised by the integration test but
-                         excluded from the line-coverage metric so the number reflects
-                         hand-written logic. -->
-                    <excludes>
-                        <exclude>**/*MapperImpl.class</exclude>
-                        <exclude>**/*Mapper.class</exclude>
-                    </excludes>
-                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

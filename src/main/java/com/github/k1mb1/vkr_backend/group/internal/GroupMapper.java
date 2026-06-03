@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.group.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
@@ -15,6 +18,7 @@ import java.util.List;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = SPRING)
 interface GroupMapper {
 

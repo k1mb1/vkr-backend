@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.subject.domain.AttendancePolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
@@ -13,6 +16,7 @@ import org.mapstruct.*;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = SPRING)
 interface SubjectMapper {
     SubjectPageResponse toResponse(Subject subject);

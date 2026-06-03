@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.grading.internal;
 
+import com.github.k1mb1.vkr_backend.common.GeneratedMapper;
+import org.mapstruct.AnnotateWith;
+
 import com.github.k1mb1.vkr_backend.grading.domain.Assignment;
 import com.github.k1mb1.vkr_backend.grading.domain.Grade;
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
@@ -11,6 +14,7 @@ import org.mapstruct.Mapping;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
+@AnnotateWith(GeneratedMapper.class)
 @Mapper(componentModel = SPRING)
 interface GradingMapper {
 
