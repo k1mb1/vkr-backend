@@ -7,9 +7,29 @@ on:
     branches: ["main", "master"]
   workflow_dispatch:
 
+# Cancel superseded runs on the same ref to save runner minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege defaults; individual steps get exactly what they need.
+permissions:
+  contents: read
+
+env:
+  # Quiet, reproducible Maven output across every step.
+  MAVEN_CLI_OPTS: "--batch-mode --no-transfer-progress --errors"
+
 jobs:
   build:
+    name: Build, test & coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      checks: write # publish test results as a check run
+      pull-requests: write # post the coverage comment on PRs
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,20 +39,77 @@ jobs:
         with:
           java-version: "21"
           distribution: "temurin"
+          # Caches ~/.m2/repository keyed on the pom.xml hashes.
           cache: "maven"
 
-      # ubuntu-latest runners ship with a running Docker daemon, so the
-      # Testcontainers-based tests (@SpringBootTest + integration test) run here too.
-      - name: Run tests
-        run: ./mvnw -B clean test
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
 
-      - name: Package
-        run: ./mvnw -B package -DskipTests
+      # ubuntu-latest ships with a running Docker daemon, so the Testcontainers
+      # tests (@SpringBootTest context load + the full-stack integration test) run here.
+      - name: Build, test & package
+        run: ./mvnw ${MAVEN_CLI_OPTS} clean verify
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }}
+        with:
+          name: JUnit tests
+          path: "target/surefire-reports/*.xml"
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Coverage summary on PR
+        uses: madrapps/jacoco-report@v1.7.2
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        with:
+          paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Code coverage"
+          update-comment: true
+          # Informational gate — bump these once a baseline is agreed on.
+          min-coverage-overall: 0
+          min-coverage-changed-files: 0
+
+      - name: Write job summary
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          {
+            echo "## Build summary"
+            total=$(grep -rhoE 'Tests run: [0-9]+' target/surefire-reports/*.txt 2>/dev/null \
+              | awk '{s+=$3} END {print s+0}')
+            echo "- Tests executed: **${total}**"
+            if [ -f target/site/jacoco/jacoco.csv ]; then
+              awk -F, 'NR>1 {lm+=$8; lc+=$9} END {
+                if (lm+lc>0) printf "- Line coverage: **%.1f%%**\n", 100*lc/(lm+lc)
+              }' target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test reports
-        if: always()
         uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
-          name: surefire-reports
+          name: test-reports
           path: target/surefire-reports/
           if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: jacoco-coverage
+          path: target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload application jar
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: application-jar
+          path: target/*.jar
+          if-no-files-found: ignore
+          retention-days: 7
