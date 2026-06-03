@@ -14,19 +14,19 @@ import lombok.experimental.SuperBuilder;
 @Hidden
 @Entity
 @Table(
-    name = "grades", indexes = {
-    @Index(name = "idx_grades_lesson_id", columnList = "lesson_id"),
-    @Index(name = "idx_grades_student_id", columnList = "student_id"),
-    @Index(name = "idx_grades_assignment_id", columnList = "assignment_id"),
-}
+    name = "grades",
+    indexes = {
+        @Index(name = "idx_grades_lesson_id", columnList = "lesson_id"),
+        @Index(name = "idx_grades_student_id", columnList = "student_id"),
+        @Index(name = "idx_grades_assignment_id", columnList = "assignment_id"),
+    }
 )
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Grade
-    extends BaseEntity {
+public class Grade extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "student_id", nullable = false)
@@ -46,12 +46,16 @@ public class Grade
     @JoinColumn(name = "awarded_lesson_id")
     Lesson awardedLesson;
 
-    // Знаковое смещение сдачи в занятиях своего типа: активное.orderIndex - задание.orderIndex.
+    // Знаковое смещение сдачи в занятиях своего типа, считанное только по занятиям с заданиями:
+    // разность «рангов» активного и заданного занятий среди занятий этого типа, у которых есть задания.
     // >0 — позже срока (штраф), <0 — раньше (бонус), 0 — вовремя. Зафиксировано при создании ячейки.
     // null — оценка вне задания или активного занятия не было. Фронт по нему применяет политику.
-    @Column(name = "lessons_offset") Integer lessonsOffset;
+    @Column(name = "lessons_offset")
+    Integer lessonsOffset;
 
-    @Column(nullable = false) int score;
+    @Column(nullable = false)
+    int score;
 
-    @Column(columnDefinition = "text") String comment;
+    @Column(columnDefinition = "text")
+    String comment;
 }

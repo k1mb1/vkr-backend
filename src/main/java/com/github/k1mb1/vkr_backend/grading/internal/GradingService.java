@@ -23,22 +23,20 @@ import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
 import com.github.k1mb1.vkr_backend.subject.domain.AttendancePolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
-import com.github.k1mb1.vkr_backend.subject.web.responses.AttendancePolicyResponse;
-import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
+import com.github.k1mb1.vkr_backend.subject.web.responses.AttendancePolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
+import java.time.LocalDate;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.*;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class GradingService
-    implements GradingApi {
+class GradingService implements GradingApi {
 
     final GradeRepository gradeRepository;
 
@@ -59,7 +57,8 @@ class GradingService
     final LessonStudentsApi lessonStudentsApi;
 
     static LocalDate earliestStartedAt(Lesson lesson) {
-        return lesson.getScopes()
+        return lesson
+            .getScopes()
             .stream()
             .map(LessonScope::getStartedAt)
             .filter(Objects::nonNull)
@@ -67,23 +66,51 @@ class GradingService
             .orElse(null);
     }
 
+    /**
+     * «Ранг» занятия среди занятий с заданиями: количество занятий с заданиями,
+     * имеющих orderIndex {@code <=} данного. Используется для вычисления
+     * {@code lessonsOffset} через разность рангов (только занятия с заданиями учитываются).
+     */
+    private static int assignmentRank(
+        Lesson lesson,
+        List<Lesson> orderedLessonsWithAssignments
+    ) {
+        int idx = Collections.binarySearch(
+            orderedLessonsWithAssignments,
+            lesson,
+            Comparator.comparingInt(Lesson::getOrderIndex)
+        );
+        if (idx >= 0) {
+            return idx + 1; // 1-based: сколько занятий с заданиями <= данного
+        }
+        return -idx - 1; // insertion point = сколько занятий с заданиями < данного (== <=, т.к. нет в списке)
+    }
+
     @Override
     public GradingTableResponse getGradingTable(GradingFilter filter) {
-        var permission = permissionRepository.findWithDetailsById(filter.permissionId())
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "TeacherSubjectPermission",
-                filter.permissionId()
-            ));
+        var permission = permissionRepository
+            .findWithDetailsById(filter.permissionId())
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "TeacherSubjectPermission",
+                    filter.permissionId()
+                )
+            );
 
-        var lessons = resolveLessons(permission, filter).stream()
-            .sorted(Comparator.comparing(
+        var lessons = resolveLessons(permission, filter)
+            .stream()
+            .sorted(
+                Comparator.comparing(
                     GradingService::earliestStartedAt,
                     Comparator.nullsLast(Comparator.naturalOrder())
-                )
-                        .thenComparingInt(Lesson::getOrderIndex))
+                ).thenComparingInt(Lesson::getOrderIndex)
+            )
             .toList();
 
-        var visibleScopesByLesson = new java.util.LinkedHashMap<Lesson, List<LessonScope>>();
+        var visibleScopesByLesson = new java.util.LinkedHashMap<
+            Lesson,
+            List<LessonScope>
+        >();
         for (var lesson : lessons) {
             visibleScopesByLesson.put(
                 lesson,
@@ -91,15 +118,29 @@ class GradingService
             );
         }
 
-        var students = unionStudentsAcrossScopes(visibleScopesByLesson.values());
+        var students = unionStudentsAcrossScopes(
+            visibleScopesByLesson.values()
+        );
         var audience = audienceOf(permission);
-        var penaltyPolicy = toPenaltyPolicyResponse(permission.getSubject().getPenaltyPolicy());
-        var attendancePolicy = toAttendancePolicyResponse(permission.getSubject().getAttendancePolicy());
+        var penaltyPolicy = toPenaltyPolicyResponse(
+            permission.getSubject().getPenaltyPolicy()
+        );
+        var attendancePolicy = toAttendancePolicyResponse(
+            permission.getSubject().getAttendancePolicy()
+        );
 
-        return buildTable(penaltyPolicy, attendancePolicy, audience, students, visibleScopesByLesson);
+        return buildTable(
+            penaltyPolicy,
+            attendancePolicy,
+            audience,
+            students,
+            visibleScopesByLesson
+        );
     }
 
-    private AttendancePolicyResponse toAttendancePolicyResponse(AttendancePolicy policy) {
+    private AttendancePolicyResponse toAttendancePolicyResponse(
+        AttendancePolicy policy
+    ) {
         if (policy == null) {
             return new AttendancePolicyResponse(false, null, null, null, null);
         }
@@ -112,9 +153,24 @@ class GradingService
         );
     }
 
-    private PenaltyPolicyResponse toPenaltyPolicyResponse(PenaltyPolicy policy) {
+    private PenaltyPolicyResponse toPenaltyPolicyResponse(
+        PenaltyPolicy policy
+    ) {
         if (policy == null) {
-            return new PenaltyPolicyResponse(false, null, null, null, null, null, false, null, null, null, null, null);
+            return new PenaltyPolicyResponse(
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null
+            );
         }
         return new PenaltyPolicyResponse(
             policy.isEnabled(),
@@ -137,35 +193,59 @@ class GradingService
         GradingFilter filter
     ) {
         if (filter.lessonScopeId() != null) {
-            var scope = lessonScopeRepository.findById(filter.lessonScopeId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "LessonScope",
-                    filter.lessonScopeId()
-                ));
+            var scope = lessonScopeRepository
+                .findById(filter.lessonScopeId())
+                .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                        "LessonScope",
+                        filter.lessonScopeId()
+                    )
+                );
             assertSameSubject(scope.getLesson(), permission);
             assertLessonMatch(scope.getLesson(), filter.lessonId());
             return List.of(scope.getLesson());
         }
         if (filter.lessonId() != null) {
-            var lesson = lessonRepository.findById(filter.lessonId())
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson", filter.lessonId()));
+            var lesson = lessonRepository
+                .findById(filter.lessonId())
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Lesson", filter.lessonId())
+                );
             assertSameSubject(lesson, permission);
             return List.of(lesson);
         }
-        return lessonRepository.findAll(LessonSpecifications.forPermission(permission));
+        return lessonRepository.findAll(
+            LessonSpecifications.forPermission(permission)
+        );
     }
 
-    private void assertSameSubject(Lesson lesson, TeacherSubjectPermission permission) {
-        if (!lesson.getSubject().getId().equals(permission.getSubject().getId())) {
+    private void assertSameSubject(
+        Lesson lesson,
+        TeacherSubjectPermission permission
+    ) {
+        if (
+            !lesson.getSubject().getId().equals(permission.getSubject().getId())
+        ) {
             throw new IllegalArgumentException(
-                "Lesson " + lesson.getId() + " does not belong to subject of permission " + permission.getId());
+                "Lesson " +
+                    lesson.getId() +
+                    " does not belong to subject of permission " +
+                    permission.getId()
+            );
         }
     }
 
     private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
-        if (requestedLessonId != null && !scopeLesson.getId().equals(requestedLessonId)) {
+        if (
+            requestedLessonId != null &&
+            !scopeLesson.getId().equals(requestedLessonId)
+        ) {
             throw new IllegalArgumentException(
-                "lessonScopeId belongs to lesson " + scopeLesson.getId() + " but lessonId=" + requestedLessonId);
+                "lessonScopeId belongs to lesson " +
+                    scopeLesson.getId() +
+                    " but lessonId=" +
+                    requestedLessonId
+            );
         }
     }
 
@@ -177,25 +257,40 @@ class GradingService
         java.util.Map<Lesson, List<LessonScope>> visibleScopesByLesson
     ) {
         var studentIds = students.stream().map(Student::getId).toList();
-        var lessonIds = visibleScopesByLesson.keySet().stream().map(Lesson::getId).toList();
-        var scopeIds = visibleScopesByLesson.values().stream()
+        var lessonIds = visibleScopesByLesson
+            .keySet()
+            .stream()
+            .map(Lesson::getId)
+            .toList();
+        var scopeIds = visibleScopesByLesson
+            .values()
+            .stream()
             .flatMap(List::stream)
             .map(LessonScope::getId)
             .toList();
 
         var assignments = lessonIds.isEmpty()
-                          ? List.<Assignment>of()
-                          : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
-                              lessonIds);
+            ? List.<Assignment>of()
+            : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
+                  lessonIds
+              );
 
-        var grades = studentIds.isEmpty() || lessonIds.isEmpty()
-                     ? List.<Grade>of()
-                     : gradeRepository.findByLessonIdInAndStudentIdIn(lessonIds, studentIds);
+        var grades =
+            studentIds.isEmpty() || lessonIds.isEmpty()
+                ? List.<Grade>of()
+                : gradeRepository.findByLessonIdInAndStudentIdIn(
+                      lessonIds,
+                      studentIds
+                  );
 
         var attendanceByStudent = attendanceApi.summarize(scopeIds, studentIds);
-        var attendance = students.stream()
+        var attendance = students
+            .stream()
             .map(s -> {
-                var sum = attendanceByStudent.getOrDefault(s.getId(), new AttendanceSummary(0, 0, 0, 0));
+                var sum = attendanceByStudent.getOrDefault(
+                    s.getId(),
+                    new AttendanceSummary(0, 0, 0, 0)
+                );
                 return new StudentAttendanceResponse(
                     s.getId(),
                     sum.present(),
@@ -212,58 +307,82 @@ class GradingService
             attendance,
             audience,
             students.stream().map(gradingMapper::toTableStudent).toList(),
-            visibleScopesByLesson.entrySet()
+            visibleScopesByLesson
+                .entrySet()
                 .stream()
                 .map(e -> toGradingLesson(e.getKey(), e.getValue()))
                 .toList(),
-            assignments.stream().map(gradingMapper::toAssignmentResponse).toList(),
+            assignments
+                .stream()
+                .map(gradingMapper::toAssignmentResponse)
+                .toList(),
             grades.stream().map(gradingMapper::toCell).toList()
         );
     }
 
-    private GradingTableLesson toGradingLesson(Lesson lesson, List<LessonScope> visibleScopes) {
-        var scopes = visibleScopes.stream()
-            .sorted(Comparator.comparing(
-                (LessonScope s) -> s.getStartedAt(),
-                Comparator.nullsLast(Comparator.naturalOrder())
-            ))
-            .map(s -> new GradingTableLesson.Scope(
-                s.getId(),
-                s.getGroup() != null
-                ? s.getGroup().getId()
-                : null,
-                s.getAllowedSubgroup() != null
-                ? s.getAllowedSubgroup().getId()
-                : null,
-                s.getStartedAt(),
-                s.isAllGroups()
-            ))
+    private GradingTableLesson toGradingLesson(
+        Lesson lesson,
+        List<LessonScope> visibleScopes
+    ) {
+        var scopes = visibleScopes
+            .stream()
+            .sorted(
+                Comparator.comparing(
+                    (LessonScope s) -> s.getStartedAt(),
+                    Comparator.nullsLast(Comparator.naturalOrder())
+                )
+            )
+            .map(s ->
+                new GradingTableLesson.Scope(
+                    s.getId(),
+                    s.getGroup() != null ? s.getGroup().getId() : null,
+                    s.getAllowedSubgroup() != null
+                        ? s.getAllowedSubgroup().getId()
+                        : null,
+                    s.getStartedAt(),
+                    s.isAllGroups()
+                )
+            )
             .toList();
         return new GradingTableLesson(
             lesson.getId(),
-                                      lesson.getType(),
-                                      lesson.getOrderIndex(),
-                                      lesson.getTopic(),
-                                      lesson.isActive(),
-                                      scopes
+            lesson.getType(),
+            lesson.getOrderIndex(),
+            lesson.getTopic(),
+            lesson.isActive(),
+            scopes
         );
     }
 
     @Transactional
     @Override
-    public List<GradeCellResponse> upsertGrades(BulkUpsertGradesRequest request) {
+    public List<GradeCellResponse> upsertGrades(
+        BulkUpsertGradesRequest request
+    ) {
         var items = request.items();
 
         var seenKeys = new HashSet<String>();
         for (var item : items) {
-            var key = item.studentId() + "|" + item.lessonId() + "|" + item.assignmentId();
+            var key =
+                item.studentId() +
+                "|" +
+                item.lessonId() +
+                "|" +
+                item.assignmentId();
             if (!seenKeys.add(key)) {
                 throw new IllegalArgumentException(
-                    "Duplicate (studentId, lessonId, assignmentId) in request: " + item.studentId() + ", " + item.lessonId() + ", " + item.assignmentId());
+                    "Duplicate (studentId, lessonId, assignmentId) in request: " +
+                        item.studentId() +
+                        ", " +
+                        item.lessonId() +
+                        ", " +
+                        item.assignmentId()
+                );
             }
         }
 
-        var assignmentIds = items.stream()
+        var assignmentIds = items
+            .stream()
             .map(UpsertGradeRequest::assignmentId)
             .filter(Objects::nonNull)
             .distinct()
@@ -286,63 +405,114 @@ class GradingService
             var a = assignmentsById.get(item.assignmentId());
             if (!a.getLesson().getId().equals(item.lessonId())) {
                 throw new IllegalArgumentException(
-                    "Assignment " + a.getId() + " does not belong to lesson " + item.lessonId());
+                    "Assignment " +
+                        a.getId() +
+                        " does not belong to lesson " +
+                        item.lessonId()
+                );
             }
             if (item.score() > a.getMaxPoints()) {
                 throw new IllegalArgumentException(
-                    "Score " + item.score() + " exceeds assignment maxPoints " + a.getMaxPoints() + " for assignment " + a.getId());
+                    "Score " +
+                        item.score() +
+                        " exceeds assignment maxPoints " +
+                        a.getMaxPoints() +
+                        " for assignment " +
+                        a.getId()
+                );
             }
         }
 
-        var studentIds = items.stream().map(UpsertGradeRequest::studentId).distinct().toList();
-        var lessonIds = items.stream().map(UpsertGradeRequest::lessonId).distinct().toList();
-        var existing = gradeRepository.findByLessonIdInAndStudentIdIn(lessonIds, studentIds);
+        var studentIds = items
+            .stream()
+            .map(UpsertGradeRequest::studentId)
+            .distinct()
+            .toList();
+        var lessonIds = items
+            .stream()
+            .map(UpsertGradeRequest::lessonId)
+            .distinct()
+            .toList();
+        var existing = gradeRepository.findByLessonIdInAndStudentIdIn(
+            lessonIds,
+            studentIds
+        );
         var existingByKey = new HashMap<String, Grade>();
         for (var g : existing) {
-            var aId = g.getAssignment() != null
-                      ? g.getAssignment().getId()
-                      : null;
-            existingByKey.put(g.getStudent().getId() + "|" + g.getLesson().getId() + "|" + aId, g);
+            var aId =
+                g.getAssignment() != null ? g.getAssignment().getId() : null;
+            existingByKey.put(
+                g.getStudent().getId() +
+                    "|" +
+                    g.getLesson().getId() +
+                    "|" +
+                    aId,
+                g
+            );
         }
 
-        // Кэш активного занятия по (subjectId|type) — для новых ячеек с заданием.
+        // Кэш активного занятия и списка занятий с заданиями по (subjectId|type).
         var activeCache = new HashMap<String, Optional<Lesson>>();
+        var lessonsWithAssignmentsCache = new HashMap<String, List<Lesson>>();
 
         var toSave = new ArrayList<Grade>(items.size());
         for (var item : items) {
-            var key = item.studentId() + "|" + item.lessonId() + "|" + item.assignmentId();
-            var assignmentRef = item.assignmentId() != null
-                                ? assignmentsById.get(item.assignmentId())
-                                : null;
+            var key =
+                item.studentId() +
+                "|" +
+                item.lessonId() +
+                "|" +
+                item.assignmentId();
+            var assignmentRef =
+                item.assignmentId() != null
+                    ? assignmentsById.get(item.assignmentId())
+                    : null;
 
-            // Смещение сдачи фиксируем один раз при создании ячейки и только для оценок с заданием:
-            // знаковая разница orderIndex внутри типа занятия задания от активного занятия этого типа.
+            // Смещение сдачи фиксируем один раз при создании ячейки и только для оценок с заданием.
+            // Считается только по занятиям, у которых есть задания:
+            // разность «рангов» активного и заданного занятий среди занятий этого типа с заданиями.
             Lesson awarded = null;
             Integer lessonsOffset = null;
             if (assignmentRef != null) {
                 var dueLesson = assignmentRef.getLesson();
-                var active = activeCache.computeIfAbsent(
-                    dueLesson.getSubject().getId() + "|" + dueLesson.getType(),
-                    k -> lessonRepository.findBySubjectIdAndTypeAndActiveTrue(
+                var cacheKey =
+                    dueLesson.getSubject().getId() + "|" + dueLesson.getType();
+                var active = activeCache.computeIfAbsent(cacheKey, k ->
+                    lessonRepository.findBySubjectIdAndTypeAndActiveTrue(
                         dueLesson.getSubject().getId(),
                         dueLesson.getType()
                     )
                 );
                 if (active.isPresent()) {
                     awarded = active.get();
-                    lessonsOffset = awarded.getOrderIndex() - dueLesson.getOrderIndex();
+                    var lessonsWithAssignments =
+                        lessonsWithAssignmentsCache.computeIfAbsent(
+                            cacheKey,
+                            k ->
+                                lessonRepository.findWithAssignmentsBySubjectIdAndType(
+                                    dueLesson.getSubject().getId(),
+                                    dueLesson.getType()
+                                )
+                        );
+                    lessonsOffset =
+                        assignmentRank(awarded, lessonsWithAssignments) -
+                        assignmentRank(dueLesson, lessonsWithAssignments);
                 }
             }
             final var awardedLesson = awarded;
             final var offset = lessonsOffset;
 
-            var grade = existingByKey.computeIfAbsent(key, k -> Grade.builder()
-                .student(studentRepository.getReferenceById(item.studentId()))
-                .lesson(lessonRepository.getReferenceById(item.lessonId()))
-                .assignment(assignmentRef)
-                .awardedLesson(awardedLesson)
-                .lessonsOffset(offset)
-                .build());
+            var grade = existingByKey.computeIfAbsent(key, k ->
+                Grade.builder()
+                    .student(
+                        studentRepository.getReferenceById(item.studentId())
+                    )
+                    .lesson(lessonRepository.getReferenceById(item.lessonId()))
+                    .assignment(assignmentRef)
+                    .awardedLesson(awardedLesson)
+                    .lessonsOffset(offset)
+                    .build()
+            );
             grade.setScore(item.score());
             grade.setComment(item.comment());
             toSave.add(grade);
@@ -354,14 +524,17 @@ class GradingService
 
     @Override
     public List<AssignmentResponse> getAssignmentsByLesson(UUID lessonId) {
-        return assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId))
+        return assignmentRepository
+            .findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId))
             .stream()
             .map(gradingMapper::toAssignmentResponse)
             .toList();
     }
 
     @Override
-    public Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(java.util.Collection<UUID> lessonIds) {
+    public Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(
+        java.util.Collection<UUID> lessonIds
+    ) {
         if (lessonIds.isEmpty()) {
             return Map.of();
         }
@@ -369,31 +542,45 @@ class GradingService
         for (var lessonId : lessonIds) {
             grouped.put(lessonId, new ArrayList<>());
         }
-        for (var assignment : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(lessonIds)) {
-            grouped.get(assignment.getLesson().getId()).add(gradingMapper.toAssignmentResponse(assignment));
+        for (var assignment : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
+            lessonIds
+        )) {
+            grouped
+                .get(assignment.getLesson().getId())
+                .add(gradingMapper.toAssignmentResponse(assignment));
         }
         return grouped;
     }
 
     @Transactional
     @Override
-    public List<AssignmentResponse> createAssignments(CreateAssignmentsRequest request) {
+    public List<AssignmentResponse> createAssignments(
+        CreateAssignmentsRequest request
+    ) {
         if (assignmentRepository.existsByLessonId(request.lessonId())) {
-            throw new IllegalStateException("Lesson " + request.lessonId() + " already has assignments. " + "Use PUT /api/lessons/{id} to update individual assignments.");
+            throw new IllegalStateException(
+                "Lesson " +
+                    request.lessonId() +
+                    " already has assignments. " +
+                    "Use PUT /api/lessons/{id} to update individual assignments."
+            );
         }
         var lessonRef = lessonRepository.getReferenceById(request.lessonId());
         var items = request.items();
         var assignments = new ArrayList<Assignment>(items.size());
         for (int i = 0; i < items.size(); i++) {
             var item = items.get(i);
-            assignments.add(Assignment.builder()
-                                .lesson(lessonRef)
-                                .order(i + 1)
-                                .maxPoints(item.maxPoints())
-                                .required(item.required())
-                                .build());
+            assignments.add(
+                Assignment.builder()
+                    .lesson(lessonRef)
+                    .order(i + 1)
+                    .maxPoints(item.maxPoints())
+                    .required(item.required())
+                    .build()
+            );
         }
-        return assignmentRepository.saveAll(assignments)
+        return assignmentRepository
+            .saveAll(assignments)
             .stream()
             .map(gradingMapper::toAssignmentResponse)
             .toList();
@@ -401,19 +588,27 @@ class GradingService
 
     @Transactional
     @Override
-    public List<AssignmentResponse> updateAssignmentsOfLesson(UUID lessonId, BulkUpdateAssignmentsRequest request) {
+    public List<AssignmentResponse> updateAssignmentsOfLesson(
+        UUID lessonId,
+        BulkUpdateAssignmentsRequest request
+    ) {
         var items = request.items();
 
         var seenIds = new HashSet<UUID>();
         for (var item : items) {
             if (!seenIds.add(item.id())) {
-                throw new IllegalArgumentException("Duplicate assignment id in request: " + item.id());
+                throw new IllegalArgumentException(
+                    "Duplicate assignment id in request: " + item.id()
+                );
             }
         }
 
         var assignments = assignmentRepository.findAllById(seenIds);
         if (assignments.size() != seenIds.size()) {
-            var found = assignments.stream().map(Assignment::getId).collect(java.util.stream.Collectors.toSet());
+            var found = assignments
+                .stream()
+                .map(Assignment::getId)
+                .collect(java.util.stream.Collectors.toSet());
             for (var id : seenIds) {
                 if (!found.contains(id)) {
                     throw new ResourceNotFoundException("Assignment", id);
@@ -423,7 +618,11 @@ class GradingService
         for (var a : assignments) {
             if (!a.getLesson().getId().equals(lessonId)) {
                 throw new IllegalArgumentException(
-                    "Assignment " + a.getId() + " does not belong to lesson " + lessonId);
+                    "Assignment " +
+                        a.getId() +
+                        " does not belong to lesson " +
+                        lessonId
+                );
             }
         }
 
@@ -436,16 +635,19 @@ class GradingService
             itemsById.put(item.id(), item);
         }
 
-        var siblings = assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId));
+        var siblings =
+            assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
+                List.of(lessonId)
+            );
         var ordersInLesson = new HashSet<Integer>();
         for (var sibling : siblings) {
             var override = itemsById.get(sibling.getId());
-            int finalOrder = override != null
-                             ? override.order()
-                             : sibling.getOrder();
+            int finalOrder =
+                override != null ? override.order() : sibling.getOrder();
             if (!ordersInLesson.add(finalOrder)) {
                 throw new IllegalArgumentException(
-                    "Duplicate order " + finalOrder + " in lesson " + lessonId);
+                    "Duplicate order " + finalOrder + " in lesson " + lessonId
+                );
             }
         }
 
@@ -465,8 +667,11 @@ class GradingService
         for (var a : persisted) {
             byIdPersisted.put(a.getId(), a);
         }
-        return items.stream()
-            .map(item -> gradingMapper.toAssignmentResponse(byIdPersisted.get(item.id())))
+        return items
+            .stream()
+            .map(item ->
+                gradingMapper.toAssignmentResponse(byIdPersisted.get(item.id()))
+            )
             .toList();
     }
 
@@ -501,26 +706,36 @@ class GradingService
         return result;
     }
 
-    private List<GradingAudienceScope> audienceOf(TeacherSubjectPermission permission) {
+    private List<GradingAudienceScope> audienceOf(
+        TeacherSubjectPermission permission
+    ) {
         if (LessonSpecifications.permissionAllowsAllGroups(permission)) {
             return List.of();
         }
-        return permission.getScopes()
+        return permission
+            .getScopes()
             .stream()
-            .sorted(Comparator.comparing((PermissionScope s) -> s.getGroup().getName())
-                        .thenComparing(s -> s.getAllowedSubgroup() == null
-                                            ? -1
-                                            : s.getAllowedSubgroup().getIndex()))
-            .map(s -> new GradingAudienceScope(
-                s.getGroup().getId(),
-                s.getGroup().getName(),
-                s.getAllowedSubgroup() != null
-                ? s.getAllowedSubgroup().getId()
-                : null,
-                s.getAllowedSubgroup() != null
-                ? s.getAllowedSubgroup().getIndex()
-                : null
-            ))
+            .sorted(
+                Comparator.comparing((PermissionScope s) ->
+                    s.getGroup().getName()
+                ).thenComparing(s ->
+                    s.getAllowedSubgroup() == null
+                        ? -1
+                        : s.getAllowedSubgroup().getIndex()
+                )
+            )
+            .map(s ->
+                new GradingAudienceScope(
+                    s.getGroup().getId(),
+                    s.getGroup().getName(),
+                    s.getAllowedSubgroup() != null
+                        ? s.getAllowedSubgroup().getId()
+                        : null,
+                    s.getAllowedSubgroup() != null
+                        ? s.getAllowedSubgroup().getIndex()
+                        : null
+                )
+            )
             .toList();
     }
 }
