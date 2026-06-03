@@ -7,13 +7,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.k1mb1.vkr_backend.teacher.web.requests.CreateOrUpdateTeacherRequest;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * <p>
  * Аутентификация подменяется {@code jwt()} post-processor'ом Spring Security Test,
  * чтобы не поднимать настоящий IdP, но при этом пройти реальную цепочку фильтров.
+ * Тело запроса собираем строкой — приложение работает на Jackson 3, и явная
+ * зависимость на ObjectMapper здесь не нужна.
  * <p>
  * Требует доступного Docker-демона для запуска контейнера БД.
  */
@@ -37,18 +37,18 @@ class TeacherApiIntegrationTest {
     @Autowired
     MockMvc mockMvc;
 
-    @Autowired
-    ObjectMapper objectMapper;
+    private static String teacherJson(String username, String email) {
+        return "{\"username\":\"%s\",\"email\":\"%s\"}".formatted(username, email);
+    }
 
     @Test
     void createsTeacherAndReadsItBack() throws Exception {
         var id = UUID.randomUUID();
-        var request = new CreateOrUpdateTeacherRequest("Иванов Иван", "ivanov+" + id + "@example.com");
 
         mockMvc.perform(put("/api/teachers/{id}", id)
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(teacherJson("Иванов Иван", "ivanov+" + id + "@example.com")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(id.toString()))
             .andExpect(jsonPath("$.username").value("Иванов Иван"));
@@ -66,15 +66,13 @@ class TeacherApiIntegrationTest {
         mockMvc.perform(put("/api/teachers/{id}", id)
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(
-                    new CreateOrUpdateTeacherRequest("Первое Имя", "first+" + id + "@example.com"))))
+                .content(teacherJson("Первое Имя", "first+" + id + "@example.com")))
             .andExpect(status().isOk());
 
         mockMvc.perform(put("/api/teachers/{id}", id)
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(
-                    new CreateOrUpdateTeacherRequest("Второе Имя", "second+" + id + "@example.com"))))
+                .content(teacherJson("Второе Имя", "second+" + id + "@example.com")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(id.toString()))
             .andExpect(jsonPath("$.username").value("Второе Имя"));
