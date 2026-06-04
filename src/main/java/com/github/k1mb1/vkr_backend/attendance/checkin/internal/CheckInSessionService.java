@@ -5,12 +5,14 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecord;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordStatus;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSession;
+import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.filters.CheckInSessionFilter;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.ConfirmCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StartCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInPreviewResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicStudentResponse;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
@@ -28,6 +30,7 @@ import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRep
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +41,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 class CheckInSessionService implements CheckInSessionApi {
+
+    /** Минимальная длина запроса для поиска студента по фамилии — отсекает попытку выгрузить весь ростер пустым/коротким запросом. */
+    private static final int MIN_SEARCH_QUERY_LENGTH = 2;
+
+    /** Верхняя граница на размер выдачи поиска — чтобы по слишком общей подстроке нельзя было получить всю группу. */
+    private static final int MAX_SEARCH_RESULTS = 20;
 
     final CheckInSessionRepository sessionRepository;
 
@@ -90,11 +99,30 @@ class CheckInSessionService implements CheckInSessionApi {
                 );
             });
 
+        // Если у предмета задана политика check-in — единые окна для всех его сессий
+        // берутся из неё, а значения из запроса игнорируются. Иначе окна берём из запроса.
+        var policy = scope.getLesson().getSubject().getCheckInPolicy();
+        int onTimeSeconds;
+        int lateSeconds;
+        if (policy.isEnabled()) {
+            onTimeSeconds = policy.getOnTimeSeconds();
+            lateSeconds = policy.getLateSeconds();
+        } else {
+            if (request.onTimeSeconds() == null || request.lateSeconds() == null) {
+                throw new IllegalArgumentException(
+                    "Для предмета без политики check-in укажите onTimeSeconds и lateSeconds"
+                );
+            }
+            onTimeSeconds = request.onTimeSeconds();
+            lateSeconds = request.lateSeconds();
+        }
+
         var session = CheckInSession.builder()
             .lessonScope(scope)
             .startedAt(Instant.now())
-            .onTimeSeconds(request.onTimeSeconds())
-            .lateSeconds(request.lateSeconds())
+            .code(CheckInCodeGenerator.generate())
+            .onTimeSeconds(onTimeSeconds)
+            .lateSeconds(lateSeconds)
             .build();
 
         return mapper.toResponse(
@@ -329,23 +357,11 @@ class CheckInSessionService implements CheckInSessionApi {
         var session = loadSession(sessionId);
         var scope = session.getLessonScope();
         var lesson = scope.getLesson();
-        var students = lessonStudentsApi.studentsOf(scope);
-        var recordsByStudent = recordsByStudentId(sessionId);
         var now = Instant.now();
 
-        var rows = students
-            .stream()
-            .map(student -> {
-                var record = recordsByStudent.get(student.getId());
-                return new PublicCheckInSessionResponse.Student(
-                    student.getId(),
-                    NameMasker.maskFullName(student.getUsername()),
-                    record != null ? record.getStatus() : null,
-                    record != null ? record.getCheckedInAt() : null
-                );
-            })
-            .toList();
-
+        // Намеренно не отдаём ростер группы: чтобы отметиться, студент ищет себя
+        // по фамилии через searchStudents(...). Так список группы и статусы посещаемости
+        // не раскрываются всем по ссылке и не скрейпятся одним запросом.
         return new PublicCheckInSessionResponse(
             session.getId(),
             lesson.getTopic(),
@@ -353,9 +369,68 @@ class CheckInSessionService implements CheckInSessionApi {
             session.stateAt(now),
             session.onTimeEndsAt(),
             session.lateEndsAt(),
-            now,
-            rows
+            now
         );
+    }
+
+    @Override
+    public void verifyCode(UUID sessionId, String code) {
+        var session = loadSession(sessionId);
+        requireOpen(session);
+        if (!CheckInCodes.matches(session.getCode(), code)) {
+            throw new IllegalArgumentException("Неверный код сессии");
+        }
+    }
+
+    @Override
+    public List<PublicStudentResponse> searchStudents(
+        UUID sessionId,
+        String code,
+        String query
+    ) {
+        var session = loadSession(sessionId);
+
+        // Доступ к списку — только за кодом аудитории: сверяем его до любого поиска.
+        if (!CheckInCodes.matches(session.getCode(), code)) {
+            throw new IllegalArgumentException("Неверный код сессии");
+        }
+
+        // Поиск работает только пока сессия открыта (основное окно или окно опоздавших).
+        // После закрытия/подтверждения/отмены протёкший QR перестаёт отдавать совпадения.
+        var state = session.stateAt(Instant.now());
+        if (
+            state != CheckInSessionState.OPEN &&
+            state != CheckInSessionState.LATE_WINDOW
+        ) {
+            return List.of();
+        }
+
+        var normalized = query == null ? "" : query.trim();
+        if (normalized.length() < MIN_SEARCH_QUERY_LENGTH) {
+            return List.of();
+        }
+        var needle = normalized.toLowerCase(Locale.ROOT);
+
+        // Совпадения отдаём с маскированным ФИО и id (id нужен для последующей отметки),
+        // но без статуса посещаемости — кто пришёл/прогулял является ПДн других студентов.
+        return lessonStudentsApi
+            .studentsOf(session.getLessonScope())
+            .stream()
+            .filter(student ->
+                student.getUsername() != null &&
+                student
+                    .getUsername()
+                    .toLowerCase(Locale.ROOT)
+                    .contains(needle)
+            )
+            .limit(MAX_SEARCH_RESULTS)
+            .map(student ->
+                new PublicStudentResponse(
+                    student.getId(),
+                    NameMasker.maskFullName(student.getUsername())
+                )
+            )
+            .toList();
     }
 
     private CheckInSession loadSession(UUID sessionId) {
@@ -364,6 +439,18 @@ class CheckInSessionService implements CheckInSessionApi {
             .orElseThrow(() ->
                 new ResourceNotFoundException("CheckInSession", sessionId)
             );
+    }
+
+    private void requireOpen(CheckInSession session) {
+        var state = session.stateAt(Instant.now());
+        if (
+            state != CheckInSessionState.OPEN &&
+            state != CheckInSessionState.LATE_WINDOW
+        ) {
+            throw new IllegalStateException(
+                "Check-in is closed for session: " + session.getId()
+            );
+        }
     }
 
     private Map<UUID, CheckInRecord> recordsByStudentId(UUID sessionId) {

@@ -16,20 +16,18 @@ public record StartCheckInRequest(
     )
     UUID lessonScopeId,
 
-    @NotNull
     @Min(1)
     @Schema(
-        description = "Длительность основного окна (секунды). Студенты, отметившиеся здесь, получат статус PRESENT",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        description = "Длительность основного окна (секунды). Студенты, отметившиеся здесь, получат статус PRESENT. " +
+            "Обязательно, если у предмета НЕ задана политика check-in; при заданной политике игнорируется.",
         example = "600"
     )
     Integer onTimeSeconds,
 
-    @NotNull
     @PositiveOrZero
     @Schema(
-        description = "Дополнительное окно для опоздавших (секунды). Отметившиеся здесь получат статус LATE",
-        requiredMode = Schema.RequiredMode.REQUIRED,
+        description = "Дополнительное окно для опоздавших (секунды). Отметившиеся здесь получат статус LATE. " +
+            "Обязательно, если у предмета НЕ задана политика check-in; при заданной политике игнорируется.",
         example = "600"
     )
     Integer lateSeconds

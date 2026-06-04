@@ -2,9 +2,12 @@ package com.github.k1mb1.vkr_backend.attendance.checkin.web;
 
 import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordsApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionApi;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.PublicStudentSearchRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StudentCheckInRequest;
-import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInRecordResponse;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.VerifyCheckInCodeRequest;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInRecordResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicStudentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequestMapping(
@@ -30,7 +34,12 @@ public class PublicCheckInController {
 
     final CheckInRecordsApi checkInRecordsApi;
 
-    @Operation(summary = "Получить состояние сессии и список студентов")
+    @Operation(
+        summary = "Получить состояние сессии",
+        description = "Возвращает только метаданные сессии (тему, аудиторию, окна, состояние). " +
+            "Ростер группы намеренно не отдаётся: сначала студент подтверждает код аудитории, " +
+            "затем ищет себя по фамилии через POST /{id}/students."
+    )
     @GetMapping("/{id}")
     public ResponseEntity<PublicCheckInSessionResponse> get(
         @PathVariable UUID id
@@ -38,9 +47,47 @@ public class PublicCheckInController {
         return ResponseEntity.ok(checkInSessionApi.getPublic(id));
     }
 
-    @Operation(summary = "Отметиться студенту")
+    @Operation(
+        summary = "Подтвердить код аудитории",
+        description = "Шаг перед поиском: проверяет код аудитории. 204 — код верный (можно искать), " +
+            "400 — код неверный либо сессия закрыта."
+    )
+    @PostMapping("/{id}/verify-code")
+    public ResponseEntity<Void> verifyCode(
+        @PathVariable UUID id,
+        @Valid
+        @RequestBody
+        VerifyCheckInCodeRequest request
+    ) {
+        checkInSessionApi.verifyCode(id, request.code());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+        summary = "Найти себя по фамилии (за кодом аудитории)",
+        description = "Доступ к списку — только за кодом аудитории: в теле передаются code и query. " +
+            "Возвращает только совпадения с маскированным ФИО и id (id нужен для отметки), без статусов " +
+            "посещаемости. Неверный код — 400; пустой/короткий запрос — пустой список."
+    )
+    @PostMapping("/{id}/students")
+    public ResponseEntity<List<PublicStudentResponse>> searchStudents(
+        @PathVariable UUID id,
+        @Valid
+        @RequestBody
+        PublicStudentSearchRequest request
+    ) {
+        return ResponseEntity.ok(
+            checkInSessionApi.searchStudents(id, request.code(), request.query())
+        );
+    }
+
+    @Operation(
+        summary = "Отметиться студенту",
+        description = "Требует ID студента (из результата поиска) и код аудитории, показанный преподавателем. " +
+            "Возвращает только собственный статус отметки."
+    )
     @PostMapping("/{id}/check-in")
-    public ResponseEntity<CheckInRecordResponse> checkIn(
+    public ResponseEntity<PublicCheckInRecordResponse> checkIn(
         @PathVariable UUID id,
         @Valid
         @RequestBody

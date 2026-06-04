@@ -21,6 +21,7 @@ interface CheckInSessionMapper {
     @Mapping(target = "lessonScopeId", source = "session.lessonScope.id")
     @Mapping(target = "allGroups", expression = "java(session.getLessonScope().isAllGroups())")
     @Mapping(target = "audience", expression = "java(audienceOf(session.getLessonScope()))")
+    @Mapping(target = "code", source = "session.code")
     @Mapping(target = "startedAt", source = "session.startedAt")
     @Mapping(target = "onTimeSeconds", source = "session.onTimeSeconds")
     @Mapping(target = "lateSeconds", source = "session.lateSeconds")

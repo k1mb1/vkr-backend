@@ -4,7 +4,7 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordsApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecord;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StudentCheckInRequest;
-import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInRecordResponse;
+import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInRecordResponse;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
@@ -29,11 +29,9 @@ class CheckInRecordService
 
     final LessonStudentsApi lessonStudentsApi;
 
-    final CheckInRecordMapper mapper;
-
     @Transactional
     @Override
-    public CheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
+    public PublicCheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
         var session = sessionRepository.findWithDetailsById(sessionId)
             .orElseThrow(() -> new ResourceNotFoundException("CheckInSession", sessionId));
 
@@ -41,6 +39,12 @@ class CheckInRecordService
         var state = session.stateAt(now);
         if (state != CheckInSessionState.OPEN && state != CheckInSessionState.LATE_WINDOW) {
             throw new IllegalStateException("Check-in is closed for session: " + sessionId);
+        }
+
+        // Код аудитории проверяем раньше, чем принадлежность студента,
+        // чтобы ошибка кода не работала оракулом «существует ли такой studentId».
+        if (!CheckInCodes.matches(session.getCode(), request.code())) {
+            throw new IllegalArgumentException("Неверный код сессии");
         }
 
         var studentId = request.studentId();
@@ -68,6 +72,8 @@ class CheckInRecordService
             record.setCheckedInAt(now);
         }
 
-        return mapper.toResponse(recordRepository.save(record));
+        var saved = recordRepository.save(record);
+        // Отдаём только собственный результат студента — без ID записи и данных других.
+        return new PublicCheckInRecordResponse(saved.getStatus(), saved.getCheckedInAt());
     }
 }

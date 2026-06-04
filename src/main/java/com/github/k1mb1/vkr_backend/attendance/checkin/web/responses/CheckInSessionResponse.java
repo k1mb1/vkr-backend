@@ -26,6 +26,12 @@ public record CheckInSessionResponse(
     )
     List<CheckInAudienceScope> audience,
 
+    @Schema(
+        description = "Код аудитории — преподаватель показывает его студентам; нужен им для отметки. " +
+            "В публичный ответ не отдаётся."
+    )
+    String code,
+
     @Schema(description = "Момент запуска")
     Instant startedAt,
 

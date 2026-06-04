@@ -1,10 +1,12 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
 import com.github.k1mb1.vkr_backend.subject.domain.AttendancePolicy;
+import com.github.k1mb1.vkr_backend.subject.domain.CheckInPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.Subject;
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.AttendancePolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.CheckInPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
@@ -23,6 +25,8 @@ interface SubjectMapper {
 
     AttendancePolicyResponse toAttendancePolicyResponse(AttendancePolicy policy);
 
+    CheckInPolicyResponse toCheckInPolicyResponse(CheckInPolicy policy);
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -30,6 +34,7 @@ interface SubjectMapper {
     @Mapping(target = "groups", ignore = true)
     @Mapping(target = "penaltyPolicy", ignore = true)
     @Mapping(target = "attendancePolicy", ignore = true)
+    @Mapping(target = "checkInPolicy", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(
         UpdateSubjectRequest request,

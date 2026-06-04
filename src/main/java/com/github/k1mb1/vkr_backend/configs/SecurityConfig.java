@@ -25,6 +25,9 @@ public class SecurityConfig {
 
     static final String[] PUBLIC_ENDPOINTS = {
         "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs",
+        // Публичная страница check-in по QR: студент не аутентифицирован.
+        // Доступ открыт, но защищён кодом аудитории и поиском вместо полного ростера.
+        "/api/check-in-sessions/public/**",
     };
 
     private final JwtAuthConverter jwtAuthConverter;

@@ -36,6 +36,12 @@ public class CheckInSession
         name = "started_at", nullable = false, columnDefinition = "timestamptz"
     ) Instant startedAt;
 
+    /**
+     * Код аудитории: преподаватель показывает его в аудитории, студент вводит при отметке.
+     * Отдаётся только на преподавательской стороне, в публичный ответ не попадает.
+     */
+    @Column(name = "code", nullable = false, length = 8) String code;
+
     @Column(name = "on_time_seconds", nullable = false) int onTimeSeconds;
 
     @Column(name = "late_seconds", nullable = false) int lateSeconds;

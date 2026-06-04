@@ -48,4 +48,10 @@ public class Subject
     @Embedded
     @Builder.Default
     AttendancePolicy attendancePolicy = AttendancePolicy.builder().build();
+
+    // Единое время на отметку (check-in) для всего предмета (опциональная фича).
+    // Если включена — окна сессий берутся отсюда, а не из запроса на запуск.
+    @Embedded
+    @Builder.Default
+    CheckInPolicy checkInPolicy = CheckInPolicy.builder().build();
 }

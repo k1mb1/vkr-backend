@@ -39,3 +39,7 @@ databaseChangeLog:
       file: db/changelog/v0/20260530000000-attendance-policy.sql
   - include:
       file: db/changelog/v0/20260603120000-recalculate-lessons-offset.sql
+  - include:
+      file: db/changelog/v0/20260603130000-checkin-session-code.sql
+  - include:
+      file: db/changelog/v0/20260603140000-subject-checkin-policy.sql
