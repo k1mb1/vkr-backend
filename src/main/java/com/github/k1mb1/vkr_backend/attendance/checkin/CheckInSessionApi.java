@@ -7,12 +7,10 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInPrev
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicStudentResponse;
-
 import java.util.List;
 import java.util.UUID;
 
 public interface CheckInSessionApi {
-
     CheckInSessionResponse start(StartCheckInRequest request);
 
     CheckInSessionResponse get(UUID sessionId);
@@ -21,7 +19,10 @@ public interface CheckInSessionApi {
 
     CheckInPreviewResponse preview(UUID sessionId);
 
-    CheckInSessionResponse confirm(UUID sessionId, ConfirmCheckInRequest request);
+    CheckInSessionResponse confirm(
+        UUID sessionId,
+        ConfirmCheckInRequest request
+    );
 
     CheckInSessionResponse cancel(UUID sessionId);
 
@@ -34,13 +35,17 @@ public interface CheckInSessionApi {
     void verifyCode(UUID sessionId, String code);
 
     /**
-     * Поиск студентов сессии по фамилии (части ФИО) для публичной страницы check-in.
+     * Поиск студента сессии по фамилии (части ФИО) для публичной страницы check-in.
      * <p>
      * Доступ за кодом аудитории: сначала проверяется {@code code}, и только при совпадении
      * выполняется поиск. В отличие от полного ростера, отдаёт только совпадения с запросом,
      * без статусов посещаемости — чтобы список группы и сведения о том, кто пришёл, не были
-     * доступны без кода и не скрейпились одним запросом. Слишком короткий или пустой запрос
-     * возвращает пустой список.
+     * доступны без кода и не скрейпились одним запросом. Слишком короткий или пустой запрос,
+     * а также неоднозначный запрос (найдено 0 или более 1 студента), возвращает пустой список.
      */
-    List<PublicStudentResponse> searchStudents(UUID sessionId, String code, String query);
+    List<PublicStudentResponse> searchStudents(
+        UUID sessionId,
+        String code,
+        String query
+    );
 }

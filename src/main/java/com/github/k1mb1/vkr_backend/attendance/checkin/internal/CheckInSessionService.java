@@ -108,7 +108,9 @@ class CheckInSessionService implements CheckInSessionApi {
             onTimeSeconds = policy.getOnTimeSeconds();
             lateSeconds = policy.getLateSeconds();
         } else {
-            if (request.onTimeSeconds() == null || request.lateSeconds() == null) {
+            if (
+                request.onTimeSeconds() == null || request.lateSeconds() == null
+            ) {
                 throw new IllegalArgumentException(
                     "Для предмета без политики check-in укажите onTimeSeconds и lateSeconds"
                 );
@@ -411,26 +413,32 @@ class CheckInSessionService implements CheckInSessionApi {
         }
         var needle = normalized.toLowerCase(Locale.ROOT);
 
-        // Совпадения отдаём с маскированным ФИО и id (id нужен для последующей отметки),
-        // но без статуса посещаемости — кто пришёл/прогулял является ПДн других студентов.
-        return lessonStudentsApi
+        var matches = lessonStudentsApi
             .studentsOf(session.getLessonScope())
             .stream()
-            .filter(student ->
-                student.getUsername() != null &&
-                student
-                    .getUsername()
-                    .toLowerCase(Locale.ROOT)
-                    .contains(needle)
-            )
-            .limit(MAX_SEARCH_RESULTS)
-            .map(student ->
-                new PublicStudentResponse(
-                    student.getId(),
-                    NameMasker.maskFullName(student.getUsername())
-                )
+            .filter(
+                student ->
+                    student.getUsername() != null &&
+                    student
+                        .getUsername()
+                        .toLowerCase(Locale.ROOT)
+                        .contains(needle)
             )
             .toList();
+
+        // Отдаём результат только при однозначном совпадении —
+        // чтобы случайный запрос не показал чужие ФИО.
+        if (matches.size() != 1) {
+            return List.of();
+        }
+
+        var student = matches.get(0);
+        return List.of(
+            new PublicStudentResponse(
+                student.getId(),
+                NameMasker.maskFullName(student.getUsername())
+            )
+        );
     }
 
     private CheckInSession loadSession(UUID sessionId) {

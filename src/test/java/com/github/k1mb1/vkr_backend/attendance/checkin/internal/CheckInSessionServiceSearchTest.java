@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.internal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -65,7 +65,10 @@ class CheckInSessionServiceSearchTest {
     final LessonScope scope = mock(LessonScope.class);
 
     static Student student(String username) {
-        return Student.builder().id(UUID.randomUUID()).username(username).build();
+        return Student.builder()
+            .id(UUID.randomUUID())
+            .username(username)
+            .build();
     }
 
     CheckInSession givenSessionWithStudents(List<Student> students) {
@@ -78,7 +81,9 @@ class CheckInSessionServiceSearchTest {
         lenient()
             .when(sessionRepository.findWithDetailsById(sessionId))
             .thenReturn(Optional.of(session));
-        lenient().when(lessonStudentsApi.studentsOf(scope)).thenReturn(students);
+        lenient()
+            .when(lessonStudentsApi.studentsOf(scope))
+            .thenReturn(students);
         return session;
     }
 
@@ -91,10 +96,9 @@ class CheckInSessionServiceSearchTest {
 
         var result = service.searchStudents(sessionId, CODE, "иванов");
 
-        assertThat(result)
-            .containsExactly(
-                new PublicStudentResponse(ivanov.getId(), "Иванов И. И.")
-            );
+        assertThat(result).containsExactly(
+            new PublicStudentResponse(ivanov.getId(), "Иванов И. И.")
+        );
     }
 
     @Test
@@ -104,14 +108,18 @@ class CheckInSessionServiceSearchTest {
 
         var result = service.searchStudents(sessionId, CODE, "  ПЕТРОВ  ");
 
-        assertThat(result).extracting(PublicStudentResponse::id).containsExactly(petrov.getId());
+        assertThat(result)
+            .extracting(PublicStudentResponse::id)
+            .containsExactly(petrov.getId());
     }
 
     @Test
     void rejectsWrongCodeWithoutTouchingRoster() {
         givenSessionWithStudents(List.of(student("Иванов Иван Иванович")));
 
-        assertThatThrownBy(() -> service.searchStudents(sessionId, "WRONG", "иванов"))
+        assertThatThrownBy(() ->
+            service.searchStudents(sessionId, "WRONG", "иванов")
+        )
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("код");
 
@@ -146,32 +154,43 @@ class CheckInSessionServiceSearchTest {
     }
 
     @Test
-    void capsResultsToMaxSearchResults() {
-        var students = java.util.stream.IntStream
-            .range(0, 30)
-            .mapToObj(i -> student("Иванов Студент " + i))
-            .toList();
-        givenSessionWithStudents(students);
+    void returnsEmptyWhenMoreThanOneMatch() {
+        givenSessionWithStudents(
+            List.of(student("Иванов Иван"), student("Иванов Пётр"))
+        );
 
         var result = service.searchStudents(sessionId, CODE, "иванов");
 
-        assertThat(result).hasSize(20);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void returnsEmptyWhenNoMatches() {
+        givenSessionWithStudents(
+            List.of(student("Петров Пётр"), student("Сидоров Сидор"))
+        );
+
+        var result = service.searchStudents(sessionId, CODE, "иванов");
+
+        assertThat(result).isEmpty();
     }
 
     @Test
     void verifyCodePassesForValidCodeOnOpenSession() {
         givenSessionWithStudents(List.of());
 
-        assertThatCode(() -> service.verifyCode(sessionId, "abc123"))
-            .doesNotThrowAnyException();
+        assertThatCode(() ->
+            service.verifyCode(sessionId, "abc123")
+        ).doesNotThrowAnyException();
     }
 
     @Test
     void verifyCodeRejectsWrongCode() {
         givenSessionWithStudents(List.of());
 
-        assertThatThrownBy(() -> service.verifyCode(sessionId, "WRONG"))
-            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() ->
+            service.verifyCode(sessionId, "WRONG")
+        ).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -179,7 +198,8 @@ class CheckInSessionServiceSearchTest {
         var session = givenSessionWithStudents(List.of());
         when(session.stateAt(any())).thenReturn(CheckInSessionState.CONFIRMED);
 
-        assertThatThrownBy(() -> service.verifyCode(sessionId, CODE))
-            .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() ->
+            service.verifyCode(sessionId, CODE)
+        ).isInstanceOf(IllegalStateException.class);
     }
 }
