@@ -16,20 +16,32 @@ import org.hibernate.type.SqlTypes;
 @Hidden
 @Entity
 @Table(
-    name = "attendances", uniqueConstraints = @UniqueConstraint(
-    name = "uk_attendance_student_lesson_scope", columnNames = { "student_id", "lesson_scope_id" }
-), indexes = {
-    @Index(name = "idx_attendances_lesson_scope_id", columnList = "lesson_scope_id"),
-    @Index(name = "idx_attendances_student_id", columnList = "student_id"),
-}
+    name = "attendances",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_attendance_student_lesson_scope",
+        columnNames = { "student_id", "lesson_scope_id" }
+    ),
+    indexes = {
+        @Index(
+            name = "idx_attendances_lesson_scope_id",
+            columnList = "lesson_scope_id"
+        ),
+        @Index(name = "idx_attendances_student_id", columnList = "student_id"),
+    }
+)
+@NamedEntityGraph(
+    name = "Attendance.withDetails",
+    attributeNodes = {
+        @NamedAttributeNode("student"),
+        @NamedAttributeNode("lessonScope"),
+    }
 )
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Attendance
-    extends BaseEntity {
+public class Attendance extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "student_id", nullable = false)
@@ -43,5 +55,6 @@ public class Attendance
     @Column(nullable = false, columnDefinition = "attendance_status")
     AttendanceStatus status;
 
-    @Column(columnDefinition = "text") String comment;
+    @Column(columnDefinition = "text")
+    String comment;
 }

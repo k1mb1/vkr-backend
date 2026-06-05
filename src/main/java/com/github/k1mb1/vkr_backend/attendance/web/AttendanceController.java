@@ -6,15 +6,16 @@ import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendance
 import com.github.k1mb1.vkr_backend.attendance.web.responses.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.attendance.web.responses.AttendanceTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RequestMapping(
     value = "/api/attendances", produces = MediaType.APPLICATION_JSON_VALUE
@@ -27,16 +28,24 @@ public class AttendanceController {
     final AttendanceApi attendanceApi;
 
     @Operation(
-        summary = "Получить таблицу посещаемости по permissionId"
+        summary = "Получить полную таблицу посещаемости по permissionId",
+        description = "Таблица по всем занятиям предмета разрешения. Пер-урочный режим " +
+            "(grades+attendance по одному занятию) — на GET /api/results?permissionId=&lessonId="
     )
     @GetMapping
     public ResponseEntity<AttendanceTableResponse> getAttendanceTable(
-        @ParameterObject
-        @Valid
-        @ModelAttribute
-        AttendanceFilter filter
+        @Parameter(
+            description = "ID разрешения преподавателя (обязательно — определяет, что видно)",
+            required = true
+        )
+        @RequestParam
+        UUID permissionId
     ) {
-        return ResponseEntity.ok(attendanceApi.getAttendanceTable(filter));
+        return ResponseEntity.ok(
+            attendanceApi.getAttendanceTable(
+                AttendanceFilter.builder().permissionId(permissionId).build()
+            )
+        );
     }
 
     @Operation(

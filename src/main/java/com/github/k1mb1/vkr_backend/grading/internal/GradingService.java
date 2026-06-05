@@ -20,12 +20,13 @@ import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
-import com.github.k1mb1.vkr_backend.subject.domain.AttendancePolicy;
-import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
+import com.github.k1mb1.vkr_backend.subject.internal.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.web.responses.AttendancePolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.FinalAssessmentPolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.web.responses.GradingHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import java.time.LocalDate;
 import java.util.*;
@@ -45,6 +46,8 @@ class GradingService implements GradingApi {
     final GradingMapper gradingMapper;
 
     final TeacherSubjectPermissionRepository permissionRepository;
+
+    final SubjectMapper subjectMapper;
 
     final LessonRepository lessonRepository;
 
@@ -122,69 +125,28 @@ class GradingService implements GradingApi {
             visibleScopesByLesson.values()
         );
         var audience = audienceOf(permission);
-        var penaltyPolicy = toPenaltyPolicyResponse(
+        var penaltyPolicy = subjectMapper.toPenaltyPolicyResponse(
             permission.getSubject().getPenaltyPolicy()
         );
-        var attendancePolicy = toAttendancePolicyResponse(
+        var attendancePolicy = subjectMapper.toAttendancePolicyResponse(
             permission.getSubject().getAttendancePolicy()
         );
+        var highlightPolicy = subjectMapper.toGradingHighlightPolicyResponse(
+            permission.getSubject().getGradingHighlightPolicy()
+        );
+        var finalAssessmentPolicy =
+            subjectMapper.toFinalAssessmentPolicyResponse(
+                permission.getSubject().getFinalAssessmentPolicy()
+            );
 
         return buildTable(
             penaltyPolicy,
             attendancePolicy,
+            highlightPolicy,
+            finalAssessmentPolicy,
             audience,
             students,
             visibleScopesByLesson
-        );
-    }
-
-    private AttendancePolicyResponse toAttendancePolicyResponse(
-        AttendancePolicy policy
-    ) {
-        if (policy == null) {
-            return new AttendancePolicyResponse(false, null, null, null, null);
-        }
-        return new AttendancePolicyResponse(
-            policy.isEnabled(),
-            policy.getPointsPresent(),
-            policy.getPointsLate(),
-            policy.getPointsAbsent(),
-            policy.getPointsExcused()
-        );
-    }
-
-    private PenaltyPolicyResponse toPenaltyPolicyResponse(
-        PenaltyPolicy policy
-    ) {
-        if (policy == null) {
-            return new PenaltyPolicyResponse(
-                false,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false,
-                null,
-                null,
-                null,
-                null,
-                null
-            );
-        }
-        return new PenaltyPolicyResponse(
-            policy.isEnabled(),
-            policy.getOperation(),
-            policy.getStep(),
-            policy.getGracePeriodLessons(),
-            policy.getIntervalLessons(),
-            policy.getMaxReductions(),
-            policy.isBonusEnabled(),
-            policy.getBonusOperation(),
-            policy.getBonusStep(),
-            policy.getBonusGracePeriodLessons(),
-            policy.getBonusIntervalLessons(),
-            policy.getBonusMaxIncreases()
         );
     }
 
@@ -214,7 +176,7 @@ class GradingService implements GradingApi {
             assertSameSubject(lesson, permission);
             return List.of(lesson);
         }
-        return lessonRepository.findAll(
+        return lessonRepository.findAllWithDetails(
             LessonSpecifications.forPermission(permission)
         );
     }
@@ -252,6 +214,8 @@ class GradingService implements GradingApi {
     private GradingTableResponse buildTable(
         PenaltyPolicyResponse penaltyPolicy,
         AttendancePolicyResponse attendancePolicy,
+        GradingHighlightPolicyResponse highlightPolicy,
+        FinalAssessmentPolicyResponse finalAssessmentPolicy,
         List<GradingAudienceScope> audience,
         List<Student> students,
         java.util.Map<Lesson, List<LessonScope>> visibleScopesByLesson
@@ -289,35 +253,48 @@ class GradingService implements GradingApi {
             .map(s -> {
                 var sum = attendanceByStudent.getOrDefault(
                     s.getId(),
-                    new AttendanceSummary(0, 0, 0, 0)
+                    AttendanceSummary.builder()
+                        .present(0)
+                        .late(0)
+                        .absent(0)
+                        .excused(0)
+                        .build()
                 );
-                return new StudentAttendanceResponse(
-                    s.getId(),
-                    sum.present(),
-                    sum.late(),
-                    sum.absent(),
-                    sum.excused()
-                );
+                return StudentAttendanceResponse.builder()
+                    .studentId(s.getId())
+                    .present(sum.present())
+                    .late(sum.late())
+                    .absent(sum.absent())
+                    .excused(sum.excused())
+                    .build();
             })
             .toList();
 
-        return new GradingTableResponse(
-            penaltyPolicy,
-            attendancePolicy,
-            attendance,
-            audience,
-            students.stream().map(gradingMapper::toTableStudent).toList(),
-            visibleScopesByLesson
-                .entrySet()
-                .stream()
-                .map(e -> toGradingLesson(e.getKey(), e.getValue()))
-                .toList(),
-            assignments
-                .stream()
-                .map(gradingMapper::toAssignmentResponse)
-                .toList(),
-            grades.stream().map(gradingMapper::toCell).toList()
-        );
+        return GradingTableResponse.builder()
+            .penaltyPolicy(penaltyPolicy)
+            .attendancePolicy(attendancePolicy)
+            .highlightPolicy(highlightPolicy)
+            .finalAssessmentPolicy(finalAssessmentPolicy)
+            .attendance(attendance)
+            .audience(audience)
+            .students(
+                students.stream().map(gradingMapper::toTableStudent).toList()
+            )
+            .lessons(
+                visibleScopesByLesson
+                    .entrySet()
+                    .stream()
+                    .map(e -> toGradingLesson(e.getKey(), e.getValue()))
+                    .toList()
+            )
+            .assignments(
+                assignments
+                    .stream()
+                    .map(gradingMapper::toAssignmentResponse)
+                    .toList()
+            )
+            .grades(grades.stream().map(gradingMapper::toCell).toList())
+            .build();
     }
 
     private GradingTableLesson toGradingLesson(
@@ -725,16 +702,20 @@ class GradingService implements GradingApi {
                 )
             )
             .map(s ->
-                new GradingAudienceScope(
-                    s.getGroup().getId(),
-                    s.getGroup().getName(),
-                    s.getAllowedSubgroup() != null
-                        ? s.getAllowedSubgroup().getId()
-                        : null,
-                    s.getAllowedSubgroup() != null
-                        ? s.getAllowedSubgroup().getIndex()
-                        : null
-                )
+                GradingAudienceScope.builder()
+                    .groupId(s.getGroup().getId())
+                    .groupName(s.getGroup().getName())
+                    .allowedSubgroupId(
+                        s.getAllowedSubgroup() != null
+                            ? s.getAllowedSubgroup().getId()
+                            : null
+                    )
+                    .allowedSubgroupIndex(
+                        s.getAllowedSubgroup() != null
+                            ? s.getAllowedSubgroup().getIndex()
+                            : null
+                    )
+                    .build()
             )
             .toList();
     }

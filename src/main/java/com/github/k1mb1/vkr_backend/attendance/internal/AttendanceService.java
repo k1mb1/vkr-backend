@@ -20,18 +20,18 @@ import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
+import com.github.k1mb1.vkr_backend.subject.internal.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
+import com.github.k1mb1.vkr_backend.subject.web.responses.AttendanceHighlightPolicyResponse;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class AttendanceService
-    implements AttendanceApi {
+class AttendanceService implements AttendanceApi {
 
     final AttendanceRepository attendanceRepository;
 
@@ -47,21 +47,29 @@ class AttendanceService
 
     final LessonStudentsApi lessonStudentsApi;
 
+    final SubjectMapper subjectMapper;
+
     @Override
     public AttendanceTableResponse getAttendanceTable(AttendanceFilter filter) {
-        var permission = permissionRepository.findWithDetailsById(filter.permissionId())
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "TeacherSubjectPermission",
-                filter.permissionId()
-            ));
+        var permission = permissionRepository
+            .findWithDetailsById(filter.permissionId())
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "TeacherSubjectPermission",
+                    filter.permissionId()
+                )
+            );
 
         var lessons = resolveLessons(permission, filter);
         var scopes = resolveScopes(lessons, permission, filter);
 
         var students = unionStudentsAcrossScopes(scopes);
         var audience = audienceOf(permission);
+        var highlightPolicy = subjectMapper.toAttendanceHighlightPolicyResponse(
+            permission.getSubject().getAttendanceHighlightPolicy()
+        );
 
-        return buildTable(audience, students, scopes);
+        return buildTable(highlightPolicy, audience, students, scopes);
     }
 
     private List<Lesson> resolveLessons(
@@ -69,22 +77,30 @@ class AttendanceService
         AttendanceFilter filter
     ) {
         if (filter.lessonScopeId() != null) {
-            var scope = lessonScopeRepository.findById(filter.lessonScopeId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                    "LessonScope",
-                    filter.lessonScopeId()
-                ));
+            var scope = lessonScopeRepository
+                .findById(filter.lessonScopeId())
+                .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                        "LessonScope",
+                        filter.lessonScopeId()
+                    )
+                );
             assertSameSubject(scope.getLesson(), permission);
             assertLessonMatch(scope.getLesson(), filter.lessonId());
             return List.of(scope.getLesson());
         }
         if (filter.lessonId() != null) {
-            var lesson = lessonRepository.findById(filter.lessonId())
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson", filter.lessonId()));
+            var lesson = lessonRepository
+                .findById(filter.lessonId())
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Lesson", filter.lessonId())
+                );
             assertSameSubject(lesson, permission);
             return List.of(lesson);
         }
-        return lessonRepository.findAll(LessonSpecifications.forPermission(permission));
+        return lessonRepository.findAllWithDetails(
+            LessonSpecifications.forPermission(permission)
+        );
     }
 
     private List<LessonScope> resolveScopes(
@@ -96,31 +112,53 @@ class AttendanceService
         if (filter.lessonScopeId() == null) {
             return visible;
         }
-        var narrowed = visible.stream()
+        var narrowed = visible
+            .stream()
             .filter(s -> s.getId().equals(filter.lessonScopeId()))
             .toList();
         if (narrowed.isEmpty()) {
             throw new IllegalArgumentException(
-                "Scope " + filter.lessonScopeId() + " is not visible under permission " + permission.getId());
+                "Scope " +
+                    filter.lessonScopeId() +
+                    " is not visible under permission " +
+                    permission.getId()
+            );
         }
         return narrowed;
     }
 
-    private void assertSameSubject(Lesson lesson, TeacherSubjectPermission permission) {
-        if (!lesson.getSubject().getId().equals(permission.getSubject().getId())) {
+    private void assertSameSubject(
+        Lesson lesson,
+        TeacherSubjectPermission permission
+    ) {
+        if (
+            !lesson.getSubject().getId().equals(permission.getSubject().getId())
+        ) {
             throw new IllegalArgumentException(
-                "Lesson " + lesson.getId() + " does not belong to subject of permission " + permission.getId());
+                "Lesson " +
+                    lesson.getId() +
+                    " does not belong to subject of permission " +
+                    permission.getId()
+            );
         }
     }
 
     private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
-        if (requestedLessonId != null && !scopeLesson.getId().equals(requestedLessonId)) {
+        if (
+            requestedLessonId != null &&
+            !scopeLesson.getId().equals(requestedLessonId)
+        ) {
             throw new IllegalArgumentException(
-                "lessonScopeId belongs to lesson " + scopeLesson.getId() + " but lessonId=" + requestedLessonId);
+                "lessonScopeId belongs to lesson " +
+                    scopeLesson.getId() +
+                    " but lessonId=" +
+                    requestedLessonId
+            );
         }
     }
 
     private AttendanceTableResponse buildTable(
+        AttendanceHighlightPolicyResponse highlightPolicy,
         List<AttendanceAudienceScope> audience,
         List<Student> students,
         List<LessonScope> scopes
@@ -128,49 +166,85 @@ class AttendanceService
         var studentIds = students.stream().map(Student::getId).toList();
         var scopeIds = scopes.stream().map(LessonScope::getId).toList();
 
-        var attendances = studentIds.isEmpty() || scopeIds.isEmpty()
-                          ? List.<Attendance>of()
-                          : attendanceRepository.findByLessonScopeIdInAndStudentIdIn(
-                              scopeIds,
-                              studentIds
-                          );
+        var attendances =
+            studentIds.isEmpty() || scopeIds.isEmpty()
+                ? List.<Attendance>of()
+                : attendanceRepository.findByLessonScopeIdInAndStudentIdIn(
+                      scopeIds,
+                      studentIds
+                  );
 
-        return new AttendanceTableResponse(
-            audience,
-            students.stream().map(attendanceMapper::toTableStudent).toList(),
-            scopes.stream().map(attendanceMapper::toTableLesson).toList(),
-            attendances.stream().map(attendanceMapper::toCell).toList()
-        );
+        return AttendanceTableResponse.builder()
+            .highlightPolicy(highlightPolicy)
+            .audience(audience)
+            .students(
+                students.stream().map(attendanceMapper::toTableStudent).toList()
+            )
+            .lessons(
+                scopes.stream().map(attendanceMapper::toTableLesson).toList()
+            )
+            .attendances(
+                attendances.stream().map(attendanceMapper::toCell).toList()
+            )
+            .build();
     }
 
     @Transactional
     @Override
-    public List<AttendanceCellResponse> upsertAll(BulkUpsertAttendanceRequest request) {
+    public List<AttendanceCellResponse> upsertAll(
+        BulkUpsertAttendanceRequest request
+    ) {
         var items = request.items();
         var seen = new HashSet<String>();
         for (var item : items) {
             var key = item.studentId() + "|" + item.lessonScopeId();
             if (!seen.add(key)) {
                 throw new IllegalArgumentException(
-                    "Duplicate (studentId, lessonScopeId) in request: " + item.studentId() + ", " + item.lessonScopeId());
+                    "Duplicate (studentId, lessonScopeId) in request: " +
+                        item.studentId() +
+                        ", " +
+                        item.lessonScopeId()
+                );
             }
         }
 
-        var studentIds = items.stream().map(UpsertAttendanceRequest::studentId).distinct().toList();
-        var scopeIds = items.stream().map(UpsertAttendanceRequest::lessonScopeId).distinct().toList();
-        var existing = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(scopeIds, studentIds);
+        var studentIds = items
+            .stream()
+            .map(UpsertAttendanceRequest::studentId)
+            .distinct()
+            .toList();
+        var scopeIds = items
+            .stream()
+            .map(UpsertAttendanceRequest::lessonScopeId)
+            .distinct()
+            .toList();
+        var existing = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(
+            scopeIds,
+            studentIds
+        );
         var existingByKey = new HashMap<String, Attendance>();
         for (var a : existing) {
-            existingByKey.put(a.getStudent().getId() + "|" + a.getLessonScope().getId(), a);
+            existingByKey.put(
+                a.getStudent().getId() + "|" + a.getLessonScope().getId(),
+                a
+            );
         }
 
         var saved = new ArrayList<Attendance>(items.size());
         for (var item : items) {
             var key = item.studentId() + "|" + item.lessonScopeId();
-            var attendance = existingByKey.computeIfAbsent(key, k -> Attendance.builder()
-                .student(studentRepository.getReferenceById(item.studentId()))
-                .lessonScope(lessonScopeRepository.getReferenceById(item.lessonScopeId()))
-                .build());
+            var attendance = existingByKey.computeIfAbsent(key, k ->
+                Attendance.builder()
+                    .student(
+                        studentRepository.getReferenceById(item.studentId())
+                    )
+                    .lessonScope(
+                        lessonScopeRepository.getReferenceById(
+                            item.lessonScopeId()
+                        )
+                    )
+                    .build()
+            );
             attendance.setStatus(item.status());
             attendance.setComment(item.comment());
             saved.add(attendance);
@@ -188,11 +262,17 @@ class AttendanceService
         if (lessonScopeIds.isEmpty() || studentIds.isEmpty()) {
             return Map.of();
         }
-        var rows = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(lessonScopeIds, studentIds);
+        var rows = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(
+            lessonScopeIds,
+            studentIds
+        );
         // [present, late, absent, excused] на студента
         var counts = new HashMap<UUID, int[]>();
         for (var a : rows) {
-            var c = counts.computeIfAbsent(a.getStudent().getId(), k -> new int[4]);
+            var c = counts.computeIfAbsent(
+                a.getStudent().getId(),
+                k -> new int[4]
+            );
             switch (a.getStatus()) {
                 case PRESENT -> c[0]++;
                 case LATE -> c[1]++;
@@ -201,7 +281,17 @@ class AttendanceService
             }
         }
         var result = new HashMap<UUID, AttendanceSummary>();
-        counts.forEach((id, c) -> result.put(id, new AttendanceSummary(c[0], c[1], c[2], c[3])));
+        counts.forEach((id, c) ->
+            result.put(
+                id,
+                AttendanceSummary.builder()
+                    .present(c[0])
+                    .late(c[1])
+                    .absent(c[2])
+                    .excused(c[3])
+                    .build()
+            )
+        );
         return result;
     }
 
@@ -211,13 +301,16 @@ class AttendanceService
     ) {
         var result = new ArrayList<LessonScope>();
         for (var lesson : lessons) {
-            result.addAll(LessonSpecifications.visibleScopes(lesson, permission));
+            result.addAll(
+                LessonSpecifications.visibleScopes(lesson, permission)
+            );
         }
-        result.sort(Comparator.comparing(
+        result.sort(
+            Comparator.comparing(
                 (LessonScope s) -> s.getStartedAt(),
                 Comparator.nullsLast(Comparator.naturalOrder())
-            )
-                        .thenComparing(s -> s.getLesson().getOrderIndex()));
+            ).thenComparing(s -> s.getLesson().getOrderIndex())
+        );
         return result;
     }
 
@@ -233,26 +326,40 @@ class AttendanceService
         return result;
     }
 
-    private List<AttendanceAudienceScope> audienceOf(TeacherSubjectPermission permission) {
+    private List<AttendanceAudienceScope> audienceOf(
+        TeacherSubjectPermission permission
+    ) {
         if (LessonSpecifications.permissionAllowsAllGroups(permission)) {
             return List.of();
         }
-        return permission.getScopes()
+        return permission
+            .getScopes()
             .stream()
-            .sorted(Comparator.comparing((PermissionScope s) -> s.getGroup().getName())
-                        .thenComparing(s -> s.getAllowedSubgroup() == null
-                                            ? -1
-                                            : s.getAllowedSubgroup().getIndex()))
-            .map(s -> new AttendanceAudienceScope(
-                s.getGroup().getId(),
-                s.getGroup().getName(),
-                s.getAllowedSubgroup() != null
-                ? s.getAllowedSubgroup().getId()
-                : null,
-                s.getAllowedSubgroup() != null
-                ? s.getAllowedSubgroup().getIndex()
-                : null
-            ))
+            .sorted(
+                Comparator.comparing((PermissionScope s) ->
+                    s.getGroup().getName()
+                ).thenComparing(s ->
+                    s.getAllowedSubgroup() == null
+                        ? -1
+                        : s.getAllowedSubgroup().getIndex()
+                )
+            )
+            .map(s ->
+                AttendanceAudienceScope.builder()
+                    .groupId(s.getGroup().getId())
+                    .groupName(s.getGroup().getName())
+                    .allowedSubgroupId(
+                        s.getAllowedSubgroup() != null
+                            ? s.getAllowedSubgroup().getId()
+                            : null
+                    )
+                    .allowedSubgroupIndex(
+                        s.getAllowedSubgroup() != null
+                            ? s.getAllowedSubgroup().getIndex()
+                            : null
+                    )
+                    .build()
+            )
             .toList();
     }
 }

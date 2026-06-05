@@ -5,7 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 @Schema(
     description = "Публичное состояние check-in сессии (для страницы студентов). " +
         "Ростер группы намеренно не отдаётся: чтобы отметиться, студент ищет себя по фамилии " +

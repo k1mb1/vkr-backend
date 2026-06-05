@@ -14,10 +14,6 @@ import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,13 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class LessonService
-    implements LessonApi {
+class LessonService implements LessonApi {
 
     final LessonRepository lessonRepository;
 
@@ -47,7 +44,8 @@ class LessonService
     final GradingApi gradingApi;
 
     static LocalDate earliestStartedAt(Lesson lesson) {
-        return lesson.getScopes()
+        return lesson
+            .getScopes()
             .stream()
             .map(LessonScope::getStartedAt)
             .filter(Objects::nonNull)
@@ -57,23 +55,31 @@ class LessonService
 
     @Override
     public LessonResponse getLessonById(UUID id) {
-        var lesson = lessonRepository.findWithDetailsById(id)
+        var lesson = lessonRepository
+            .findWithDetailsById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
         var assignments = gradingApi.getAssignmentsByLesson(id);
-        return lessonMapper.toResponse(lesson, lesson.getScopes().stream().toList(), assignments);
+        return lessonMapper.toResponse(
+            lesson,
+            lesson.getScopes().stream().toList(),
+            assignments
+        );
     }
 
     @Transactional
     @Override
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
-        var lesson = lessonRepository.findWithDetailsById(id)
+        var lesson = lessonRepository
+            .findWithDetailsById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         if (request.header() != null) {
             var header = request.header();
             lessonMapper.updateEntity(header, lesson);
             if (header.subjectId() != null) {
-                lesson.setSubject(subjectRepository.getReferenceById(header.subjectId()));
+                lesson.setSubject(
+                    subjectRepository.getReferenceById(header.subjectId())
+                );
             }
             if (header.orderIndex() != null) {
                 lesson.setOrderIndex(header.orderIndex());
@@ -95,12 +101,16 @@ class LessonService
     @Transactional
     @Override
     public LessonResponse setActive(UUID id, boolean active) {
-        var lesson = lessonRepository.findById(id)
+        var lesson = lessonRepository
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         if (active) {
             // Не более одного активного занятия на (предмет, тип) — снимаем флаг с остальных того же типа.
-            lessonRepository.clearActiveForSubjectAndType(lesson.getSubject().getId(), lesson.getType());
+            lessonRepository.clearActiveForSubjectAndType(
+                lesson.getSubject().getId(),
+                lesson.getType()
+            );
             lessonRepository.flush();
         }
         lesson.setActive(active);
@@ -112,7 +122,8 @@ class LessonService
     @Transactional
     @Override
     public void deleteLesson(UUID id) {
-        var lesson = lessonRepository.findById(id)
+        var lesson = lessonRepository
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
         var subjectId = lesson.getSubject().getId();
         var type = lesson.getType();
@@ -127,58 +138,83 @@ class LessonService
 
     @Override
     public List<LessonResponse> getLessons(LessonFilter filter) {
-        var permission = permissionRepository.findWithDetailsById(filter.permissionId())
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "TeacherSubjectPermission",
-                filter.permissionId()
-            ));
-        var lessons = lessonRepository.findAll(LessonSpecifications.forPermission(permission));
-        var sorted = lessons.stream()
-            .sorted(Comparator.comparing(
+        var permission = permissionRepository
+            .findWithDetailsById(filter.permissionId())
+            .orElseThrow(() ->
+                new ResourceNotFoundException(
+                    "TeacherSubjectPermission",
+                    filter.permissionId()
+                )
+            );
+        var lessons = lessonRepository.findAllWithDetails(
+            LessonSpecifications.forPermission(permission)
+        );
+        var sorted = lessons
+            .stream()
+            .sorted(
+                Comparator.comparing(
                     LessonService::earliestStartedAt,
                     Comparator.nullsLast(Comparator.naturalOrder())
-                )
-                        .thenComparingInt(Lesson::getOrderIndex))
+                ).thenComparingInt(Lesson::getOrderIndex)
+            )
             .toList();
         var assignmentsByLesson = gradingApi.getAssignmentsByLessons(
             sorted.stream().map(Lesson::getId).toList()
         );
-        return sorted.stream()
-            .map(lesson -> lessonMapper.toResponse(
-                lesson,
-                LessonSpecifications.visibleScopes(lesson, permission),
-                assignmentsByLesson.getOrDefault(lesson.getId(), List.of())
-            ))
+        return sorted
+            .stream()
+            .map(lesson ->
+                lessonMapper.toResponse(
+                    lesson,
+                    LessonSpecifications.visibleScopes(lesson, permission),
+                    assignmentsByLesson.getOrDefault(lesson.getId(), List.of())
+                )
+            )
             .toList();
     }
 
     @Transactional
     @Override
     public List<LessonResponse> bulkCreate(BulkCreateLessonsRequest request) {
-        var subject = subjectRepository.findById(request.subjectId())
-            .orElseThrow(() -> new ResourceNotFoundException("Subject", request.subjectId()));
+        var subject = subjectRepository
+            .findById(request.subjectId())
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Subject", request.subjectId())
+            );
         var counters = nextOrderIndexByType(subject.getId());
         var lessons = new ArrayList<Lesson>();
 
         for (int i = 0; i < request.lectureCount(); i++) {
-            lessons.add(lessonTemplate(
-                subject.getId(),
-                LessonType.LECTURE,
-                counters.merge(LessonType.LECTURE, 1, Integer::sum)
-            ));
+            lessons.add(
+                lessonTemplate(
+                    subject.getId(),
+                    LessonType.LECTURE,
+                    counters.merge(LessonType.LECTURE, 1, Integer::sum)
+                )
+            );
         }
         for (int i = 0; i < request.practiceCount(); i++) {
-            lessons.add(lessonTemplate(
-                subject.getId(),
-                LessonType.PRACTICE,
-                counters.merge(LessonType.PRACTICE, 1, Integer::sum)
-            ));
+            lessons.add(
+                lessonTemplate(
+                    subject.getId(),
+                    LessonType.PRACTICE,
+                    counters.merge(LessonType.PRACTICE, 1, Integer::sum)
+                )
+            );
         }
 
         assignDefaultTopics(lessons);
 
-        return lessonRepository.saveAll(lessons).stream()
-            .map(lesson -> lessonMapper.toResponse(lesson, List.<LessonScope>of(), List.<AssignmentResponse>of()))
+        return lessonRepository
+            .saveAll(lessons)
+            .stream()
+            .map(lesson ->
+                lessonMapper.toResponse(
+                    lesson,
+                    List.<LessonScope>of(),
+                    List.<AssignmentResponse>of()
+                )
+            )
             .toList();
     }
 
@@ -200,8 +236,12 @@ class LessonService
                 continue;
             }
             switch (lesson.getType()) {
-                case LECTURE -> lesson.setTopic("Лекция " + lesson.getOrderIndex());
-                case PRACTICE -> lesson.setTopic("Практика " + lesson.getOrderIndex());
+                case LECTURE -> lesson.setTopic(
+                    "Лекция " + lesson.getOrderIndex()
+                );
+                case PRACTICE -> lesson.setTopic(
+                    "Практика " + lesson.getOrderIndex()
+                );
             }
         }
     }
@@ -210,12 +250,7 @@ class LessonService
         var map = new EnumMap<LessonType, Integer>(LessonType.class);
         for (var type : LessonType.values()) {
             var max = lessonRepository.findMaxOrderIndex(subjectId, type);
-            map.put(
-                type,
-                max == null
-                ? 0
-                : max
-            );
+            map.put(type, max == null ? 0 : max);
         }
         return map;
     }

@@ -6,15 +6,16 @@ import com.github.k1mb1.vkr_backend.grading.web.requests.BulkUpsertGradesRequest
 import com.github.k1mb1.vkr_backend.grading.web.responses.GradeCellResponse;
 import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RequestMapping(
     value = "/api/grades", produces = MediaType.APPLICATION_JSON_VALUE
@@ -27,16 +28,24 @@ public class GradingController {
     final GradingApi gradingApi;
 
     @Operation(
-        summary = "Получить таблицу оценок по permissionId"
+        summary = "Получить полную таблицу оценок по permissionId",
+        description = "Таблица по всем занятиям предмета разрешения. Пер-урочный режим " +
+            "(grades+attendance по одному занятию) — на GET /api/results?permissionId=&lessonId="
     )
     @GetMapping
     public ResponseEntity<GradingTableResponse> getGradingTable(
-        @ParameterObject
-        @Valid
-        @ModelAttribute
-        GradingFilter filter
+        @Parameter(
+            description = "ID разрешения преподавателя (обязательно — определяет, что видно)",
+            required = true
+        )
+        @RequestParam
+        UUID permissionId
     ) {
-        return ResponseEntity.ok(gradingApi.getGradingTable(filter));
+        return ResponseEntity.ok(
+            gradingApi.getGradingTable(
+                GradingFilter.builder().permissionId(permissionId).build()
+            )
+        );
     }
 
     @Operation(

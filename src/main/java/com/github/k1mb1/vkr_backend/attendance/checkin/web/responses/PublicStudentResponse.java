@@ -2,7 +2,9 @@ package com.github.k1mb1.vkr_backend.attendance.checkin.web.responses;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 @Schema(
     description = "Найденный по фамилии студент для публичной страницы check-in. " +
         "Отдаётся только для совпадений с поисковым запросом, без статуса посещаемости — " +

@@ -190,7 +190,7 @@ class CheckInSessionService implements CheckInSessionApi {
             return lesson.getScopes().stream().map(LessonScope::getId).toList();
         }
         return lessonRepository
-            .findAll(LessonSpecifications.forPermission(permission))
+            .findAllWithDetails(LessonSpecifications.forPermission(permission))
             .stream()
             .flatMap(l ->
                 LessonSpecifications.visibleScopes(l, permission).stream()
@@ -243,20 +243,20 @@ class CheckInSessionService implements CheckInSessionApi {
                 var checkedInAt =
                     record != null ? record.getCheckedInAt() : null;
                 var proposed = proposedAttendanceStatus(checkInStatus);
-                return new CheckInPreviewResponse.Row(
-                    student.getId(),
-                    student.getUsername(),
-                    checkInStatus,
-                    checkedInAt,
-                    proposed
-                );
+                return CheckInPreviewResponse.Row.builder()
+                    .studentId(student.getId())
+                    .username(student.getUsername())
+                    .checkInStatus(checkInStatus)
+                    .checkedInAt(checkedInAt)
+                    .proposedStatus(proposed)
+                    .build();
             })
             .toList();
 
-        return new CheckInPreviewResponse(
-            mapper.toResponse(session, Instant.now()),
-            rows
-        );
+        return CheckInPreviewResponse.builder()
+            .session(mapper.toResponse(session, Instant.now()))
+            .rows(rows)
+            .build();
     }
 
     @Transactional
@@ -319,12 +319,12 @@ class CheckInSessionService implements CheckInSessionApi {
                 comment = null;
             }
             items.add(
-                new UpsertAttendanceRequest(
-                    student.getId(),
-                    scopeId,
-                    status,
-                    comment
-                )
+                UpsertAttendanceRequest.builder()
+                    .studentId(student.getId())
+                    .lessonScopeId(scopeId)
+                    .status(status)
+                    .comment(comment)
+                    .build()
             );
         }
         if (!items.isEmpty()) {
@@ -364,15 +364,15 @@ class CheckInSessionService implements CheckInSessionApi {
         // Намеренно не отдаём ростер группы: чтобы отметиться, студент ищет себя
         // по фамилии через searchStudents(...). Так список группы и статусы посещаемости
         // не раскрываются всем по ссылке и не скрейпятся одним запросом.
-        return new PublicCheckInSessionResponse(
-            session.getId(),
-            lesson.getTopic(),
-            mapper.audienceOf(scope),
-            session.stateAt(now),
-            session.onTimeEndsAt(),
-            session.lateEndsAt(),
-            now
-        );
+        return PublicCheckInSessionResponse.builder()
+            .id(session.getId())
+            .lessonTopic(lesson.getTopic())
+            .audience(mapper.audienceOf(scope))
+            .state(session.stateAt(now))
+            .onTimeEndsAt(session.onTimeEndsAt())
+            .lateEndsAt(session.lateEndsAt())
+            .serverNow(now)
+            .build();
     }
 
     @Override
@@ -434,10 +434,10 @@ class CheckInSessionService implements CheckInSessionApi {
 
         var student = matches.get(0);
         return List.of(
-            new PublicStudentResponse(
-                student.getId(),
-                NameMasker.maskFullName(student.getUsername())
-            )
+            PublicStudentResponse.builder()
+                .id(student.getId())
+                .username(NameMasker.maskFullName(student.getUsername()))
+                .build()
         );
     }
 

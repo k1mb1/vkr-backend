@@ -54,10 +54,15 @@ class CheckInRecordServiceTest {
 
     @BeforeEach
     void setUp() {
-        var student = Student.builder().id(studentId).username("Иванов Иван").build();
+        var student = Student.builder()
+            .id(studentId)
+            .username("Иванов Иван")
+            .build();
         lenient().when(session.getLessonScope()).thenReturn(scope);
         lenient().when(session.getCode()).thenReturn("ABC123");
-        lenient().when(session.stateAt(any())).thenReturn(CheckInSessionState.OPEN);
+        lenient()
+            .when(session.stateAt(any()))
+            .thenReturn(CheckInSessionState.OPEN);
         lenient()
             .when(session.statusForCheckInAt(any()))
             .thenReturn(CheckInRecordStatus.PRESENT);
@@ -68,7 +73,12 @@ class CheckInRecordServiceTest {
             .when(lessonStudentsApi.studentsOf(scope))
             .thenReturn(List.of(student));
         lenient()
-            .when(recordRepository.findBySessionIdAndStudentId(sessionId, studentId))
+            .when(
+                recordRepository.findBySessionIdAndStudentId(
+                    sessionId,
+                    studentId
+                )
+            )
             .thenReturn(Optional.empty());
         lenient()
             .when(studentRepository.getReferenceById(studentId))
@@ -82,7 +92,10 @@ class CheckInRecordServiceTest {
     void checksInWithValidCodeAndReturnsOwnStatusOnly() {
         var response = service.checkIn(
             sessionId,
-            new StudentCheckInRequest(studentId, "abc123")
+            StudentCheckInRequest.builder()
+                .studentId(studentId)
+                .code("abc123")
+                .build()
         );
 
         assertThat(response.status()).isEqualTo(CheckInRecordStatus.PRESENT);
@@ -93,7 +106,13 @@ class CheckInRecordServiceTest {
     @Test
     void rejectsWrongCodeWithoutCheckingStudentScope() {
         assertThatThrownBy(() ->
-            service.checkIn(sessionId, new StudentCheckInRequest(studentId, "WRONG"))
+            service.checkIn(
+                sessionId,
+                StudentCheckInRequest.builder()
+                    .studentId(studentId)
+                    .code("WRONG")
+                    .build()
+            )
         )
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("код");
@@ -108,7 +127,13 @@ class CheckInRecordServiceTest {
         when(session.stateAt(any())).thenReturn(CheckInSessionState.CONFIRMED);
 
         assertThatThrownBy(() ->
-            service.checkIn(sessionId, new StudentCheckInRequest(studentId, "ABC123"))
+            service.checkIn(
+                sessionId,
+                StudentCheckInRequest.builder()
+                    .studentId(studentId)
+                    .code("ABC123")
+                    .build()
+            )
         ).isInstanceOf(IllegalStateException.class);
 
         verify(recordRepository, never()).save(any());

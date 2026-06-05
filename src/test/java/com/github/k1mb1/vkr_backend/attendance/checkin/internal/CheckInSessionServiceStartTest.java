@@ -74,8 +74,9 @@ class CheckInSessionServiceStartTest {
             .thenReturn(Optional.of(scope));
         lenient()
             .when(
-                sessionRepository
-                    .findByLessonScopeIdAndConfirmedAtIsNullAndCancelledAtIsNull(any())
+                sessionRepository.findByLessonScopeIdAndConfirmedAtIsNullAndCancelledAtIsNull(
+                    any()
+                )
             )
             .thenReturn(Optional.empty());
         lenient()
@@ -92,10 +93,20 @@ class CheckInSessionServiceStartTest {
     @Test
     void usesPolicyWindowsIgnoringRequestWhenPolicyEnabled() {
         when(subject.getCheckInPolicy()).thenReturn(
-            CheckInPolicy.builder().enabled(true).onTimeSeconds(300).lateSeconds(120).build()
+            CheckInPolicy.builder()
+                .enabled(true)
+                .onTimeSeconds(300)
+                .lateSeconds(120)
+                .build()
         );
 
-        service.start(new StartCheckInRequest(scopeId, 999, 999));
+        service.start(
+            StartCheckInRequest.builder()
+                .lessonScopeId(scopeId)
+                .onTimeSeconds(999)
+                .lateSeconds(999)
+                .build()
+        );
 
         var saved = savedSession();
         assertThat(saved.getOnTimeSeconds()).isEqualTo(300);
@@ -109,7 +120,13 @@ class CheckInSessionServiceStartTest {
             CheckInPolicy.builder().enabled(false).build()
         );
 
-        service.start(new StartCheckInRequest(scopeId, 600, 300));
+        service.start(
+            StartCheckInRequest.builder()
+                .lessonScopeId(scopeId)
+                .onTimeSeconds(600)
+                .lateSeconds(300)
+                .build()
+        );
 
         var saved = savedSession();
         assertThat(saved.getOnTimeSeconds()).isEqualTo(600);
@@ -123,7 +140,13 @@ class CheckInSessionServiceStartTest {
         );
 
         assertThatThrownBy(() ->
-            service.start(new StartCheckInRequest(scopeId, null, null))
+            service.start(
+                StartCheckInRequest.builder()
+                    .lessonScopeId(scopeId)
+                    .onTimeSeconds(null)
+                    .lateSeconds(null)
+                    .build()
+            )
         ).isInstanceOf(IllegalArgumentException.class);
 
         verify(sessionRepository, never()).save(any());

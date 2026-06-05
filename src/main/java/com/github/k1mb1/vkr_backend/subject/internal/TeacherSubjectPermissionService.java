@@ -14,17 +14,15 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateTeacherSubjectPer
 import com.github.k1mb1.vkr_backend.subject.web.responses.TeacherSubjectPermissionResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class TeacherSubjectPermissionService
-    implements TeacherSubjectPermissionsApi {
+class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     final TeacherSubjectPermissionRepository permissionRepository;
 
@@ -40,18 +38,29 @@ class TeacherSubjectPermissionService
     public List<TeacherSubjectPermissionResponse> getPermissionsBySubject(
         UUID subjectId
     ) {
-        return permissionRepository.findAllBySubjectId(subjectId)
+        return permissionRepository
+            .findAllBySubjectId(subjectId)
             .stream()
-            .map(this::toResponse)
+            .map(permissionMapper::toFullResponse)
             .toList();
     }
 
     @Override
-    public TeacherSubjectPermissionResponse getPermission(UUID subjectId, UUID teacherId) {
-        return permissionRepository.findBySubjectIdAndTeacherId(subjectId, teacherId)
-            .map(this::toResponse)
-            .orElseThrow(() -> new EntityNotFoundException(
-                "TeacherSubjectPermission not found for subjectId=" + subjectId + ", teacherId=" + teacherId));
+    public TeacherSubjectPermissionResponse getPermission(
+        UUID subjectId,
+        UUID teacherId
+    ) {
+        return permissionRepository
+            .findBySubjectIdAndTeacherId(subjectId, teacherId)
+            .map(permissionMapper::toFullResponse)
+            .orElseThrow(() ->
+                new EntityNotFoundException(
+                    "TeacherSubjectPermission not found for subjectId=" +
+                        subjectId +
+                        ", teacherId=" +
+                        teacherId
+                )
+            );
     }
 
     @Transactional
@@ -59,26 +68,48 @@ class TeacherSubjectPermissionService
     public TeacherSubjectPermissionResponse create(
         CreateTeacherSubjectPermissionRequest request
     ) {
-        if (permissionRepository.existsByTeacherIdAndSubjectId(
-            request.teacherId(),
-            request.subjectId()
-        )) {
-            throw new IllegalStateException("Permission already exists for teacherId=" + request.teacherId() + ", subjectId=" + request.subjectId());
+        if (
+            permissionRepository.existsByTeacherIdAndSubjectId(
+                request.teacherId(),
+                request.subjectId()
+            )
+        ) {
+            throw new IllegalStateException(
+                "Permission already exists for teacherId=" +
+                    request.teacherId() +
+                    ", subjectId=" +
+                    request.subjectId()
+            );
         }
-        validateScopesForAllPermissions(request.allPermissions(), request.scopes());
+        validateScopesForAllPermissions(
+            request.allPermissions(),
+            request.scopes()
+        );
 
         var subject = subjectRepository.getReferenceById(request.subjectId());
         var permission = TeacherSubjectPermission.builder()
-            .teacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()))
+            .teacher(
+                teacherReferenceService.getTeacherReferenceById(
+                    request.teacherId()
+                )
+            )
             .subject(subject)
             .allPermissions(request.allPermissions())
             .build();
 
-        if (!request.allPermissions() && request.scopes() != null && !request.scopes().isEmpty()) {
-            permission.getScopes().addAll(buildScopes(permission, request.scopes()));
+        if (
+            !request.allPermissions() &&
+            request.scopes() != null &&
+            !request.scopes().isEmpty()
+        ) {
+            permission
+                .getScopes()
+                .addAll(buildScopes(permission, request.scopes()));
         }
 
-        return toResponse(permissionRepository.save(permission));
+        return permissionMapper.toFullResponse(
+            permissionRepository.save(permission)
+        );
     }
 
     @Transactional
@@ -87,19 +118,34 @@ class TeacherSubjectPermissionService
         UUID id,
         UpdateTeacherSubjectPermissionRequest request
     ) {
-        var permission = permissionRepository.findWithDetailsById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", id));
+        var permission = permissionRepository
+            .findWithDetailsById(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("TeacherSubjectPermission", id)
+            );
 
-        if (request.teacherId() != null && !request.teacherId()
-            .equals(permission.getTeacher().getId())) {
-            if (permissionRepository.existsByTeacherIdAndSubjectId(
-                request.teacherId(),
-                permission.getSubject().getId()
-            )) {
-                throw new IllegalStateException("Permission already exists for teacherId=" + request.teacherId() + ", subjectId=" + permission.getSubject()
-                    .getId());
+        if (
+            request.teacherId() != null &&
+            !request.teacherId().equals(permission.getTeacher().getId())
+        ) {
+            if (
+                permissionRepository.existsByTeacherIdAndSubjectId(
+                    request.teacherId(),
+                    permission.getSubject().getId()
+                )
+            ) {
+                throw new IllegalStateException(
+                    "Permission already exists for teacherId=" +
+                        request.teacherId() +
+                        ", subjectId=" +
+                        permission.getSubject().getId()
+                );
             }
-            permission.setTeacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()));
+            permission.setTeacher(
+                teacherReferenceService.getTeacherReferenceById(
+                    request.teacherId()
+                )
+            );
         }
         if (request.allPermissions() != null) {
             permission.setAllPermissions(request.allPermissions());
@@ -110,24 +156,32 @@ class TeacherSubjectPermissionService
         if (request.scopes() != null) {
             if (permission.isAllPermissions()) {
                 throw new IllegalArgumentException(
-                    "scopes must not be provided when allPermissions=true");
+                    "scopes must not be provided when allPermissions=true"
+                );
             }
             if (request.scopes().isEmpty()) {
-                throw new IllegalArgumentException("scopes must be non-empty when provided");
+                throw new IllegalArgumentException(
+                    "scopes must be non-empty when provided"
+                );
             }
             var newScopes = buildScopes(permission, request.scopes());
             permission.getScopes().clear();
             permission.getScopes().addAll(newScopes);
         }
 
-        return toResponse(permissionRepository.save(permission));
+        return permissionMapper.toFullResponse(
+            permissionRepository.save(permission)
+        );
     }
 
     @Transactional
     @Override
     public void delete(UUID id) {
-        var permission = permissionRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", id));
+        var permission = permissionRepository
+            .findById(id)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("TeacherSubjectPermission", id)
+            );
         permission.archive();
         permissionRepository.save(permission);
     }
@@ -137,7 +191,9 @@ class TeacherSubjectPermissionService
         List<PermissionScopeRequest> scopes
     ) {
         if (!allPermissions && (scopes == null || scopes.isEmpty())) {
-            throw new IllegalArgumentException("scopes must be non-empty when allPermissions=false");
+            throw new IllegalArgumentException(
+                "scopes must be non-empty when allPermissions=false"
+            );
         }
     }
 
@@ -146,7 +202,8 @@ class TeacherSubjectPermissionService
         List<PermissionScopeRequest> requests
     ) {
         Subject subject = permission.getSubject();
-        var subjectGroupIds = subject.getGroups()
+        var subjectGroupIds = subject
+            .getGroups()
             .stream()
             .map(Group::getId)
             .collect(java.util.stream.Collectors.toSet());
@@ -162,49 +219,58 @@ class TeacherSubjectPermissionService
                 groupId = req.group().groupId();
                 subgroupId = req.group().allowedSubgroupId();
                 if (!subjectGroupIds.contains(groupId)) {
-                    throw new IllegalArgumentException("Group " + groupId + " is not attached to subject " + subject.getId());
+                    throw new IllegalArgumentException(
+                        "Group " +
+                            groupId +
+                            " is not attached to subject " +
+                            subject.getId()
+                    );
                 }
                 group = groupReferenceService.getGroupReferenceById(groupId);
                 if (subgroupId != null) {
-                    allowedSubgroup = groupReferenceService.getSubgroupReferenceById(subgroupId);
+                    allowedSubgroup =
+                        groupReferenceService.getSubgroupReferenceById(
+                            subgroupId
+                        );
                     validateSubgroupBelongsToGroup(allowedSubgroup, group);
                 }
             }
 
-            var key = groupId + "|" + subgroupId + "|" + req.allowedLessonType();
+            var key =
+                groupId + "|" + subgroupId + "|" + req.allowedLessonType();
             if (!seen.add(key)) {
-                throw new IllegalArgumentException("Duplicate scope in request: groupId=" + groupId + ", allowedSubgroupId=" + subgroupId + ", allowedLessonType=" + req.allowedLessonType());
+                throw new IllegalArgumentException(
+                    "Duplicate scope in request: groupId=" +
+                        groupId +
+                        ", allowedSubgroupId=" +
+                        subgroupId +
+                        ", allowedLessonType=" +
+                        req.allowedLessonType()
+                );
             }
-            result.add(PermissionScope.builder()
-                           .permission(permission)
-                           .group(group)
-                           .allowedSubgroup(allowedSubgroup)
-                           .allowedLessonType(req.allowedLessonType())
-                           .build());
+            result.add(
+                PermissionScope.builder()
+                    .permission(permission)
+                    .group(group)
+                    .allowedSubgroup(allowedSubgroup)
+                    .allowedLessonType(req.allowedLessonType())
+                    .build()
+            );
         }
         return result;
     }
 
-    private void validateSubgroupBelongsToGroup(Subgroup subgroup, Group group) {
-        if (subgroup != null && !Objects.equals(subgroup.getGroup().getId(), group.getId())) {
-            throw new IllegalArgumentException("Subgroup does not belong to the specified group");
-        }
-    }
-
-    private TeacherSubjectPermissionResponse toResponse(
-        TeacherSubjectPermission permission
+    private void validateSubgroupBelongsToGroup(
+        Subgroup subgroup,
+        Group group
     ) {
-        var base = permissionMapper.toResponse(permission);
-        var scopes = permissionMapper.scopesForPermission(permission);
-        return new TeacherSubjectPermissionResponse(
-            base.id(),
-            base.teacherId(),
-            base.teacherName(),
-            base.subjectId(),
-            base.allPermissions(),
-            scopes,
-            base.createdAt(),
-            base.updatedAt()
-        );
+        if (
+            subgroup != null &&
+            !Objects.equals(subgroup.getGroup().getId(), group.getId())
+        ) {
+            throw new IllegalArgumentException(
+                "Subgroup does not belong to the specified group"
+            );
+        }
     }
 }

@@ -5,17 +5,15 @@ import com.github.k1mb1.vkr_backend.subject.SubjectPenaltyPolicyApi;
 import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicy;
 import com.github.k1mb1.vkr_backend.subject.web.requests.PenaltyPolicyRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class SubjectPenaltyPolicyService
-    implements SubjectPenaltyPolicyApi {
+class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
 
     final SubjectRepository subjectRepository;
 
@@ -23,42 +21,56 @@ class SubjectPenaltyPolicyService
 
     @Override
     public PenaltyPolicyResponse getPenaltyPolicy(UUID subjectId) {
-        var subject = subjectRepository.findById(subjectId)
-            .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
-        return subjectMapper.toPenaltyPolicyResponse(subject.getPenaltyPolicy());
+        var subject = subjectRepository
+            .findById(subjectId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Subject", subjectId)
+            );
+        return subjectMapper.toPenaltyPolicyResponse(
+            subject.getPenaltyPolicy()
+        );
     }
 
     @Transactional
     @Override
-    public PenaltyPolicyResponse updatePenaltyPolicy(UUID subjectId, PenaltyPolicyRequest request) {
-        var subject = subjectRepository.findById(subjectId)
-            .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
+    public PenaltyPolicyResponse updatePenaltyPolicy(
+        UUID subjectId,
+        PenaltyPolicyRequest request
+    ) {
+        var subject = subjectRepository
+            .findById(subjectId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Subject", subjectId)
+            );
         subject.setPenaltyPolicy(toPenaltyPolicy(request));
-        return subjectMapper.toPenaltyPolicyResponse(subjectRepository.save(subject).getPenaltyPolicy());
+        return subjectMapper.toPenaltyPolicyResponse(
+            subjectRepository.save(subject).getPenaltyPolicy()
+        );
     }
 
     /**
-     * Преобразует запрос политики в embeddable. Понижение и бонус независимы:
+     * Собирает новую политику из запроса. Понижение и бонус независимы:
      * при enabled=true обязательны поля понижения, при bonusEnabled=true — поля бонуса.
-     * Выключенная сторона хранит null в своих параметрах.
+     * Выключенная сторона получает значения по умолчанию (через {@code @Builder.Default}).
      */
     private PenaltyPolicy toPenaltyPolicy(PenaltyPolicyRequest request) {
-        var builder = PenaltyPolicy.builder()
-            .enabled(false)
-            .bonusEnabled(false);
+        var builder = PenaltyPolicy.builder();
 
         if (Boolean.TRUE.equals(request.enabled())) {
-            if (request.operation() == null
-                || request.step() == null
-                || request.gracePeriodLessons() == null
-                || request.intervalLessons() == null
-                || request.maxReductions() == null) {
+            if (
+                request.operation() == null ||
+                request.step() == null ||
+                request.gracePeriodLessons() == null ||
+                request.intervalLessons() == null ||
+                request.maxReductions() == null
+            ) {
                 throw new IllegalArgumentException(
-                    "При включённом понижении (enabled=true) обязательны поля: "
-                    + "operation, step, gracePeriodLessons, intervalLessons, maxReductions"
+                    "При включённом понижении (enabled=true) обязательны поля: " +
+                        "operation, step, gracePeriodLessons, intervalLessons, maxReductions"
                 );
             }
-            builder.enabled(true)
+            builder
+                .enabled(true)
                 .operation(request.operation())
                 .step(request.step())
                 .gracePeriodLessons(request.gracePeriodLessons())
@@ -67,17 +79,20 @@ class SubjectPenaltyPolicyService
         }
 
         if (Boolean.TRUE.equals(request.bonusEnabled())) {
-            if (request.bonusOperation() == null
-                || request.bonusStep() == null
-                || request.bonusGracePeriodLessons() == null
-                || request.bonusIntervalLessons() == null
-                || request.bonusMaxIncreases() == null) {
+            if (
+                request.bonusOperation() == null ||
+                request.bonusStep() == null ||
+                request.bonusGracePeriodLessons() == null ||
+                request.bonusIntervalLessons() == null ||
+                request.bonusMaxIncreases() == null
+            ) {
                 throw new IllegalArgumentException(
-                    "При включённом бонусе (bonusEnabled=true) обязательны поля: "
-                    + "bonusOperation, bonusStep, bonusGracePeriodLessons, bonusIntervalLessons, bonusMaxIncreases"
+                    "При включённом бонусе (bonusEnabled=true) обязательны поля: " +
+                        "bonusOperation, bonusStep, bonusGracePeriodLessons, bonusIntervalLessons, bonusMaxIncreases"
                 );
             }
-            builder.bonusEnabled(true)
+            builder
+                .bonusEnabled(true)
                 .bonusOperation(request.bonusOperation())
                 .bonusStep(request.bonusStep())
                 .bonusGracePeriodLessons(request.bonusGracePeriodLessons())

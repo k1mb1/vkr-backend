@@ -97,7 +97,10 @@ class CheckInSessionServiceSearchTest {
         var result = service.searchStudents(sessionId, CODE, "иванов");
 
         assertThat(result).containsExactly(
-            new PublicStudentResponse(ivanov.getId(), "Иванов И. И.")
+            PublicStudentResponse.builder()
+                .id(ivanov.getId())
+                .username("Иванов И. И.")
+                .build()
         );
     }
 

@@ -21,6 +21,15 @@ import lombok.experimental.SuperBuilder;
         @Index(name = "idx_grades_assignment_id", columnList = "assignment_id"),
     }
 )
+@NamedEntityGraph(
+    name = "Grade.withDetails",
+    attributeNodes = {
+        @NamedAttributeNode("student"),
+        @NamedAttributeNode("lesson"),
+        @NamedAttributeNode("assignment"),
+        @NamedAttributeNode("awardedLesson"),
+    }
+)
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)

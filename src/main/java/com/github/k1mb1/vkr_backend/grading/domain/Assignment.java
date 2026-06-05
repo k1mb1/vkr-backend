@@ -13,27 +13,36 @@ import lombok.experimental.SuperBuilder;
 @Hidden
 @Entity
 @Table(
-    name = "assignments", uniqueConstraints = @UniqueConstraint(
-    name = "uk_assignment_lesson_order", columnNames = { "lesson_id", "order" }
-), indexes = {
-    @Index(name = "idx_assignments_lesson_id", columnList = "lesson_id"),
-}
+    name = "assignments",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_assignment_lesson_order",
+        columnNames = { "lesson_id", "order" }
+    ),
+    indexes = {
+        @Index(name = "idx_assignments_lesson_id", columnList = "lesson_id"),
+    }
+)
+@NamedEntityGraph(
+    name = "Assignment.withLesson",
+    attributeNodes = @NamedAttributeNode("lesson")
 )
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Assignment
-    extends BaseEntity {
+public class Assignment extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_id", nullable = false)
     Lesson lesson;
 
-    @Column(name = "\"order\"", nullable = false) int order;
+    @Column(name = "\"order\"", nullable = false)
+    int order;
 
-    @Column(name = "max_points", nullable = false) int maxPoints;
+    @Column(name = "max_points", nullable = false)
+    int maxPoints;
 
-    @Column(nullable = false) boolean required;
+    @Column(nullable = false)
+    boolean required;
 }

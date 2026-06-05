@@ -4,14 +4,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 @Schema(description = "Запуск опроса по посещаемости")
 public record StartCheckInRequest(
     @NotNull
     @Schema(
-        description = "ID конкретного проведения занятия (lesson_scope). " + "Аудитория опроса совпадает с группой/подгруппой этого scope (или со всеми группами предмета при allGroups=true).",
+        description = "ID конкретного проведения занятия (lesson_scope). " +
+            "Аудитория опроса совпадает с группой/подгруппой этого scope (или со всеми группами предмета при allGroups=true).",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     UUID lessonScopeId,

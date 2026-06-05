@@ -14,15 +14,22 @@ import lombok.experimental.SuperBuilder;
 @Hidden
 @Entity
 @Table(name = "students")
+@NamedEntityGraph(
+    name = "Student.withGroups",
+    attributeNodes = {
+        @NamedAttributeNode("group"),
+        @NamedAttributeNode("subgroup"),
+    }
+)
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Student
-    extends ArchivableEntity {
+public class Student extends ArchivableEntity {
 
-    @Column(nullable = false) String username;
+    @Column(nullable = false)
+    String username;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "group_id", nullable = false)

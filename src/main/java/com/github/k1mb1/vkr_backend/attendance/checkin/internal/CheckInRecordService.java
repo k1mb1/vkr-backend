@@ -8,18 +8,16 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheck
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class CheckInRecordService
-    implements CheckInRecordsApi {
+class CheckInRecordService implements CheckInRecordsApi {
 
     final CheckInSessionRepository sessionRepository;
 
@@ -31,14 +29,25 @@ class CheckInRecordService
 
     @Transactional
     @Override
-    public PublicCheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
-        var session = sessionRepository.findWithDetailsById(sessionId)
-            .orElseThrow(() -> new ResourceNotFoundException("CheckInSession", sessionId));
+    public PublicCheckInRecordResponse checkIn(
+        UUID sessionId,
+        StudentCheckInRequest request
+    ) {
+        var session = sessionRepository
+            .findWithDetailsById(sessionId)
+            .orElseThrow(() ->
+                new ResourceNotFoundException("CheckInSession", sessionId)
+            );
 
         var now = Instant.now();
         var state = session.stateAt(now);
-        if (state != CheckInSessionState.OPEN && state != CheckInSessionState.LATE_WINDOW) {
-            throw new IllegalStateException("Check-in is closed for session: " + sessionId);
+        if (
+            state != CheckInSessionState.OPEN &&
+            state != CheckInSessionState.LATE_WINDOW
+        ) {
+            throw new IllegalStateException(
+                "Check-in is closed for session: " + sessionId
+            );
         }
 
         // Код аудитории проверяем раньше, чем принадлежность студента,
@@ -49,9 +58,13 @@ class CheckInRecordService
 
         var studentId = request.studentId();
         var students = lessonStudentsApi.studentsOf(session.getLessonScope());
-        var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
+        var inScope = students
+            .stream()
+            .anyMatch(s -> s.getId().equals(studentId));
         if (!inScope) {
-            throw new IllegalArgumentException("Student is not part of this lesson audience: " + studentId);
+            throw new IllegalArgumentException(
+                "Student is not part of this lesson audience: " + studentId
+            );
         }
 
         var status = session.statusForCheckInAt(now);
@@ -59,12 +72,15 @@ class CheckInRecordService
             throw new IllegalStateException("Check-in window has elapsed");
         }
 
-        var record = recordRepository.findBySessionIdAndStudentId(sessionId, studentId)
-            .orElseGet(() -> CheckInRecord.builder()
-                .session(session)
-                .student(studentRepository.getReferenceById(studentId))
-                .checkedInAt(now)
-                .build());
+        var record = recordRepository
+            .findBySessionIdAndStudentId(sessionId, studentId)
+            .orElseGet(() ->
+                CheckInRecord.builder()
+                    .session(session)
+                    .student(studentRepository.getReferenceById(studentId))
+                    .checkedInAt(now)
+                    .build()
+            );
 
         // first check-in wins; do not downgrade PRESENT to LATE on repeated submission
         if (record.getId() == null) {
@@ -74,6 +90,9 @@ class CheckInRecordService
 
         var saved = recordRepository.save(record);
         // Отдаём только собственный результат студента — без ID записи и данных других.
-        return new PublicCheckInRecordResponse(saved.getStatus(), saved.getCheckedInAt());
+        return PublicCheckInRecordResponse.builder()
+            .status(saved.getStatus())
+            .checkedInAt(saved.getCheckedInAt())
+            .build();
     }
 }

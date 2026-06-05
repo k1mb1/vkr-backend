@@ -1,13 +1,16 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
+import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Политика временных окон check-in для всего предмета (опциональная фича).
@@ -18,24 +21,25 @@ import lombok.Setter;
  * окна задаются индивидуально при запуске сессии.
  */
 @Hidden
-@Embeddable
+@Entity
+@Table(name = "checkin_policies")
 @Getter
 @Setter
-@Builder(toBuilder = true)
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class CheckInPolicy {
+public class CheckInPolicy extends BaseEntity {
 
     /** Включена ли единая политика окон check-in для предмета. */
     @Builder.Default
-    @Column(name = "checkin_enabled", nullable = false)
+    @Column(nullable = false)
     boolean enabled = false;
 
     /** Длительность основного окна (секунды); значимо только при enabled=true. */
-    @Column(name = "checkin_on_time_seconds")
+    @Column
     Integer onTimeSeconds;
 
     /** Дополнительное окно для опоздавших (секунды); значимо только при enabled=true. */
-    @Column(name = "checkin_late_seconds")
+    @Column
     Integer lateSeconds;
 }

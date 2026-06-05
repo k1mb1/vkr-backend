@@ -15,7 +15,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LessonRepository
-    extends JpaRepository<Lesson, UUID>, JpaSpecificationExecutor<Lesson>
+    extends
+        JpaRepository<Lesson, UUID>,
+        JpaSpecificationExecutor<Lesson>,
+        LessonRepositoryCustom
 {
     @EntityGraph(
         attributePaths = {
@@ -73,6 +76,7 @@ public interface LessonRepository
     @Query(
         """
         SELECT l FROM Lesson l
+        JOIN FETCH l.subject
         WHERE l.subject.id = :subjectId AND l.type = :type
           AND EXISTS (SELECT 1 FROM Assignment a WHERE a.lesson.id = l.id)
         ORDER BY l.orderIndex

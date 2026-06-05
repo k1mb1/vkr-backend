@@ -3,9 +3,10 @@ package com.github.k1mb1.vkr_backend.attendance.checkin.web.requests;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 @Schema(description = "Отметка студента в check-in сессии")
 public record StudentCheckInRequest(
     @NotNull
