@@ -9,14 +9,15 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
+import java.util.UUID;
 
 @Schema(
     description = """
-        Параметры промежуточной аттестации (итоги): единый список банд + режим посещаемости.
-        При enabled = true обязателен непустой bands (проверяется на сервисе). Каждая банда —
-        ярлык и условия (баллы и/или задачи), условия комбинируются по AND. Банды нужно слать
-        по убыванию старшинства. Все вычисления вердикта и «сколько ещё» делает фронт.
-        """
+    Параметры промежуточной аттестации (итоги): единый список банд + режим посещаемости.
+    При enabled = true обязателен непустой bands (проверяется на сервисе). Каждая банда —
+    ярлык и условия (баллы и/или задачи), условия комбинируются по AND. Банды нужно слать
+    по убыванию старшинства. Все вычисления вердикта и «сколько ещё» делает фронт.
+    """
 )
 public record FinalAssessmentPolicyRequest(
     @Schema(
@@ -26,22 +27,30 @@ public record FinalAssessmentPolicyRequest(
     @NotNull
     Boolean enabled,
 
-    @Schema(description = "Банды по убыванию старшинства (первая — самая старшая)")
+    @Schema(
+        description = "Банды по убыванию старшинства (первая — самая старшая)"
+    )
     @Valid
     List<Band> bands,
 
-    @Schema(description = "Учёт посещаемости: COMBINED (в балл) или SEPARATE (отдельный гейт). По умолчанию COMBINED")
+    @Schema(
+        description = "Учёт посещаемости: COMBINED (в балл) или SEPARATE (отдельный гейт). По умолчанию COMBINED"
+    )
     AttendanceMode attendanceMode,
 
     @Schema(description = "SEPARATE: чем меряется гейт — PERCENT или COUNT")
     AttendanceRequirementMode attendanceRequirementMode,
 
-    @Schema(description = "SEPARATE + PERCENT: минимальный процент посещённых занятий (0..100)")
+    @Schema(
+        description = "SEPARATE + PERCENT: минимальный процент посещённых занятий (0..100)"
+    )
     @Min(0)
     @Max(100)
     Integer attendanceMinPercent,
 
-    @Schema(description = "SEPARATE + COUNT: минимальное количество посещённых занятий")
+    @Schema(
+        description = "SEPARATE + COUNT: минимальное количество посещённых занятий"
+    )
     @Min(0)
     Integer attendanceMinCount,
 
@@ -57,17 +66,28 @@ public record FinalAssessmentPolicyRequest(
     @Schema(description = "SEPARATE: засчитывать ли EXCUSED как посещение")
     Boolean attendanceCountExcused
 ) {
-    @Schema(description = "Банда: ярлык и условия его получения (minPoints и/или requiredTasks, AND)")
+    @Schema(
+        description = "Банда: ярлык и условия его получения (minPoints и/или requiredTasks, AND)"
+    )
     public record Band(
-        @Schema(description = "Ярлык, напр. «5», «зачтено»", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "ID банды (null при создании новой)") UUID id,
+
+        @Schema(
+            description = "Ярлык, напр. «5», «зачтено»",
+            requiredMode = Schema.RequiredMode.REQUIRED
+        )
         @NotBlank
         String label,
 
-        @Schema(description = "Минимальный итоговый балл (включительно). null — без ограничения по баллам")
+        @Schema(
+            description = "Минимальный итоговый балл (включительно). null — без ограничения по баллам"
+        )
         @Min(0)
         Integer minPoints,
 
-        @Schema(description = "Минимум закрытых обязательных задач. null — без ограничения по задачам")
+        @Schema(
+            description = "Минимум закрытых обязательных задач. null — без ограничения по задачам"
+        )
         @Min(0)
         Integer requiredTasks
     ) {}

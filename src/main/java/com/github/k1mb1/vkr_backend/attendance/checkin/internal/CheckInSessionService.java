@@ -45,9 +45,6 @@ class CheckInSessionService implements CheckInSessionApi {
     /** Минимальная длина запроса для поиска студента по фамилии — отсекает попытку выгрузить весь ростер пустым/коротким запросом. */
     private static final int MIN_SEARCH_QUERY_LENGTH = 2;
 
-    /** Верхняя граница на размер выдачи поиска — чтобы по слишком общей подстроке нельзя было получить всю группу. */
-    private static final int MAX_SEARCH_RESULTS = 20;
-
     final CheckInSessionRepository sessionRepository;
 
     final CheckInRecordRepository recordRepository;

@@ -2,15 +2,14 @@ package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.CollectionTable;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OrderColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +33,11 @@ import lombok.experimental.SuperBuilder;
  *
  *   // посещаемость-гейт (см. ниже): не пройден -> вердикта нет (не допущен)
  *   if (attendanceMode == SEPARATE && !gateOk) -> не допущен
+ *
+ *   // допуски заданий: каждое задание с admissionMode != NONE может ограничить максимально
+ *   // доступную банду ("потолок"). Для режима TIERED задание хранит ссылку bandId на банду
+ *   // и минимальный балл за задание; фронт вычисляет доступные банды по пересечению
+ *   // требований всех заданий-допусков.
  *
  *   // вердикт = первая подходящая банда (банды по убыванию старшинства):
  *   подходит(band) = (band.minPoints == null    || total >= band.minPoints)
@@ -68,12 +72,13 @@ public class FinalAssessmentPolicy extends BaseEntity {
     boolean enabled = false;
 
     /** Банды итоговой аттестации по убыванию старшинства. Пусто при enabled = false. */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(
-        name = "final_assessment_bands",
-        joinColumns = @JoinColumn(name = "policy_id")
+    @OneToMany(
+        mappedBy = "policy",
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
     )
-    @OrderColumn(name = "position")
+    @OrderBy("position ASC")
     @Builder.Default
     List<AssessmentBand> bands = new ArrayList<>();
 

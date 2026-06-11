@@ -91,10 +91,6 @@ class LessonService implements LessonApi {
             lessonScopesApi.replaceScopesOfLesson(id, request.scopes());
         }
 
-        if (request.assignments() != null) {
-            gradingApi.updateAssignmentsOfLesson(id, request.assignments());
-        }
-
         return getLessonById(id);
     }
 

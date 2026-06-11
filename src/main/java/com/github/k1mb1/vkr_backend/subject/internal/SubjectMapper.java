@@ -3,9 +3,9 @@ package com.github.k1mb1.vkr_backend.subject.internal;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
+import com.github.k1mb1.vkr_backend.subject.domain.AssessmentBand;
 import com.github.k1mb1.vkr_backend.subject.domain.AttendanceHighlightPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.AttendancePolicy;
-import com.github.k1mb1.vkr_backend.subject.domain.AssessmentBand;
 import com.github.k1mb1.vkr_backend.subject.domain.CheckInPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.FinalAssessmentPolicy;
 import com.github.k1mb1.vkr_backend.subject.domain.GradingHighlightPolicy;
@@ -48,6 +48,7 @@ public interface SubjectMapper {
         FinalAssessmentPolicy policy
     );
 
+    @Mapping(target = "id", source = "id")
     FinalAssessmentPolicyResponse.Band toBand(AssessmentBand band);
 
     @Mapping(target = "id", ignore = true)

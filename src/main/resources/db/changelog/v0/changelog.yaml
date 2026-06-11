@@ -49,3 +49,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260605000000-extract-policy-entities.sql
   - include:
       file: db/changelog/v0/20260606000000-subject-final-assessment-policy.sql
+  - include:
+      file: db/changelog/v0/20260607000000-assignment-admission.sql

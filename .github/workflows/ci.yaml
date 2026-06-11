@@ -23,15 +23,15 @@ jobs:
       - name: Build with Maven
         run: ./mvnw clean compile
 
-      # - name: Run tests
-      #   run: ./mvnw test
+      - name: Run tests
+        run: ./mvnw test
 
       - name: Package (optional)
         run: ./mvnw package -DskipTests
 
-      # - name: Upload test reports (if needed)
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: surefire-reports
-      #     path: target/surefire-reports/
+      - name: Upload test reports (if needed)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/

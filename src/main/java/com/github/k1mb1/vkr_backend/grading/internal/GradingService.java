@@ -5,6 +5,7 @@ import com.github.k1mb1.vkr_backend.attendance.AttendanceSummary;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.domain.Assignment;
+import com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionMode;
 import com.github.k1mb1.vkr_backend.grading.domain.Grade;
 import com.github.k1mb1.vkr_backend.grading.web.filters.GradingFilter;
 import com.github.k1mb1.vkr_backend.grading.web.requests.BulkUpdateAssignmentsRequest;
@@ -544,6 +545,9 @@ class GradingService implements GradingApi {
         }
         var lessonRef = lessonRepository.getReferenceById(request.lessonId());
         var items = request.items();
+        for (var item : items) {
+            validateAdmission(item.admissionMode(), item.admissionMinScore());
+        }
         var assignments = new ArrayList<Assignment>(items.size());
         for (int i = 0; i < items.size(); i++) {
             var item = items.get(i);
@@ -553,6 +557,22 @@ class GradingService implements GradingApi {
                     .order(i + 1)
                     .maxPoints(item.maxPoints())
                     .required(item.required())
+                    .admissionMode(item.admissionMode())
+                    .admissionMinScore(item.admissionMinScore())
+                    .admissionTiers(
+                        item.admissionTiers() != null
+                            ? item
+                                  .admissionTiers()
+                                  .stream()
+                                  .map(t ->
+                                      com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionTier.builder()
+                                          .bandId(t.bandId())
+                                          .minScore(t.minScore())
+                                          .build()
+                                  )
+                                  .toList()
+                            : new ArrayList<>()
+                    )
                     .build()
             );
         }
@@ -570,6 +590,9 @@ class GradingService implements GradingApi {
         BulkUpdateAssignmentsRequest request
     ) {
         var items = request.items();
+        for (var item : items) {
+            validateAdmission(item.admissionMode(), item.admissionMinScore());
+        }
 
         var seenIds = new HashSet<UUID>();
         for (var item : items) {
@@ -638,6 +661,22 @@ class GradingService implements GradingApi {
             assignment.setOrder(item.order());
             assignment.setMaxPoints(item.maxPoints());
             assignment.setRequired(item.required());
+            assignment.setAdmissionMode(item.admissionMode());
+            assignment.setAdmissionMinScore(item.admissionMinScore());
+            assignment.setAdmissionTiers(
+                item.admissionTiers() != null
+                    ? item
+                          .admissionTiers()
+                          .stream()
+                          .map(t ->
+                              com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionTier.builder()
+                                  .bandId(t.bandId())
+                                  .minScore(t.minScore())
+                                  .build()
+                          )
+                          .toList()
+                    : new ArrayList<>()
+            );
         }
         var persisted = assignmentRepository.saveAll(assignments);
         var byIdPersisted = new HashMap<UUID, Assignment>();
@@ -718,5 +757,19 @@ class GradingService implements GradingApi {
                     .build()
             )
             .toList();
+    }
+
+    private void validateAdmission(
+        AssignmentAdmissionMode mode,
+        Integer admissionMinScore
+    ) {
+        if (
+            mode == AssignmentAdmissionMode.PASS_FAIL &&
+            admissionMinScore != null
+        ) {
+            throw new IllegalArgumentException(
+                "PASS_FAIL mode does not require admissionMinScore"
+            );
+        }
     }
 }

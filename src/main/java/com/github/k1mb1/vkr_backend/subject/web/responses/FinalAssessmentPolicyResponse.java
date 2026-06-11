@@ -4,27 +4,37 @@ import com.github.k1mb1.vkr_backend.subject.domain.AttendanceMode;
 import com.github.k1mb1.vkr_backend.subject.domain.AttendanceRequirementMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-@Schema(description = "Параметры промежуточной аттестации (итоги считает фронт)")
+@Schema(
+    description = "Параметры промежуточной аттестации (итоги считает фронт)"
+)
 public record FinalAssessmentPolicyResponse(
-    @Schema(description = "Включены ли итоги (банды)")
-    boolean enabled,
+    @Schema(description = "Включены ли итоги (банды)") boolean enabled,
 
-    @Schema(description = "Банды по убыванию старшинства (первая — самая старшая)")
+    @Schema(
+        description = "Банды по убыванию старшинства (первая — самая старшая)"
+    )
     List<Band> bands,
 
-    @Schema(description = "Учёт посещаемости: COMBINED (в балл) или SEPARATE (отдельный гейт)")
+    @Schema(
+        description = "Учёт посещаемости: COMBINED (в балл) или SEPARATE (отдельный гейт)"
+    )
     AttendanceMode attendanceMode,
 
     @Schema(description = "SEPARATE: чем меряется гейт — PERCENT или COUNT")
     AttendanceRequirementMode attendanceRequirementMode,
 
-    @Schema(description = "SEPARATE + PERCENT: минимальный процент посещённых занятий (0..100)")
+    @Schema(
+        description = "SEPARATE + PERCENT: минимальный процент посещённых занятий (0..100)"
+    )
     Integer attendanceMinPercent,
 
-    @Schema(description = "SEPARATE + COUNT: минимальное количество посещённых занятий")
+    @Schema(
+        description = "SEPARATE + COUNT: минимальное количество посещённых занятий"
+    )
     Integer attendanceMinCount,
 
     @Schema(description = "SEPARATE: засчитывается ли PRESENT как посещение")
@@ -39,16 +49,23 @@ public record FinalAssessmentPolicyResponse(
     @Schema(description = "SEPARATE: засчитывается ли EXCUSED как посещение")
     boolean attendanceCountExcused
 ) {
-    @Schema(description = "Банда: ярлык и условия его получения (minPoints и/или requiredTasks, AND)")
+    @Schema(
+        description = "Банда: ярлык и условия его получения (minPoints и/или requiredTasks, AND)"
+    )
     @Builder
     public record Band(
-        @Schema(description = "Ярлык, напр. «5», «зачтено»")
-        String label,
+        @Schema(description = "ID банды") UUID id,
 
-        @Schema(description = "Минимальный итоговый балл (включительно), null — без ограничения")
+        @Schema(description = "Ярлык, напр. «5», «зачтено»") String label,
+
+        @Schema(
+            description = "Минимальный итоговый балл (включительно), null — без ограничения"
+        )
         Integer minPoints,
 
-        @Schema(description = "Минимум закрытых обязательных задач, null — без ограничения")
+        @Schema(
+            description = "Минимум закрытых обязательных задач, null — без ограничения"
+        )
         Integer requiredTasks
     ) {}
 }
