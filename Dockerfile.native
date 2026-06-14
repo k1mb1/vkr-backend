@@ -19,10 +19,13 @@ COPY src ./src
 RUN ./mvnw -B -Pnative -DskipTests native:compile
 
 ############################################################
-# Stage 2 — minimal runtime image with C libs for native-image
+# Stage 2 — minimal runtime image
 ############################################################
-FROM gcr.io/distroless/cc-debian12
+FROM alpine:latest
 WORKDIR /app
+
+# Install minimal runtime dependencies for native-image
+RUN apk add --no-cache libc6-compat libz
 
 # A single self-contained native binary — no JVM, no jar
 COPY --from=builder /workspace/target/vkr-backend /app/app
