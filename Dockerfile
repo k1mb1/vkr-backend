@@ -12,6 +12,7 @@ COPY --from=builder /workspace/target/*.jar /app/app.jar
 
 WORKDIR /app
 EXPOSE 8080
-ENV SPRING_PROFILES_ACTIVE=prod
 
+# The `prod` profile is the application's default (spring.profiles.default),
+# so no SPRING_PROFILES_ACTIVE is needed here.
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

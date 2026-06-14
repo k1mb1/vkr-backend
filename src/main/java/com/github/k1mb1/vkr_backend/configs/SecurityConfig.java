@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.configs;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.SupplierJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -42,10 +42,17 @@ public class SecurityConfig {
         this.jwtAuthConverter = jwtAuthConverter;
     }
 
+    /**
+     * Explicit decoder so the bean is present unconditionally — Spring Boot's
+     * auto-configured one is created only when {@code issuer-uri} is set at AOT
+     * build time, which isn't the case for the native image (the value arrives
+     * from the environment at runtime). {@link SupplierJwtDecoder} defers the
+     * OIDC discovery network call to the first token decode, so the context
+     * starts even when the issuer isn't yet reachable.
+     */
     @Bean
-    @Lazy
     public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withIssuerLocation(issuerUri).build();
+        return new SupplierJwtDecoder(() -> NimbusJwtDecoder.withIssuerLocation(issuerUri).build());
     }
 
     @Bean

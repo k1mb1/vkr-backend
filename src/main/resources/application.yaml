@@ -2,6 +2,10 @@ server:
   port: ${PORT:8080}
 
 spring:
+  profiles:
+    # Active profile when none is set explicitly — production runtime needs
+    # nothing extra, tests/dev override via @ActiveProfiles / SPRING_PROFILES_ACTIVE.
+    default: prod
   application:
     name: vkr-backend
   datasource:

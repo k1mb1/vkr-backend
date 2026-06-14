@@ -134,15 +134,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <!-- Active under the Spring Boot `native` profile; pin the binary name
-                     so the multi-stage Docker build can COPY target/vkr-backend reliably. -->
-                <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <configuration>
-                    <imageName>vkr-backend</imageName>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <executions>
@@ -164,5 +155,29 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Only contributes config when building the GraalVM native image
+             (`-Pnative`). Declaring the native-maven-plugin in the default
+             build makes it rewrite the surefire configuration on every test
+             run (emitting the deprecated `systemProperties` warning), so it
+             lives here alongside Spring Boot's own `native` profile. The
+             pinned image name lets the multi-stage Docker build COPY
+             target/vkr-backend reliably. -->
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <configuration>
+                            <imageName>vkr-backend</imageName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

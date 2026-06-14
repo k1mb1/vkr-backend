@@ -40,6 +40,7 @@ COPY --from=builder /workspace/target/vkr-backend /app/app
 
 USER appuser
 EXPOSE 8080
-ENV SPRING_PROFILES_ACTIVE=prod
 
+# The `prod` profile is the application's default (spring.profiles.default),
+# so no SPRING_PROFILES_ACTIVE is needed here.
 ENTRYPOINT ["/app/app"]
