@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.configs;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -8,6 +9,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,9 +36,16 @@ public class SecurityConfig {
     private final JwtAuthConverter jwtAuthConverter;
 
     @Value("${app.cors.allowed-origins}") String[] allowedOrigins;
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String issuerUri;
 
     public SecurityConfig(JwtAuthConverter jwtAuthConverter) {
         this.jwtAuthConverter = jwtAuthConverter;
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "spring.security.oauth2.resourceserver.jwt.issuer-uri")
+    public JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withIssuerLocation(issuerUri).build();
     }
 
     @Bean
