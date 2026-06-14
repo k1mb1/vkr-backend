@@ -1,5 +1,9 @@
 package com.github.k1mb1.vkr_backend.config;
 
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -21,8 +25,12 @@ public class NativeImageHints implements RuntimeHintsRegistrar {
         hints.reflection().registerType(UUID.class, MemberCategory.values());
         hints.reflection().registerType(UUID[].class, MemberCategory.values());
 
-        // Spring Security OAuth2 JWT decoding
+        // Spring Security OAuth2 JWT decoding — NimbusJwtDecoder needs reflection for JOSE library
         hints.reflection().registerType(JwtDecoder.class, MemberCategory.values());
         hints.reflection().registerType(NimbusJwtDecoder.class, MemberCategory.values());
+        hints.reflection().registerType(ConfigurableJWTProcessor.class, MemberCategory.values());
+        hints.reflection().registerType(JWSKeySelector.class, MemberCategory.values());
+        hints.reflection().registerType(RSAKey.class, MemberCategory.values());
+        hints.reflection().registerType(JOSEException.class, MemberCategory.values());
     }
 }
