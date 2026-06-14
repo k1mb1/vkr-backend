@@ -134,6 +134,15 @@
                 </configuration>
             </plugin>
             <plugin>
+                <!-- Active under the Spring Boot `native` profile; pin the binary name
+                     so the multi-stage Docker build can COPY target/vkr-backend reliably. -->
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <configuration>
+                    <imageName>vkr-backend</imageName>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <executions>

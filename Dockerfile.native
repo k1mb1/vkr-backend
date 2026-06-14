@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+
+############################################################
+# Stage 1 — build a GraalVM native executable
+############################################################
+FROM ghcr.io/graalvm/graalvm-community:21 AS builder
+WORKDIR /workspace
+
+# `mvnw` (only-script wrapper) needs unzip to unpack the Maven distribution
+RUN microdnf install -y unzip && microdnf clean all
+
+# Maven wrapper + descriptor first to leverage Docker layer caching
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml lombok.config ./
+RUN ./mvnw -B dependency:go-offline
+
+# Sources and native compilation (Spring Boot AOT + GraalVM native-image)
+COPY src ./src
+RUN ./mvnw -B -Pnative -DskipTests native:compile
+
+############################################################
+# Stage 2 — minimal runtime image
+############################################################
+FROM gcr.io/distroless/base-debian12
+WORKDIR /app
+
+# A single self-contained native binary — no JVM, no jar
+COPY --from=builder /workspace/target/vkr-backend /app/app
+
+EXPOSE 8080
+ENV SPRING_PROFILES_ACTIVE=prod
+
+ENTRYPOINT ["/app/app"]
