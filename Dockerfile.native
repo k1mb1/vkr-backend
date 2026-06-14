@@ -19,9 +19,9 @@ COPY src ./src
 RUN ./mvnw -B -Pnative -DskipTests native:compile
 
 ############################################################
-# Stage 2 — minimal runtime image
+# Stage 2 — minimal runtime image with C libs for native-image
 ############################################################
-FROM gcr.io/distroless/base-debian12
+FROM gcr.io/distroless/cc-debian12
 WORKDIR /app
 
 # A single self-contained native binary — no JVM, no jar
