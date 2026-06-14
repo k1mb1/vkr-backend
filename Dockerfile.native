@@ -19,17 +19,26 @@ COPY src ./src
 RUN ./mvnw -B -Pnative -DskipTests native:compile
 
 ############################################################
-# Stage 2 — minimal runtime image
+# Stage 2 — minimal glibc runtime
+#
+# The native binary is dynamically linked against glibc and needs
+# libz.so.1 (zlib) at runtime. debian:bookworm-slim ships both glibc
+# and zlib1g out of the box; we only add CA certificates for outbound
+# HTTPS (e.g. the OAuth2 issuer). Alpine is intentionally avoided: it
+# uses musl, which is not reliably compatible with a glibc native image.
 ############################################################
-FROM alpine:latest
+FROM debian:bookworm-slim
 WORKDIR /app
 
-# Install minimal runtime dependencies for native-image
-RUN apk add --no-cache libc6-compat libz
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -u 1001 appuser
 
 # A single self-contained native binary — no JVM, no jar
 COPY --from=builder /workspace/target/vkr-backend /app/app
 
+USER appuser
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=prod
 
