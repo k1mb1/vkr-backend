@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: Build & test (JVM)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -35,3 +36,24 @@ jobs:
         with:
           name: surefire-reports
           path: target/surefire-reports/
+
+  docker:
+    name: Build native Docker image
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build native image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.native
+          push: false
+          tags: vkr-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
