@@ -3,7 +3,7 @@
 ############################################################
 # Stage 1 — build a GraalVM native executable
 ############################################################
-FROM ghcr.io/graalvm/graalvm-community:21 AS builder
+FROM ghcr.io/graalvm/graalvm-community:25 AS builder
 WORKDIR /workspace
 
 # `mvnw` (only-script wrapper) needs unzip to unpack the Maven distribution
