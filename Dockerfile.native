@@ -1,46 +1,17 @@
 # syntax=docker/dockerfile:1
-
-############################################################
-# Stage 1 — build a GraalVM native executable
-############################################################
 FROM ghcr.io/graalvm/graalvm-community:25 AS builder
 WORKDIR /workspace
-
-# `mvnw` (only-script wrapper) needs unzip to unpack the Maven distribution
 RUN microdnf install -y unzip && microdnf clean all
-
-# Maven wrapper + descriptor first to leverage Docker layer caching
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml lombok.config ./
 RUN ./mvnw -B dependency:go-offline
-
-# Sources and native compilation (Spring Boot AOT + GraalVM native-image)
 COPY src ./src
 RUN ./mvnw -B -Pnative -DskipTests native:compile
 
-############################################################
-# Stage 2 — minimal glibc runtime
-#
-# The native binary is dynamically linked against glibc and needs
-# libz.so.1 (zlib) at runtime. debian:bookworm-slim ships both glibc
-# and zlib1g out of the box; we only add CA certificates for outbound
-# HTTPS (e.g. the OAuth2 issuer). Alpine is intentionally avoided: it
-# uses musl, which is not reliably compatible with a glibc native image.
-############################################################
 FROM debian:bookworm-slim
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd -r -u 1001 appuser
-
-# A single self-contained native binary — no JVM, no jar
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/* && useradd -r -u 1001 appuser
 COPY --from=builder /workspace/target/vkr-backend /app/app
-
 USER appuser
 EXPOSE 8080
-
-# The `prod` profile is the application's default (spring.profiles.default),
-# so no SPRING_PROFILES_ACTIVE is needed here.
 ENTRYPOINT ["/app/app"]
