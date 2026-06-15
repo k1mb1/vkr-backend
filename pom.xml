@@ -157,13 +157,6 @@
     </build>
 
     <profiles>
-        <!-- Only contributes config when building the GraalVM native image
-             (`-Pnative`). Declaring the native-maven-plugin in the default
-             build makes it rewrite the surefire configuration on every test
-             run (emitting the deprecated `systemProperties` warning), so it
-             lives here alongside Spring Boot's own `native` profile. The
-             pinned image name lets the multi-stage Docker build COPY
-             target/vkr-backend reliably. -->
         <profile>
             <id>native</id>
             <build>
