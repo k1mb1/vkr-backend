@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.lesson.web;
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.web.filters.LessonFilter;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkCreateLessonsRequest;
+import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkScheduleLessonsRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.SetActiveLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
@@ -97,6 +98,23 @@ public class LessonController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
             lessonApi.bulkCreate(request)
+        );
+    }
+
+    @Operation(
+        summary = "Создание занятия с серией проведений по недельному шаблону",
+        description = "Дата первой пары + повторяющийся недельный шаблон (внешний массив — недели, внутренний — дни). " +
+            "Создаёт одно занятие и count проведений (scope'ов) с автоматически проставленными датами."
+    )
+    @PostMapping("/bulk-schedule")
+    public ResponseEntity<LessonResponse> bulkSchedule(
+        @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Параметры расписания",
+            required = true
+        ) BulkScheduleLessonsRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            lessonApi.bulkSchedule(request)
         );
     }
 }

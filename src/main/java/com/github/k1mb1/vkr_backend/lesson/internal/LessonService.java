@@ -3,6 +3,9 @@ package com.github.k1mb1.vkr_backend.lesson.internal;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
+import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
+import com.github.k1mb1.vkr_backend.group.domain.Group;
+import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.LessonScopesApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
@@ -10,11 +13,15 @@ import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import com.github.k1mb1.vkr_backend.lesson.web.filters.LessonFilter;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkCreateLessonsRequest;
+import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkScheduleLessonsRequest;
+import com.github.k1mb1.vkr_backend.lesson.web.requests.LessonScopeAudienceRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.UpdateLessonRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonResponse;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -42,6 +49,8 @@ class LessonService implements LessonApi {
     final LessonScopesApi lessonScopesApi;
 
     final GradingApi gradingApi;
+
+    final GroupReferenceService groupReferenceService;
 
     static LocalDate earliestStartedAt(Lesson lesson) {
         return lesson
@@ -212,6 +221,109 @@ class LessonService implements LessonApi {
                 )
             )
             .toList();
+    }
+
+    @Transactional
+    @Override
+    public LessonResponse bulkSchedule(BulkScheduleLessonsRequest request) {
+        var subject = subjectRepository
+            .findById(request.subjectId())
+            .orElseThrow(() ->
+                new ResourceNotFoundException("Subject", request.subjectId())
+            );
+
+        var dates = schedule(
+            request.firstLessonDate(),
+            request.count(),
+            request.days()
+        );
+
+        // Одно занятие-шаблон; каждая дата серии — отдельное проведение (scope) той же аудитории.
+        var counters = nextOrderIndexByType(subject.getId());
+        var lesson = lessonTemplate(
+            subject.getId(),
+            request.lessonType(),
+            counters.merge(request.lessonType(), 1, Integer::sum)
+        );
+        for (var date : dates) {
+            lesson
+                .getScopes()
+                .add(buildScope(lesson, date, request.audience()));
+        }
+        assignDefaultTopics(List.of(lesson));
+
+        var saved = lessonRepository.save(lesson);
+        return lessonMapper.toResponse(
+            saved,
+            saved.getScopes().stream().toList(),
+            List.<AssignmentResponse>of()
+        );
+    }
+
+    /**
+     * Даты пар по недельному шаблону: первая пара = firstLessonDate, затем шаблон зацикливается
+     * по неделям, пока не наберётся count дат. Внешний список — недели, внутренний — дни недели.
+     */
+    static List<LocalDate> schedule(
+        LocalDate firstLessonDate,
+        int count,
+        List<List<DayOfWeek>> weeks
+    ) {
+        // Понедельник недели, в которой стоит первая пара, — точка отсчёта.
+        var weekStart = firstLessonDate.with(
+            TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
+        );
+        var dates = new ArrayList<LocalDate>(count);
+        for (int w = 0; dates.size() < count; w++) {
+            var days = weeks
+                .get(w % weeks.size())
+                .stream()
+                .sorted()
+                .toList();
+            for (var day : days) {
+                if (dates.size() == count) {
+                    break;
+                }
+                dates.add(weekStart.plusWeeks(w).with(day));
+            }
+        }
+        return dates;
+    }
+
+    private LessonScope buildScope(
+        Lesson lesson,
+        LocalDate startedAt,
+        LessonScopeAudienceRequest audience
+    ) {
+        var scope = LessonScope.builder()
+            .lesson(lesson)
+            .startedAt(startedAt)
+            .build();
+        if (audience == null) {
+            scope.setAllGroups(true);
+            return scope;
+        }
+        Group group = groupReferenceService.getGroupReferenceById(
+            audience.groupId()
+        );
+        Subgroup allowedSubgroup =
+            audience.allowedSubgroupId() != null
+                ? groupReferenceService.getSubgroupReferenceById(
+                      audience.allowedSubgroupId()
+                  )
+                : null;
+        if (
+            allowedSubgroup != null &&
+            !Objects.equals(allowedSubgroup.getGroup().getId(), group.getId())
+        ) {
+            throw new IllegalArgumentException(
+                "Subgroup does not belong to the specified group"
+            );
+        }
+        scope.setAllGroups(false);
+        scope.setGroup(group);
+        scope.setAllowedSubgroup(allowedSubgroup);
+        return scope;
     }
 
     private Lesson lessonTemplate(
