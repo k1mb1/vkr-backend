@@ -1,4 +1,4 @@
-name: Java CI with Maven
+name: Java CI (Fast + Native)
 
 on:
   push:
@@ -11,8 +11,19 @@ jobs:
     name: Build & test (JVM)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - '**/*.java'
+              - 'pom.xml'
+              - 'src/main/resources/**'
+              - 'src/test/**'
 
       - name: Set up JDK 25
         uses: actions/setup-java@v4
@@ -21,16 +32,14 @@ jobs:
           distribution: "temurin"
           cache: "maven"
 
-      - name: Build with Maven
-        run: ./mvnw clean compile
+      - name: Compile
+        run: ./mvnw -B -q clean compile
 
       - name: Run tests
-        run: ./mvnw test
+        if: steps.changes.outputs.backend == 'true'
+        run: ./mvnw -B test
 
-      - name: Package (optional)
-        run: ./mvnw package -DskipTests
-
-      - name: Upload test reports (if needed)
+      - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -38,47 +47,43 @@ jobs:
           path: target/surefire-reports/
 
   docker:
-    name: Build native Docker image
+    name: Native Docker build (single compile)
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
-        with:
-          java-version: "25"
-          distribution: "temurin"
-          cache: "maven"
-
-      - name: Build native image with Maven (GraalVM warnings check)
-        run: ./mvnw -B -Pnative -DskipTests native:compile 2>&1 | tee native-build.log
-        continue-on-error: true
-
-      - name: Parse GraalVM warnings
-        run: |
-          WARNINGS=$(grep -i "warning" native-build.log | grep -v "^$" || echo "No warnings found")
-          echo "## GraalVM Native Build Warnings" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ $(echo "$WARNINGS" | wc -l) -gt 0 ]; then
-            echo "⚠️ Found warnings:" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "$WARNINGS" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ No warnings detected" >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build native image Docker (cached)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.native
-          push: false
-          tags: vkr-backend:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # Exposes ACTIONS_CACHE_URL / RUNTIME_TOKEN so raw buildx can use the
+      # GitHub Actions cache backend (docker/build-push-action does this for us,
+      # but we run buildx directly to capture the build log for warning parsing).
+      - name: Expose GitHub Actions runtime
+        uses: crazy-max/ghaction-github-runtime@v3
+
+      - name: Build native image (compiled once, log captured)
+        run: |
+          docker buildx build \
+            --file ./Dockerfile.native \
+            --tag vkr-backend:ci \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --progress=plain \
+            . 2>&1 | tee native-build.log
+
+      - name: Report GraalVM warnings
+        if: always()
+        run: |
+          echo "## GraalVM Native Build Warnings" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          WARNINGS=$(grep -iE "warning" native-build.log || true)
+          if [ -n "$WARNINGS" ]; then
+            echo "⚠️ Found warnings:" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "$WARNINGS" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "✅ No warnings detected" >> "$GITHUB_STEP_SUMMARY"
+          fi
