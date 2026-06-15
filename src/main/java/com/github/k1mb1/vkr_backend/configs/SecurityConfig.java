@@ -8,6 +8,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.SupplierJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -33,9 +36,23 @@ public class SecurityConfig {
     private final JwtAuthConverter jwtAuthConverter;
 
     @Value("${app.cors.allowed-origins}") String[] allowedOrigins;
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String issuerUri;
 
     public SecurityConfig(JwtAuthConverter jwtAuthConverter) {
         this.jwtAuthConverter = jwtAuthConverter;
+    }
+
+    /**
+     * Explicit decoder so the bean is present unconditionally — Spring Boot's
+     * auto-configured one is created only when {@code issuer-uri} is set at AOT
+     * build time, which isn't the case for the native image (the value arrives
+     * from the environment at runtime). {@link SupplierJwtDecoder} defers the
+     * OIDC discovery network call to the first token decode, so the context
+     * starts even when the issuer isn't yet reachable.
+     */
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        return new SupplierJwtDecoder(() -> NimbusJwtDecoder.withIssuerLocation(issuerUri).build());
     }
 
     @Bean

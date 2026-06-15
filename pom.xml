@@ -16,7 +16,7 @@
     <properties>
         <springdoc.version>3.0.2</springdoc.version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
     </properties>
 
     <dependencies>
@@ -155,5 +155,29 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Only contributes config when building the GraalVM native image
+             (`-Pnative`). Declaring the native-maven-plugin in the default
+             build makes it rewrite the surefire configuration on every test
+             run (emitting the deprecated `systemProperties` warning), so it
+             lives here alongside Spring Boot's own `native` profile. The
+             pinned image name lets the multi-stage Docker build COPY
+             target/vkr-backend reliably. -->
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <configuration>
+                            <imageName>vkr-backend</imageName>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
