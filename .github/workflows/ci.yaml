@@ -47,6 +47,30 @@ jobs:
           path: target/surefire-reports/
 
   docker:
+    name: Docker build (JVM)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Expose GitHub Actions runtime
+        uses: crazy-max/ghaction-github-runtime@v3
+
+      - name: Build JVM image
+        run: |
+          docker buildx build \
+            --file ./Dockerfile \
+            --tag vkr-backend:ci-jvm \
+            --cache-from type=gha,scope=jvm \
+            --cache-to type=gha,mode=max,scope=jvm \
+            --progress=plain \
+            .
+
+  docker-native:
     name: Native Docker build (single compile)
     needs: build
     runs-on: ubuntu-latest

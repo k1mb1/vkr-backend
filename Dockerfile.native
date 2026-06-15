@@ -4,11 +4,11 @@ WORKDIR /workspace
 
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml lombok.config ./
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,id=m2,target=/root/.m2 \
     ./mvnw -B -q -e -DskipTests dependency:go-offline
 
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 \
+RUN --mount=type=cache,id=m2,target=/root/.m2 \
     ./mvnw -B -e -T 1C -Pnative -DskipTests native:compile
 
 FROM debian:bookworm-slim
