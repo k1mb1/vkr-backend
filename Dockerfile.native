@@ -10,8 +10,6 @@ RUN ./mvnw -B -Pnative -DskipTests native:compile
 
 FROM debian:bookworm-slim
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/* && useradd -r -u 1001 appuser
 COPY --from=builder /workspace/target/vkr-backend /app/app
-USER appuser
 EXPOSE 8080
 ENTRYPOINT ["/app/app"]
