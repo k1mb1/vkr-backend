@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM ghcr.io/graalvm/graalvm-community:25 AS builder
 WORKDIR /workspace
-RUN microdnf install -y unzip && microdnf clean all
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml lombok.config ./
 RUN ./mvnw -B dependency:go-offline
