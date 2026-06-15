@@ -61,7 +61,10 @@ jobs:
         uses: crazy-max/ghaction-github-runtime@v3
 
       - name: Build native image (compiled once, log captured)
+        shell: bash
+
         run: |
+          set -o pipefail
           docker buildx build \
             --file ./Dockerfile.native \
             --tag vkr-backend:ci \

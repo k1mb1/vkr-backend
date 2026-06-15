@@ -1,4 +1,4 @@
-FROM ghcr.io/graalvm/native-image:ol9-java25 AS builder
+FROM ghcr.io/graalvm/graalvm-community:25 AS builder
 WORKDIR /workspace
 
 COPY .mvn/ .mvn/
