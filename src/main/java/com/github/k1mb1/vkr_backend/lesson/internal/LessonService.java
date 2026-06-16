@@ -238,17 +238,23 @@ class LessonService implements LessonApi {
             request.days()
         );
 
-        // Одно занятие-шаблон; каждая дата серии — отдельное проведение (scope) той же аудитории.
+        // Одно занятие-шаблон; на каждую дату серии — по проведению (scope) для каждой аудитории.
         var counters = nextOrderIndexByType(subject.getId());
         var lesson = lessonTemplate(
             subject.getId(),
             request.lessonType(),
             counters.merge(request.lessonType(), 1, Integer::sum)
         );
+        var audiences = request.audiences();
         for (var date : dates) {
-            lesson
-                .getScopes()
-                .add(buildScope(lesson, date, request.audience()));
+            if (audiences == null || audiences.isEmpty()) {
+                // null/пустой список аудиторий — одно проведение на все группы.
+                lesson.getScopes().add(buildScope(lesson, date, null));
+            } else {
+                for (var audience : audiences) {
+                    lesson.getScopes().add(buildScope(lesson, date, audience));
+                }
+            }
         }
         assignDefaultTopics(List.of(lesson));
 

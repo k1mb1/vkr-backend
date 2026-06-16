@@ -11,6 +11,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Schema(
@@ -18,8 +19,8 @@ import java.util.UUID;
     Создание одного занятия с серией проведений по недельному шаблону.
     `days` — повторяющийся шаблон: внешний список = недели, внутренний = дни недели внутри недели.
     Генерация идёт по неделям, шаблон зацикливается, пока не наберётся `count` дат проведений.
-    Создаётся одно занятие-шаблон выбранного типа и `count` scope'ов (проведений) для указанной
-    аудитории — по одному на каждую вычисленную дату.
+    Создаётся одно занятие-шаблон выбранного типа; на каждую вычисленную дату создаётся по одному
+    scope'у (проведению) для каждой указанной аудитории — итого `count` × `audiences.size()` scope'ов.
     Пример: firstLessonDate=понедельник, days=[["MONDAY","THURSDAY"], []], count=5
     → проведения на пн/чт 1-й недели, пн/чт 3-й недели, пн 5-й недели (раз в 2 недели).
     """
@@ -60,9 +61,12 @@ public record BulkScheduleLessonsRequest(
     @NotEmpty
     List<@NotNull List<@NotNull DayOfWeek>> days,
 
-    @Schema(description = "Аудитория для всех созданных пар. null = все группы")
+    @Schema(
+        description = "Аудитории для созданных пар: на каждую дату создаётся scope для каждой " +
+            "аудитории (группа + опциональная подгруппа). null или пустой список = все группы."
+    )
     @Valid
-    LessonScopeAudienceRequest audience
+    List<@NotNull LessonScopeAudienceRequest> audiences
 ) {
     @Schema(hidden = true)
     @AssertTrue(message = "At least one week in the pattern must contain a day")
@@ -90,5 +94,40 @@ public record BulkScheduleLessonsRequest(
             )
             .map(earliest -> firstLessonDate.getDayOfWeek() == earliest)
             .orElse(true);
+    }
+
+    @Schema(hidden = true)
+    @AssertTrue(
+        message = "Audiences must not overlap (same group or nested subgroup) within the request"
+    )
+    public boolean hasNoOverlappingAudiences() {
+        if (audiences == null) {
+            return true;
+        }
+        for (int i = 0; i < audiences.size(); i++) {
+            for (int j = i + 1; j < audiences.size(); j++) {
+                if (audiencesOverlap(audiences.get(i), audiences.get(j))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean audiencesOverlap(
+        LessonScopeAudienceRequest a,
+        LessonScopeAudienceRequest b
+    ) {
+        if (a == null || b == null) {
+            return false; // отловит @NotNull на элементах
+        }
+        if (!Objects.equals(a.groupId(), b.groupId())) {
+            return false;
+        }
+        // Та же группа: вся группа пересекается с чем угодно; иначе — только одинаковые подгруппы.
+        if (a.allowedSubgroupId() == null || b.allowedSubgroupId() == null) {
+            return true;
+        }
+        return Objects.equals(a.allowedSubgroupId(), b.allowedSubgroupId());
     }
 }
