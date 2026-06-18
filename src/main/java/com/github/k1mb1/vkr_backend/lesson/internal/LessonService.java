@@ -225,41 +225,52 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    public LessonResponse bulkSchedule(BulkScheduleLessonsRequest request) {
+    public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
         var subject = subjectRepository
             .findById(request.subjectId())
             .orElseThrow(() ->
                 new ResourceNotFoundException("Subject", request.subjectId())
             );
 
-        // Одно занятие-шаблон; каждый элемент задаёт аудиторию со своим расписанием:
-        // на каждую вычисленную дату элемента — по проведению (scope) для его аудитории.
-        var counters = nextOrderIndexByType(subject.getId());
-        var lesson = lessonTemplate(
-            subject.getId(),
-            request.lessonType(),
-            counters.merge(request.lessonType(), 1, Integer::sum)
-        );
-        for (var item : request.items()) {
-            var dates = schedule(
-                item.firstLessonDate(),
-                request.count(),
-                item.days()
-            );
-            for (var date : dates) {
-                lesson
-                    .getScopes()
-                    .add(buildScope(lesson, date, item.audience()));
-            }
-        }
-        assignDefaultTopics(List.of(lesson));
+        // Для каждого item — своя серия из count дат (count общий для всех).
+        var datesPerItem = request
+            .items()
+            .stream()
+            .map(item ->
+                schedule(item.firstLessonDate(), request.count(), item.days())
+            )
+            .toList();
 
-        var saved = lessonRepository.save(lesson);
-        return lessonMapper.toResponse(
-            saved,
-            saved.getScopes().stream().toList(),
-            List.<AssignmentResponse>of()
-        );
+        // count занятий: занятие k проводится на k-ю дату каждого item —
+        // по проведению (scope) для аудитории этого item на его k-ю дату.
+        var counters = nextOrderIndexByType(subject.getId());
+        var lessons = new ArrayList<Lesson>(request.count());
+        for (int k = 0; k < request.count(); k++) {
+            var lesson = lessonTemplate(
+                subject.getId(),
+                request.lessonType(),
+                counters.merge(request.lessonType(), 1, Integer::sum)
+            );
+            for (int i = 0; i < request.items().size(); i++) {
+                var audience = request.items().get(i).audience();
+                var date = datesPerItem.get(i).get(k);
+                lesson.getScopes().add(buildScope(lesson, date, audience));
+            }
+            lessons.add(lesson);
+        }
+        assignDefaultTopics(lessons);
+
+        return lessonRepository
+            .saveAll(lessons)
+            .stream()
+            .map(lesson ->
+                lessonMapper.toResponse(
+                    lesson,
+                    lesson.getScopes().stream().toList(),
+                    List.<AssignmentResponse>of()
+                )
+            )
+            .toList();
     }
 
     /**

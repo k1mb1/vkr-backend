@@ -102,12 +102,12 @@ public class LessonController {
     }
 
     @Operation(
-        summary = "Создание занятия с серией проведений по недельному шаблону",
+        summary = "Создание серии занятий по недельному шаблону",
         description = "Дата первой пары + повторяющийся недельный шаблон (внешний массив — недели, внутренний — дни). " +
-            "Создаёт одно занятие и count проведений (scope'ов) с автоматически проставленными датами."
+            "Создаёт count занятий: занятие k проводится на k-ю дату каждого item (scope для аудитории item)."
     )
     @PostMapping("/bulk-schedule")
-    public ResponseEntity<LessonResponse> bulkSchedule(
+    public ResponseEntity<List<LessonResponse>> bulkSchedule(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Параметры расписания",
             required = true

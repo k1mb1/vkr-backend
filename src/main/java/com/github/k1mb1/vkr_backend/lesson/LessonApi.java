@@ -21,5 +21,5 @@ public interface LessonApi {
 
     List<LessonResponse> bulkCreate(BulkCreateLessonsRequest request);
 
-    LessonResponse bulkSchedule(BulkScheduleLessonsRequest request);
+    List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request);
 }

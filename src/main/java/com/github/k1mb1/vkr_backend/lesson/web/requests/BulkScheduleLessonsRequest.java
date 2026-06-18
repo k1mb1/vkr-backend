@@ -16,17 +16,18 @@ import java.util.UUID;
 
 @Schema(
     description = """
-    Создание одного занятия с серией проведений по недельным шаблонам.
-    `count` — общий для всех элементов: для каждого элемента `items` генерируется ровно `count` дат.
+    Создание серии из `count` занятий по недельным шаблонам.
+    `count` — общий для всех элементов: для каждого элемента `items` генерируется ровно `count` дат,
+    и создаётся `count` занятий-шаблонов выбранного типа.
     Каждый элемент `items` задаёт одну аудиторию со своим собственным расписанием
     (`firstLessonDate` + `days`).
     `days` — повторяющийся шаблон: внешний список = недели, внутренний = дни недели внутри недели.
     Генерация идёт по неделям, шаблон зацикливается, пока не наберётся `count` дат проведений.
-    Создаётся одно занятие-шаблон выбранного типа; на каждую вычисленную дату каждого элемента
-    создаётся по одному scope'у (проведению) для аудитории этого элемента —
-    итого `count` × `items.size()` scope'ов.
+    Занятие k проводится на k-ю дату каждого элемента: на него создаётся по одному scope'у
+    (проведению) для аудитории каждого элемента — итого `count` занятий, каждое с `items.size()`
+    scope'ами.
     Пример: items=[{audience, firstLessonDate=понедельник, days=[["MONDAY","THURSDAY"], []]}], count=5
-    → проведения на пн/чт 1-й недели, пн/чт 3-й недели, пн 5-й недели (раз в 2 недели).
+    → 5 занятий на пн/чт 1-й недели, пн/чт 3-й недели, пн 5-й недели (раз в 2 недели).
     """
 )
 public record BulkScheduleLessonsRequest(
@@ -86,9 +87,7 @@ public record BulkScheduleLessonsRequest(
         List<@NotNull List<@NotNull DayOfWeek>> days
     ) {
         @Schema(hidden = true)
-        @AssertTrue(
-            message = "At least one week in the pattern must contain a day"
-        )
+        @AssertTrue(message = "At least one week in the pattern must contain a day")
         public boolean hasAnyDay() {
             return (
                 days != null &&
