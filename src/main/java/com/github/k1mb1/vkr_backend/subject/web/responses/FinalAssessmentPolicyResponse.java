@@ -50,7 +50,7 @@ public record FinalAssessmentPolicyResponse(
     boolean attendanceCountExcused
 ) {
     @Schema(
-        description = "Банда: ярлык и условия его получения (minPoints и/или requiredTasks, AND)"
+        description = "Банда: ярлык и условия его получения (minPoints, minPercent и/или requiredTasks, AND)"
     )
     @Builder
     public record Band(
@@ -62,6 +62,12 @@ public record FinalAssessmentPolicyResponse(
             description = "Минимальный итоговый балл (включительно), null — без ограничения"
         )
         Integer minPoints,
+
+        @Schema(
+            description = "Минимальный процент (0..100) от максимально возможных баллов " +
+                "(включительно), null — без ограничения"
+        )
+        Integer minPercent,
 
         @Schema(
             description = "Минимум закрытых обязательных задач, null — без ограничения"

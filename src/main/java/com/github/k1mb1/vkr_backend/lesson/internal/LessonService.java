@@ -232,28 +232,24 @@ class LessonService implements LessonApi {
                 new ResourceNotFoundException("Subject", request.subjectId())
             );
 
-        var dates = schedule(
-            request.firstLessonDate(),
-            request.count(),
-            request.days()
-        );
-
-        // Одно занятие-шаблон; на каждую дату серии — по проведению (scope) для каждой аудитории.
+        // Одно занятие-шаблон; каждый элемент задаёт аудиторию со своим расписанием:
+        // на каждую вычисленную дату элемента — по проведению (scope) для его аудитории.
         var counters = nextOrderIndexByType(subject.getId());
         var lesson = lessonTemplate(
             subject.getId(),
             request.lessonType(),
             counters.merge(request.lessonType(), 1, Integer::sum)
         );
-        var audiences = request.audiences();
-        for (var date : dates) {
-            if (audiences == null || audiences.isEmpty()) {
-                // null/пустой список аудиторий — одно проведение на все группы.
-                lesson.getScopes().add(buildScope(lesson, date, null));
-            } else {
-                for (var audience : audiences) {
-                    lesson.getScopes().add(buildScope(lesson, date, audience));
-                }
+        for (var item : request.items()) {
+            var dates = schedule(
+                item.firstLessonDate(),
+                request.count(),
+                item.days()
+            );
+            for (var date : dates) {
+                lesson
+                    .getScopes()
+                    .add(buildScope(lesson, date, item.audience()));
             }
         }
         assignDefaultTopics(List.of(lesson));

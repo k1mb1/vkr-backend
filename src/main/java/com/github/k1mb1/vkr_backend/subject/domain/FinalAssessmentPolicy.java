@@ -41,6 +41,7 @@ import lombok.experimental.SuperBuilder;
  *
  *   // вердикт = первая подходящая банда (банды по убыванию старшинства):
  *   подходит(band) = (band.minPoints == null    || total >= band.minPoints)
+ *                 && (band.minPercent == null   || total * 100 >= band.minPercent * maxPoints)
  *                 && (band.requiredTasks == null || закрытоОбязательныхЗадач >= band.requiredTasks)
  *   если ни одна не подошла — без вердикта (например «не зачтено» / «неуд»)
  *

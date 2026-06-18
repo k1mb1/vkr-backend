@@ -114,6 +114,7 @@ class SubjectFinalAssessmentPolicyService
                 var band = existingById.get(req.id());
                 band.setLabel(req.label());
                 band.setMinPoints(req.minPoints());
+                band.setMinPercent(req.minPercent());
                 band.setRequiredTasks(req.requiredTasks());
             }
         }
@@ -125,6 +126,7 @@ class SubjectFinalAssessmentPolicyService
                     .policy(policy)
                     .label(req.label())
                     .minPoints(req.minPoints())
+                    .minPercent(req.minPercent())
                     .requiredTasks(req.requiredTasks())
                     .build();
                 policy.getBands().add(band);

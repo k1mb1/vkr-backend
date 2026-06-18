@@ -16,12 +16,16 @@ import java.util.UUID;
 
 @Schema(
     description = """
-    Создание одного занятия с серией проведений по недельному шаблону.
+    Создание одного занятия с серией проведений по недельным шаблонам.
+    `count` — общий для всех элементов: для каждого элемента `items` генерируется ровно `count` дат.
+    Каждый элемент `items` задаёт одну аудиторию со своим собственным расписанием
+    (`firstLessonDate` + `days`).
     `days` — повторяющийся шаблон: внешний список = недели, внутренний = дни недели внутри недели.
     Генерация идёт по неделям, шаблон зацикливается, пока не наберётся `count` дат проведений.
-    Создаётся одно занятие-шаблон выбранного типа; на каждую вычисленную дату создаётся по одному
-    scope'у (проведению) для каждой указанной аудитории — итого `count` × `audiences.size()` scope'ов.
-    Пример: firstLessonDate=понедельник, days=[["MONDAY","THURSDAY"], []], count=5
+    Создаётся одно занятие-шаблон выбранного типа; на каждую вычисленную дату каждого элемента
+    создаётся по одному scope'у (проведению) для аудитории этого элемента —
+    итого `count` × `items.size()` scope'ов.
+    Пример: items=[{audience, firstLessonDate=понедельник, days=[["MONDAY","THURSDAY"], []]}], count=5
     → проведения на пн/чт 1-й недели, пн/чт 3-й недели, пн 5-й недели (раз в 2 недели).
     """
 )
@@ -41,59 +45,75 @@ public record BulkScheduleLessonsRequest(
     LessonType lessonType,
 
     @Schema(
-        description = "Дата первой пары (первого проведения)",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotNull
-    LocalDate firstLessonDate,
-
-    @Schema(
-        description = "Сколько проведений (дат) создать",
+        description = "Сколько проведений (дат) создать для каждого элемента items",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     @Positive
     int count,
 
     @Schema(
-        description = "Недельный шаблон. Внешний список — недели, внутренний — дни недели этой недели.",
+        description = "Элементы расписания: каждая аудитория со своим собственным " +
+            "стартом и недельным шаблоном.",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotEmpty
-    List<@NotNull List<@NotNull DayOfWeek>> days,
-
-    @Schema(
-        description = "Аудитории для созданных пар: на каждую дату создаётся scope для каждой " +
-            "аудитории (группа + опциональная подгруппа). null или пустой список = все группы."
-    )
     @Valid
-    List<@NotNull LessonScopeAudienceRequest> audiences
+    List<@NotNull Item> items
 ) {
-    @Schema(hidden = true)
-    @AssertTrue(message = "At least one week in the pattern must contain a day")
-    public boolean hasAnyDay() {
-        return (
-            days != null &&
-            days.stream().anyMatch(week -> week != null && !week.isEmpty())
-        );
-    }
-
-    @Schema(hidden = true)
-    @AssertTrue(
-        message = "firstLessonDate must fall on the earliest weekday of the first non-empty week"
+    @Schema(
+        description = "Один элемент расписания: аудитория + её собственный старт и недельный шаблон."
     )
-    public boolean isFirstLessonDateConsistent() {
-        if (days == null || firstLessonDate == null) {
-            return true; // отловят @NotNull / @NotEmpty
+    public record Item(
+        @Schema(
+            description = "Аудитория для созданных пар (группа + опциональная подгруппа). " +
+                "null = все группы."
+        )
+        @Valid
+        LessonScopeAudienceRequest audience,
+
+        @Schema(
+            description = "Дата первой пары (первого проведения)",
+            requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotNull
+        LocalDate firstLessonDate,
+
+        @Schema(
+            description = "Недельный шаблон. Внешний список — недели, внутренний — дни недели этой недели.",
+            requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        @NotEmpty
+        List<@NotNull List<@NotNull DayOfWeek>> days
+    ) {
+        @Schema(hidden = true)
+        @AssertTrue(
+            message = "At least one week in the pattern must contain a day"
+        )
+        public boolean hasAnyDay() {
+            return (
+                days != null &&
+                days.stream().anyMatch(week -> week != null && !week.isEmpty())
+            );
         }
-        return days
-            .stream()
-            .filter(week -> week != null && !week.isEmpty())
-            .findFirst()
-            .map(week ->
-                week.stream().min(Comparator.naturalOrder()).orElseThrow()
-            )
-            .map(earliest -> firstLessonDate.getDayOfWeek() == earliest)
-            .orElse(true);
+
+        @Schema(hidden = true)
+        @AssertTrue(
+            message = "firstLessonDate must fall on the earliest weekday of the first non-empty week"
+        )
+        public boolean isFirstLessonDateConsistent() {
+            if (days == null || firstLessonDate == null) {
+                return true; // отловят @NotNull / @NotEmpty
+            }
+            return days
+                .stream()
+                .filter(week -> week != null && !week.isEmpty())
+                .findFirst()
+                .map(week ->
+                    week.stream().min(Comparator.naturalOrder()).orElseThrow()
+                )
+                .map(earliest -> firstLessonDate.getDayOfWeek() == earliest)
+                .orElse(true);
+        }
     }
 
     @Schema(hidden = true)
@@ -101,12 +121,12 @@ public record BulkScheduleLessonsRequest(
         message = "Audiences must not overlap (same group or nested subgroup) within the request"
     )
     public boolean hasNoOverlappingAudiences() {
-        if (audiences == null) {
+        if (items == null) {
             return true;
         }
-        for (int i = 0; i < audiences.size(); i++) {
-            for (int j = i + 1; j < audiences.size(); j++) {
-                if (audiencesOverlap(audiences.get(i), audiences.get(j))) {
+        for (int i = 0; i < items.size(); i++) {
+            for (int j = i + 1; j < items.size(); j++) {
+                if (itemsOverlap(items.get(i), items.get(j))) {
                     return false;
                 }
             }
@@ -114,12 +134,20 @@ public record BulkScheduleLessonsRequest(
         return true;
     }
 
+    private static boolean itemsOverlap(Item a, Item b) {
+        if (a == null || b == null) {
+            return false; // отловит @NotNull на элементах
+        }
+        return audiencesOverlap(a.audience(), b.audience());
+    }
+
     private static boolean audiencesOverlap(
         LessonScopeAudienceRequest a,
         LessonScopeAudienceRequest b
     ) {
+        // null-аудитория = все группы: пересекается с любой другой аудиторией.
         if (a == null || b == null) {
-            return false; // отловит @NotNull на элементах
+            return true;
         }
         if (!Objects.equals(a.groupId(), b.groupId())) {
             return false;

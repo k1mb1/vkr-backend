@@ -20,9 +20,12 @@ import lombok.experimental.SuperBuilder;
  * <p>
  * Условия комбинируются по AND (нужно выполнить все заданные); {@code null}-условие не ограничивает:
  * <pre>
- *   подходит = (minPoints == null || total >= minPoints)
+ *   подходит = (minPoints == null   || total >= minPoints)
+ *           && (minPercent == null  || total * 100 >= minPercent * maxPoints)
  *           && (requiredTasks == null || закрытоОбязательныхЗадач >= requiredTasks)
  * </pre>
+ * {@code minPercent} — порог как процент от максимально возможных баллов ({@code maxPoints});
+ * расчёт делает фронт.
  * Банда без условий — «пол» (подходит всегда). Банды хранятся в порядке убывания старшинства
  * через {@code position}; фронт выбирает первую подходящую.
  */
@@ -49,6 +52,13 @@ public class AssessmentBand extends BaseEntity {
     /** Минимальный итоговый балл (включительно). null — балл не ограничивает банду. */
     @Column(name = "min_points")
     Integer minPoints;
+
+    /**
+     * Минимальный процент (0..100) от максимально возможных баллов предмета (включительно).
+     * Отдельное условие рядом с {@code minPoints}. null — процент не ограничивает банду.
+     */
+    @Column(name = "min_percent")
+    Integer minPercent;
 
     /** Минимум закрытых обязательных задач. null — задачи не ограничивают банду. */
     @Column(name = "required_tasks")

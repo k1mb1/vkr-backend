@@ -51,3 +51,5 @@ databaseChangeLog:
       file: db/changelog/v0/20260606000000-subject-final-assessment-policy.sql
   - include:
       file: db/changelog/v0/20260607000000-assignment-admission.sql
+  - include:
+      file: db/changelog/v0/20260618000000-assessment-band-min-percent.sql
