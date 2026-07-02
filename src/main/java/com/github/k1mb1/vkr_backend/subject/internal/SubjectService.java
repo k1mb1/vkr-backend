@@ -53,7 +53,6 @@ class SubjectService
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.isAdmin()")
     @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public SubjectResponse createSubject(CreateSubjectRequest request) {
         var subject = Subject.builder()
