@@ -2,8 +2,6 @@ package com.github.k1mb1.vkr_backend.lesson.internal;
 
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
-import com.github.k1mb1.vkr_backend.group.domain.Group;
-import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.lesson.LessonScopesApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
@@ -12,6 +10,7 @@ import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkReplaceLessonScopesR
 import com.github.k1mb1.vkr_backend.lesson.web.requests.LessonScopeAudienceRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonScopeResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -38,6 +36,7 @@ class LessonScopeService
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<LessonScopeResponse> addScopes(
         UUID lessonId,
         BulkAddLessonScopesRequest request
@@ -64,6 +63,7 @@ class LessonScopeService
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<LessonScopeResponse> replaceScopesOfLesson(
         UUID lessonId,
         BulkReplaceLessonScopesRequest request
@@ -119,16 +119,11 @@ class LessonScopeService
             scope.setAllowedSubgroup(null);
             return;
         }
-        Group group = groupReferenceService.getGroupReferenceById(audience.groupId());
-        Subgroup allowedSubgroup = audience.allowedSubgroupId() != null
-                                   ? groupReferenceService.getSubgroupReferenceById(audience.allowedSubgroupId())
-                                   : null;
-        if (allowedSubgroup != null && !Objects.equals(allowedSubgroup.getGroup().getId(), group.getId())) {
-            throw new IllegalArgumentException("Subgroup does not belong to the specified group");
-        }
+        var ref = groupReferenceService.resolveAudience(
+            audience.groupId(), audience.allowedSubgroupId());
         scope.setAllGroups(false);
-        scope.setGroup(group);
-        scope.setAllowedSubgroup(allowedSubgroup);
+        scope.setGroup(ref.group());
+        scope.setAllowedSubgroup(ref.allowedSubgroup());
     }
 
     private void validateNoInternalOverlap(Lesson lesson) {

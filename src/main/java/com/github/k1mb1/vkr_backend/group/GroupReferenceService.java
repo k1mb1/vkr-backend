@@ -10,4 +10,12 @@ public interface GroupReferenceService {
     Group getGroupReferenceById(UUID id);
 
     Subgroup getSubgroupReferenceById(UUID id);
+
+    /**
+     * Разрешает аудиторию (группа + опц. подгруппа) в ссылки на сущности с проверкой
+     * принадлежности подгруппы группе. {@code groupId == null} → пустая аудитория
+     * (вызывающий трактует как allGroups). Бросает {@link IllegalArgumentException},
+     * если подгруппа не принадлежит указанной группе.
+     */
+    AudienceRef resolveAudience(UUID groupId, UUID allowedSubgroupId);
 }

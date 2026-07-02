@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.student.internal;
 
 import com.github.k1mb1.vkr_backend.student.domain.Student;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,6 +17,10 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
 
     @EntityGraph("Student.withGroups")
     List<Student> findByGroupIdAndArchivedAtIsNull(UUID groupId);
+
+    /** Батч-вариант для нескольких групп — чтобы не делать N запросов на группу. */
+    @EntityGraph("Student.withGroups")
+    List<Student> findByGroupIdInAndArchivedAtIsNull(Collection<UUID> groupIds);
 
     @EntityGraph("Student.withGroups")
     List<Student> findByGroupIdAndSubgroupIdAndArchivedAtIsNull(

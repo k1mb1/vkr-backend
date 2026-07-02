@@ -1,0 +1,109 @@
+package com.github.k1mb1.vkr_backend.common.security;
+
+import com.github.k1mb1.vkr_backend.attendance.checkin.internal.CheckInSessionRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * Точка принятия решений авторизации, вызывается из SpEL в {@code @PreAuthorize}
+ * как бин {@code @authz}. Identity берётся из токена ({@link SecurityService}),
+ * тонкие права — из кэшированного снапшота ({@link PermissionResolver}).
+ *
+ * <p>Везде {@code isAdmin()} проверяется первым: для админа права из БД не резолвятся
+ * вовсе (short-circuit), лишних запросов нет.
+ */
+@Component("authz")
+@RequiredArgsConstructor
+public class AuthorizationService {
+
+    private final SecurityService security;
+    private final PermissionResolver permissionResolver;
+    private final LessonScopeRepository lessonScopeRepository;
+    private final LessonRepository lessonRepository;
+    private final CheckInSessionRepository checkInSessionRepository;
+
+    public boolean isAdmin() {
+        return security.isAdmin();
+    }
+
+    /** Текущий пользователь действует от своего же имени (teacherId == sub) или это админ. */
+    public boolean isSelfOrAdmin(UUID teacherId) {
+        return security.isAdmin() || security.isSameUser(teacherId);
+    }
+
+    /** Доступ к конкретному выданному permission'у (его таблицам/данным). */
+    public boolean ownsPermission(UUID permissionId) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        return current().map(p -> p.ownsPermission(permissionId)).orElse(false);
+    }
+
+    /** Доступ к предмету (есть хоть одно право на него). */
+    public boolean canAccessSubject(UUID subjectId) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        return current().map(p -> p.hasSubject(subjectId)).orElse(false);
+    }
+
+    /** Все указанные scope'ы (проведения занятий) принадлежат предметам, доступным пользователю. */
+    public boolean canAccessLessonScopes(Collection<UUID> lessonScopeIds) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        if (lessonScopeIds == null || lessonScopeIds.isEmpty()) {
+            return true;
+        }
+        var perms = current().orElse(null);
+        if (perms == null) {
+            return false;
+        }
+        var subjectIds = lessonScopeRepository.findSubjectIdsByScopeIds(lessonScopeIds);
+        return !subjectIds.isEmpty() && perms.subjectIds().containsAll(subjectIds);
+    }
+
+    /** Все указанные занятия принадлежат предметам, доступным пользователю. */
+    public boolean canAccessLessons(Collection<UUID> lessonIds) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        if (lessonIds == null || lessonIds.isEmpty()) {
+            return true;
+        }
+        var perms = current().orElse(null);
+        if (perms == null) {
+            return false;
+        }
+        var subjectIds = lessonRepository.findSubjectIdsByLessonIds(lessonIds);
+        return !subjectIds.isEmpty() && perms.subjectIds().containsAll(subjectIds);
+    }
+
+    public boolean canAccessLesson(UUID lessonId) {
+        return canAccessLessons(lessonId == null ? java.util.List.of() : java.util.List.of(lessonId));
+    }
+
+    /** Доступ к check-in сессии по её id (через предмет занятия сессии). */
+    public boolean canAccessCheckInSession(UUID sessionId) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        if (sessionId == null) {
+            return false;
+        }
+        return checkInSessionRepository
+            .findSubjectIdById(sessionId)
+            .map(this::canAccessSubject)
+            .orElse(false);
+    }
+
+    private Optional<UserPermissions> current() {
+        return security.currentSubjectId().map(permissionResolver::forUser);
+    }
+}

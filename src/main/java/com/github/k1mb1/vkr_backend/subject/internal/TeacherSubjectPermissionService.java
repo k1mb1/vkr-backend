@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.subject.internal;
 
+import com.github.k1mb1.vkr_backend.common.error.ConflictException;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
@@ -16,6 +17,8 @@ import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
     final TeacherSubjectPermissionMapper permissionMapper;
 
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public List<TeacherSubjectPermissionResponse> getPermissionsBySubject(
         UUID subjectId
     ) {
@@ -46,6 +50,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
     }
 
     @Override
+    @PreAuthorize("@authz.isSelfOrAdmin(#teacherId)")
     public TeacherSubjectPermissionResponse getPermission(
         UUID subjectId,
         UUID teacherId
@@ -65,6 +70,8 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.isAdmin()")
+    @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public TeacherSubjectPermissionResponse create(
         CreateTeacherSubjectPermissionRequest request
     ) {
@@ -74,7 +81,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
                 request.subjectId()
             )
         ) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Permission already exists for teacherId=" +
                     request.teacherId() +
                     ", subjectId=" +
@@ -114,6 +121,8 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.isAdmin()")
+    @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public TeacherSubjectPermissionResponse update(
         UUID id,
         UpdateTeacherSubjectPermissionRequest request
@@ -134,7 +143,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
                     permission.getSubject().getId()
                 )
             ) {
-                throw new IllegalStateException(
+                throw new ConflictException(
                     "Permission already exists for teacherId=" +
                         request.teacherId() +
                         ", subjectId=" +
@@ -176,6 +185,8 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.isAdmin()")
+    @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public void delete(UUID id) {
         var permission = permissionRepository
             .findById(id)
@@ -226,14 +237,12 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
                             subject.getId()
                     );
                 }
-                group = groupReferenceService.getGroupReferenceById(groupId);
-                if (subgroupId != null) {
-                    allowedSubgroup =
-                        groupReferenceService.getSubgroupReferenceById(
-                            subgroupId
-                        );
-                    validateSubgroupBelongsToGroup(allowedSubgroup, group);
-                }
+                var ref = groupReferenceService.resolveAudience(
+                    groupId,
+                    subgroupId
+                );
+                group = ref.group();
+                allowedSubgroup = ref.allowedSubgroup();
             }
 
             var key =
@@ -258,19 +267,5 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
             );
         }
         return result;
-    }
-
-    private void validateSubgroupBelongsToGroup(
-        Subgroup subgroup,
-        Group group
-    ) {
-        if (
-            subgroup != null &&
-            !Objects.equals(subgroup.getGroup().getId(), group.getId())
-        ) {
-            throw new IllegalArgumentException(
-                "Subgroup does not belong to the specified group"
-            );
-        }
     }
 }

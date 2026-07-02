@@ -4,8 +4,6 @@ import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
-import com.github.k1mb1.vkr_backend.group.domain.Group;
-import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.lesson.LessonApi;
 import com.github.k1mb1.vkr_backend.lesson.LessonScopesApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
@@ -30,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,6 +62,7 @@ class LessonService implements LessonApi {
     }
 
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse getLessonById(UUID id) {
         var lesson = lessonRepository
             .findWithDetailsById(id)
@@ -77,6 +77,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
         var lesson = lessonRepository
             .findWithDetailsById(id)
@@ -105,6 +106,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse setActive(UUID id, boolean active) {
         var lesson = lessonRepository
             .findById(id)
@@ -126,6 +128,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public void deleteLesson(UUID id) {
         var lesson = lessonRepository
             .findById(id)
@@ -142,6 +145,7 @@ class LessonService implements LessonApi {
     }
 
     @Override
+    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public List<LessonResponse> getLessons(LessonFilter filter) {
         var permission = permissionRepository
             .findWithDetailsById(filter.permissionId())
@@ -180,6 +184,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkCreate(BulkCreateLessonsRequest request) {
         var subject = subjectRepository
             .findById(request.subjectId())
@@ -225,6 +230,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
         var subject = subjectRepository
             .findById(request.subjectId())
@@ -316,26 +322,13 @@ class LessonService implements LessonApi {
             scope.setAllGroups(true);
             return scope;
         }
-        Group group = groupReferenceService.getGroupReferenceById(
-            audience.groupId()
+        var ref = groupReferenceService.resolveAudience(
+            audience.groupId(),
+            audience.allowedSubgroupId()
         );
-        Subgroup allowedSubgroup =
-            audience.allowedSubgroupId() != null
-                ? groupReferenceService.getSubgroupReferenceById(
-                      audience.allowedSubgroupId()
-                  )
-                : null;
-        if (
-            allowedSubgroup != null &&
-            !Objects.equals(allowedSubgroup.getGroup().getId(), group.getId())
-        ) {
-            throw new IllegalArgumentException(
-                "Subgroup does not belong to the specified group"
-            );
-        }
         scope.setAllGroups(false);
-        scope.setGroup(group);
-        scope.setAllowedSubgroup(allowedSubgroup);
+        scope.setGroup(ref.group());
+        scope.setAllowedSubgroup(ref.allowedSubgroup());
         return scope;
     }
 

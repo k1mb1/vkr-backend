@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.group.internal;
 
+import com.github.k1mb1.vkr_backend.common.error.ConflictException;
 import com.github.k1mb1.vkr_backend.group.GroupsApi;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
@@ -189,7 +190,7 @@ class GroupService
         var subject = subjectRepository.findById(subjectId)
             .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + subjectId));
         if (!subject.getGroups().add(group)) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Group " + groupId + " is already attached to subject " + subjectId);
         }
         subjectRepository.save(subject);

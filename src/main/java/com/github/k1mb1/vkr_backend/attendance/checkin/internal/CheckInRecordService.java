@@ -5,6 +5,7 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecord;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StudentCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInRecordResponse;
+import com.github.k1mb1.vkr_backend.common.error.ConflictException;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
@@ -45,7 +46,7 @@ class CheckInRecordService implements CheckInRecordsApi {
             state != CheckInSessionState.OPEN &&
             state != CheckInSessionState.LATE_WINDOW
         ) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Check-in is closed for session: " + sessionId
             );
         }
@@ -69,7 +70,7 @@ class CheckInRecordService implements CheckInRecordsApi {
 
         var status = session.statusForCheckInAt(now);
         if (status == null) {
-            throw new IllegalStateException("Check-in window has elapsed");
+            throw new ConflictException("Check-in window has elapsed");
         }
 
         var record = recordRepository

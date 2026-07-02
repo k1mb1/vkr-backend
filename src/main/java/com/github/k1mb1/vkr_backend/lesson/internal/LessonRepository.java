@@ -86,4 +86,8 @@ public interface LessonRepository
         @Param("subjectId") UUID subjectId,
         @Param("type") LessonType type
     );
+
+    /** id предметов указанных занятий — для проверки доступа на запись. */
+    @Query("SELECT DISTINCT l.subject.id FROM Lesson l WHERE l.id IN :ids")
+    java.util.Set<UUID> findSubjectIdsByLessonIds(java.util.Collection<UUID> ids);
 }

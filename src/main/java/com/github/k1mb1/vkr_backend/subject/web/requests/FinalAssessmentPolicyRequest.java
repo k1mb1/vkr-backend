@@ -10,7 +10,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
+import lombok.Builder;
 
+@Builder
 @Schema(
     description = """
     Параметры промежуточной аттестации (итоги): единый список банд + режим посещаемости.

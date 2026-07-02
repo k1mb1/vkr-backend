@@ -16,12 +16,14 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicStude
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.web.requests.UpsertAttendanceRequest;
+import com.github.k1mb1.vkr_backend.common.error.ConflictException;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.common.util.NameMasker;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonResolver;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
@@ -34,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +58,8 @@ class CheckInSessionService implements CheckInSessionApi {
 
     final TeacherSubjectPermissionRepository permissionRepository;
 
+    final LessonResolver lessonResolver;
+
     final LessonStudentsApi lessonStudentsApi;
 
     final CheckInSessionMapper mapper;
@@ -75,6 +80,7 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLessonScopes({#request.lessonScopeId()})")
     public CheckInSessionResponse start(StartCheckInRequest request) {
         var scope = lessonScopeRepository
             .findWithDetailsById(request.lessonScopeId())
@@ -90,7 +96,7 @@ class CheckInSessionService implements CheckInSessionApi {
                 scope.getId()
             )
             .ifPresent(existing -> {
-                throw new IllegalStateException(
+                throw new ConflictException(
                     "Active check-in session already exists for lesson scope: " +
                         scope.getId()
                 );
@@ -131,12 +137,14 @@ class CheckInSessionService implements CheckInSessionApi {
     }
 
     @Override
+    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
     public CheckInSessionResponse get(UUID sessionId) {
         var session = loadSession(sessionId);
         return mapper.toResponse(session, Instant.now());
     }
 
     @Override
+    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public List<CheckInSessionResponse> list(CheckInSessionFilter filter) {
         var permission = permissionRepository
             .findWithDetailsById(filter.permissionId())
@@ -173,8 +181,11 @@ class CheckInSessionService implements CheckInSessionApi {
                         filter.lessonScopeId()
                     )
                 );
-            assertSameSubject(scope.getLesson(), permission);
-            assertLessonMatch(scope.getLesson(), filter.lessonId());
+            lessonResolver.assertSameSubject(scope.getLesson(), permission);
+            lessonResolver.assertLessonMatch(
+                scope.getLesson(),
+                filter.lessonId()
+            );
             return List.of(scope.getId());
         }
         if (filter.lessonId() != null) {
@@ -183,7 +194,7 @@ class CheckInSessionService implements CheckInSessionApi {
                 .orElseThrow(() ->
                     new ResourceNotFoundException("Lesson", filter.lessonId())
                 );
-            assertSameSubject(lesson, permission);
+            lessonResolver.assertSameSubject(lesson, permission);
             return lesson.getScopes().stream().map(LessonScope::getId).toList();
         }
         return lessonRepository
@@ -196,37 +207,8 @@ class CheckInSessionService implements CheckInSessionApi {
             .toList();
     }
 
-    private void assertSameSubject(
-        Lesson lesson,
-        TeacherSubjectPermission permission
-    ) {
-        if (
-            !lesson.getSubject().getId().equals(permission.getSubject().getId())
-        ) {
-            throw new IllegalArgumentException(
-                "Lesson " +
-                    lesson.getId() +
-                    " does not belong to subject of permission " +
-                    permission.getId()
-            );
-        }
-    }
-
-    private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
-        if (
-            requestedLessonId != null &&
-            !scopeLesson.getId().equals(requestedLessonId)
-        ) {
-            throw new IllegalArgumentException(
-                "lessonScopeId belongs to lesson " +
-                    scopeLesson.getId() +
-                    " but lessonId=" +
-                    requestedLessonId
-            );
-        }
-    }
-
     @Override
+    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
     public CheckInPreviewResponse preview(UUID sessionId) {
         var session = loadSession(sessionId);
         var students = lessonStudentsApi.studentsOf(session.getLessonScope());
@@ -258,18 +240,19 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
     public CheckInSessionResponse confirm(
         UUID sessionId,
         ConfirmCheckInRequest request
     ) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Session already confirmed: " + sessionId
             );
         }
         if (session.getCancelledAt() != null) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Session is cancelled: " + sessionId
             );
         }
@@ -337,10 +320,11 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
     public CheckInSessionResponse cancel(UUID sessionId) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Cannot cancel a confirmed session: " + sessionId
             );
         }
@@ -452,7 +436,7 @@ class CheckInSessionService implements CheckInSessionApi {
             state != CheckInSessionState.OPEN &&
             state != CheckInSessionState.LATE_WINDOW
         ) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Check-in is closed for session: " + session.getId()
             );
         }

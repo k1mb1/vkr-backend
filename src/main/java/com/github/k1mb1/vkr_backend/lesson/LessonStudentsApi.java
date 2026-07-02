@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface LessonStudentsApi {
@@ -19,4 +20,10 @@ public interface LessonStudentsApi {
      * the scope is restricted to.
      */
     List<Student> studentsOf(LessonScope scope);
+
+    /**
+     * Union of students across several scopes, sorted by username and de-duplicated.
+     * Loads all required groups in a single query (no per-scope N+1).
+     */
+    List<Student> studentsOf(Collection<LessonScope> scopes);
 }

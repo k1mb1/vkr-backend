@@ -14,6 +14,7 @@ import com.github.k1mb1.vkr_backend.attendance.AttendanceApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSession;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicStudentResponse;
+import com.github.k1mb1.vkr_backend.common.error.ConflictException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
@@ -203,6 +204,6 @@ class CheckInSessionServiceSearchTest {
 
         assertThatThrownBy(() ->
             service.verifyCode(sessionId, CODE)
-        ).isInstanceOf(IllegalStateException.class);
+        ).isInstanceOf(ConflictException.class);
     }
 }

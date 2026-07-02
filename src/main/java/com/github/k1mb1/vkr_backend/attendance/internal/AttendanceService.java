@@ -13,18 +13,18 @@ import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
-import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonResolver;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
-import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.web.responses.AttendanceHighlightPolicyResponse;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +39,7 @@ class AttendanceService implements AttendanceApi {
 
     final TeacherSubjectPermissionRepository permissionRepository;
 
-    final LessonRepository lessonRepository;
+    final LessonResolver lessonResolver;
 
     final LessonScopeRepository lessonScopeRepository;
 
@@ -50,6 +50,7 @@ class AttendanceService implements AttendanceApi {
     final SubjectMapper subjectMapper;
 
     @Override
+    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public AttendanceTableResponse getAttendanceTable(AttendanceFilter filter) {
         var permission = permissionRepository
             .findWithDetailsById(filter.permissionId())
@@ -60,47 +61,20 @@ class AttendanceService implements AttendanceApi {
                 )
             );
 
-        var lessons = resolveLessons(permission, filter);
+        var lessons = lessonResolver.resolveLessons(
+            permission,
+            filter.lessonScopeId(),
+            filter.lessonId()
+        );
         var scopes = resolveScopes(lessons, permission, filter);
 
-        var students = unionStudentsAcrossScopes(scopes);
+        var students = lessonStudentsApi.studentsOf(scopes);
         var audience = audienceOf(permission);
         var highlightPolicy = subjectMapper.toAttendanceHighlightPolicyResponse(
             permission.getSubject().getAttendanceHighlightPolicy()
         );
 
         return buildTable(highlightPolicy, audience, students, scopes);
-    }
-
-    private List<Lesson> resolveLessons(
-        TeacherSubjectPermission permission,
-        AttendanceFilter filter
-    ) {
-        if (filter.lessonScopeId() != null) {
-            var scope = lessonScopeRepository
-                .findById(filter.lessonScopeId())
-                .orElseThrow(() ->
-                    new ResourceNotFoundException(
-                        "LessonScope",
-                        filter.lessonScopeId()
-                    )
-                );
-            assertSameSubject(scope.getLesson(), permission);
-            assertLessonMatch(scope.getLesson(), filter.lessonId());
-            return List.of(scope.getLesson());
-        }
-        if (filter.lessonId() != null) {
-            var lesson = lessonRepository
-                .findById(filter.lessonId())
-                .orElseThrow(() ->
-                    new ResourceNotFoundException("Lesson", filter.lessonId())
-                );
-            assertSameSubject(lesson, permission);
-            return List.of(lesson);
-        }
-        return lessonRepository.findAllWithDetails(
-            LessonSpecifications.forPermission(permission)
-        );
     }
 
     private List<LessonScope> resolveScopes(
@@ -125,36 +99,6 @@ class AttendanceService implements AttendanceApi {
             );
         }
         return narrowed;
-    }
-
-    private void assertSameSubject(
-        Lesson lesson,
-        TeacherSubjectPermission permission
-    ) {
-        if (
-            !lesson.getSubject().getId().equals(permission.getSubject().getId())
-        ) {
-            throw new IllegalArgumentException(
-                "Lesson " +
-                    lesson.getId() +
-                    " does not belong to subject of permission " +
-                    permission.getId()
-            );
-        }
-    }
-
-    private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
-        if (
-            requestedLessonId != null &&
-            !scopeLesson.getId().equals(requestedLessonId)
-        ) {
-            throw new IllegalArgumentException(
-                "lessonScopeId belongs to lesson " +
-                    scopeLesson.getId() +
-                    " but lessonId=" +
-                    requestedLessonId
-            );
-        }
     }
 
     private AttendanceTableResponse buildTable(
@@ -191,6 +135,7 @@ class AttendanceService implements AttendanceApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLessonScopes(#request.items().![lessonScopeId()])")
     public List<AttendanceCellResponse> upsertAll(
         BulkUpsertAttendanceRequest request
     ) {
@@ -314,36 +259,12 @@ class AttendanceService implements AttendanceApi {
         return result;
     }
 
-    private List<Student> unionStudentsAcrossScopes(List<LessonScope> scopes) {
-        var seen = new LinkedHashMap<UUID, Student>();
-        for (var scope : scopes) {
-            for (var s : lessonStudentsApi.studentsOf(scope)) {
-                seen.putIfAbsent(s.getId(), s);
-            }
-        }
-        var result = new ArrayList<>(seen.values());
-        result.sort(Comparator.comparing(Student::getUsername));
-        return result;
-    }
-
     private List<AttendanceAudienceScope> audienceOf(
         TeacherSubjectPermission permission
     ) {
-        if (LessonSpecifications.permissionAllowsAllGroups(permission)) {
-            return List.of();
-        }
-        return permission
-            .getScopes()
+        return lessonResolver
+            .audienceScopes(permission)
             .stream()
-            .sorted(
-                Comparator.comparing((PermissionScope s) ->
-                    s.getGroup().getName()
-                ).thenComparing(s ->
-                    s.getAllowedSubgroup() == null
-                        ? -1
-                        : s.getAllowedSubgroup().getIndex()
-                )
-            )
             .map(s ->
                 AttendanceAudienceScope.builder()
                     .groupId(s.getGroup().getId())

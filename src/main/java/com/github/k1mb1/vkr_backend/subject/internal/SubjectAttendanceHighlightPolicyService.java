@@ -7,12 +7,14 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.AttendanceHighlightPoli
 import com.github.k1mb1.vkr_backend.subject.web.responses.AttendanceHighlightPolicyResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@PreAuthorize("@authz.canAccessSubject(#subjectId)")
 class SubjectAttendanceHighlightPolicyService
     implements SubjectAttendanceHighlightPolicyApi
 {

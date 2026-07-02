@@ -11,8 +11,11 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.stereotype.Component;
 
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -37,10 +40,29 @@ public class JwtAuthConverter
         return new JwtAuthenticationToken(jwt, authorities, jwt.getSubject());
     }
 
+    /**
+     * Грубые (глобальные) роли — единственное, что мы берём из identity-провайдера.
+     * Тонкие права (какой преподаватель к какому предмету/группам допущен) живут в БД
+     * приложения и резолвятся отдельно по {@code sub}. Из Keycloak realm-роль
+     * {@code admin} превращается в authority {@code ROLE_ADMIN} (для {@code hasRole('ADMIN')}).
+     */
+    @SuppressWarnings("unchecked")
     private Collection<? extends GrantedAuthority> extractResourceRoles(
         @NonNull
         final Jwt jwt
     ) {
-        return Collections.emptySet();
+        val realmAccess = jwt.getClaim("realm_access");
+        if (!(realmAccess instanceof Map<?, ?> claims)) {
+            return List.of();
+        }
+        val roles = claims.get("roles");
+        if (!(roles instanceof Collection<?> roleList)) {
+            return List.of();
+        }
+        return roleList.stream()
+            .filter(String.class::isInstance)
+            .map(String.class::cast)
+            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
+            .collect(toUnmodifiableSet());
     }
 }

@@ -7,12 +7,14 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.CheckInPolicyRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.CheckInPolicyResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@PreAuthorize("@authz.canAccessSubject(#subjectId)")
 class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
 
     final SubjectRepository subjectRepository;

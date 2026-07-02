@@ -2,7 +2,9 @@ package com.github.k1mb1.vkr_backend.grading.internal;
 
 import com.github.k1mb1.vkr_backend.attendance.AttendanceApi;
 import com.github.k1mb1.vkr_backend.attendance.AttendanceSummary;
+import com.github.k1mb1.vkr_backend.common.error.ConflictException;
 import com.github.k1mb1.vkr_backend.common.error.ResourceNotFoundException;
+import com.github.k1mb1.vkr_backend.common.security.AuthorizationService;
 import com.github.k1mb1.vkr_backend.grading.GradingApi;
 import com.github.k1mb1.vkr_backend.grading.domain.Assignment;
 import com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionMode;
@@ -17,11 +19,10 @@ import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
+import com.github.k1mb1.vkr_backend.lesson.internal.LessonResolver;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
-import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import com.github.k1mb1.vkr_backend.subject.internal.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
@@ -32,6 +33,8 @@ import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,13 +55,15 @@ class GradingService implements GradingApi {
 
     final LessonRepository lessonRepository;
 
-    final LessonScopeRepository lessonScopeRepository;
+    final LessonResolver lessonResolver;
 
     final StudentRepository studentRepository;
 
     final AttendanceApi attendanceApi;
 
     final LessonStudentsApi lessonStudentsApi;
+
+    final AuthorizationService authz;
 
     static LocalDate earliestStartedAt(Lesson lesson) {
         return lesson
@@ -91,6 +96,7 @@ class GradingService implements GradingApi {
     }
 
     @Override
+    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public GradingTableResponse getGradingTable(GradingFilter filter) {
         var permission = permissionRepository
             .findWithDetailsById(filter.permissionId())
@@ -101,7 +107,12 @@ class GradingService implements GradingApi {
                 )
             );
 
-        var lessons = resolveLessons(permission, filter)
+        var lessons = lessonResolver
+            .resolveLessons(
+                permission,
+                filter.lessonScopeId(),
+                filter.lessonId()
+            )
             .stream()
             .sorted(
                 Comparator.comparing(
@@ -122,8 +133,12 @@ class GradingService implements GradingApi {
             );
         }
 
-        var students = unionStudentsAcrossScopes(
-            visibleScopesByLesson.values()
+        var students = lessonStudentsApi.studentsOf(
+            visibleScopesByLesson
+                .values()
+                .stream()
+                .flatMap(List::stream)
+                .toList()
         );
         var audience = audienceOf(permission);
         var penaltyPolicy = subjectMapper.toPenaltyPolicyResponse(
@@ -149,67 +164,6 @@ class GradingService implements GradingApi {
             students,
             visibleScopesByLesson
         );
-    }
-
-    private List<Lesson> resolveLessons(
-        TeacherSubjectPermission permission,
-        GradingFilter filter
-    ) {
-        if (filter.lessonScopeId() != null) {
-            var scope = lessonScopeRepository
-                .findById(filter.lessonScopeId())
-                .orElseThrow(() ->
-                    new ResourceNotFoundException(
-                        "LessonScope",
-                        filter.lessonScopeId()
-                    )
-                );
-            assertSameSubject(scope.getLesson(), permission);
-            assertLessonMatch(scope.getLesson(), filter.lessonId());
-            return List.of(scope.getLesson());
-        }
-        if (filter.lessonId() != null) {
-            var lesson = lessonRepository
-                .findById(filter.lessonId())
-                .orElseThrow(() ->
-                    new ResourceNotFoundException("Lesson", filter.lessonId())
-                );
-            assertSameSubject(lesson, permission);
-            return List.of(lesson);
-        }
-        return lessonRepository.findAllWithDetails(
-            LessonSpecifications.forPermission(permission)
-        );
-    }
-
-    private void assertSameSubject(
-        Lesson lesson,
-        TeacherSubjectPermission permission
-    ) {
-        if (
-            !lesson.getSubject().getId().equals(permission.getSubject().getId())
-        ) {
-            throw new IllegalArgumentException(
-                "Lesson " +
-                    lesson.getId() +
-                    " does not belong to subject of permission " +
-                    permission.getId()
-            );
-        }
-    }
-
-    private void assertLessonMatch(Lesson scopeLesson, UUID requestedLessonId) {
-        if (
-            requestedLessonId != null &&
-            !scopeLesson.getId().equals(requestedLessonId)
-        ) {
-            throw new IllegalArgumentException(
-                "lessonScopeId belongs to lesson " +
-                    scopeLesson.getId() +
-                    " but lessonId=" +
-                    requestedLessonId
-            );
-        }
     }
 
     private GradingTableResponse buildTable(
@@ -334,6 +288,7 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLessons(#request.items().![lessonId()])")
     public List<GradeCellResponse> upsertGrades(
         BulkUpsertGradesRequest request
     ) {
@@ -501,6 +456,7 @@ class GradingService implements GradingApi {
     }
 
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<AssignmentResponse> getAssignmentsByLesson(UUID lessonId) {
         return assignmentRepository
             .findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId))
@@ -532,11 +488,12 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#request.lessonId())")
     public List<AssignmentResponse> createAssignments(
         CreateAssignmentsRequest request
     ) {
         if (assignmentRepository.existsByLessonId(request.lessonId())) {
-            throw new IllegalStateException(
+            throw new ConflictException(
                 "Lesson " +
                     request.lessonId() +
                     " already has assignments. " +
@@ -585,6 +542,7 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<AssignmentResponse> updateAssignmentsOfLesson(
         UUID lessonId,
         BulkUpdateAssignmentsRequest request
@@ -694,52 +652,32 @@ class GradingService implements GradingApi {
     @Transactional
     @Override
     public void deleteAssignment(UUID id) {
-        if (!assignmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Assignment", id);
+        // Доступ по id задания: резолвим предмет задания и проверяем доступ к нему.
+        // (через @PreAuthorize нельзя — решение зависит от сущности, которую ещё надо загрузить).
+        var subjectId = assignmentRepository
+            .findSubjectIdById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Assignment", id));
+        if (!authz.canAccessSubject(subjectId)) {
+            throw new AccessDeniedException(
+                "No access to assignment " + id
+            );
         }
         assignmentRepository.deleteById(id);
     }
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public void deleteAssignmentsOfLesson(UUID lessonId) {
         assignmentRepository.deleteByLessonId(lessonId);
-    }
-
-    private List<Student> unionStudentsAcrossScopes(
-        java.util.Collection<List<LessonScope>> scopesPerLesson
-    ) {
-        var seen = new LinkedHashMap<UUID, Student>();
-        for (var scopes : scopesPerLesson) {
-            for (var scope : scopes) {
-                for (var s : lessonStudentsApi.studentsOf(scope)) {
-                    seen.putIfAbsent(s.getId(), s);
-                }
-            }
-        }
-        var result = new ArrayList<>(seen.values());
-        result.sort(Comparator.comparing(Student::getUsername));
-        return result;
     }
 
     private List<GradingAudienceScope> audienceOf(
         TeacherSubjectPermission permission
     ) {
-        if (LessonSpecifications.permissionAllowsAllGroups(permission)) {
-            return List.of();
-        }
-        return permission
-            .getScopes()
+        return lessonResolver
+            .audienceScopes(permission)
             .stream()
-            .sorted(
-                Comparator.comparing((PermissionScope s) ->
-                    s.getGroup().getName()
-                ).thenComparing(s ->
-                    s.getAllowedSubgroup() == null
-                        ? -1
-                        : s.getAllowedSubgroup().getIndex()
-                )
-            )
             .map(s ->
                 GradingAudienceScope.builder()
                     .groupId(s.getGroup().getId())

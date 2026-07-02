@@ -2,9 +2,11 @@ package com.github.k1mb1.vkr_backend.subject.web.requests;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 
+@Builder
 @Schema(
     description = """
         Связка посещаемости с баллом: сколько баллов даёт каждый статус.

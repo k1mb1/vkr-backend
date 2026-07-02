@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.attendance.checkin.internal;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSession;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -11,8 +12,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-interface CheckInSessionRepository
+public interface CheckInSessionRepository
     extends JpaRepository<CheckInSession, UUID> {
+
+    /** id предмета сессии (через scope → занятие) — для проверки доступа по id сессии. */
+    @Query("SELECT s.lessonScope.lesson.subject.id FROM CheckInSession s WHERE s.id = :id")
+    Optional<UUID> findSubjectIdById(UUID id);
 
     @EntityGraph(
         attributePaths = {

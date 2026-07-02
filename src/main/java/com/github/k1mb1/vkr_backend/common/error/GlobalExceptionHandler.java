@@ -78,13 +78,13 @@ public class GlobalExceptionHandler {
             .body(ErrorDto.of(ErrorCode.ILLEGAL_ARGUMENT, ex.getMessage(), BAD_REQUEST));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorDto> handleIllegalState(
-        IllegalStateException ex
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorDto> handleConflict(
+        ConflictException ex
     ) {
-        log.warn("Illegal state: {}", ex.getMessage());
-        return ResponseEntity.status(BAD_REQUEST)
-            .body(ErrorDto.of(ErrorCode.ILLEGAL_STATE, ex.getMessage(), BAD_REQUEST));
+        log.warn("Conflict: {}", ex.getMessage());
+        return ResponseEntity.status(CONFLICT)
+            .body(ErrorDto.of(ErrorCode.CONFLICT, ex.getMessage(), CONFLICT));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
