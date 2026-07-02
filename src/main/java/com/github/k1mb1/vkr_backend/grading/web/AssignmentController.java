@@ -5,6 +5,7 @@ import com.github.k1mb1.vkr_backend.grading.web.requests.BulkUpdateAssignmentsRe
 import com.github.k1mb1.vkr_backend.grading.web.requests.CreateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -29,7 +30,8 @@ public class AssignmentController {
         summary = "Получить список заданий по lessonId (отсортированный по order)"
     )
     @GetMapping
-    public ResponseEntity<List<AssignmentResponse>> getByLesson(
+    public ResponseEntity<List<AssignmentResponse>> getAssignmentsByLesson(
+        @Parameter(description = "ID занятия")
         @RequestParam UUID lessonId
     ) {
         return ResponseEntity.ok(gradingApi.getAssignmentsByLesson(lessonId));
@@ -39,7 +41,7 @@ public class AssignmentController {
         summary = "Создать список заданий для урока (только если у урока ещё нет заданий)"
     )
     @PostMapping
-    public ResponseEntity<List<AssignmentResponse>> create(
+    public ResponseEntity<List<AssignmentResponse>> createAssignments(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Список заданий для урока",
             required = true
@@ -50,7 +52,8 @@ public class AssignmentController {
 
     @Operation(summary = "Массовое обновление заданий урока")
     @PutMapping("/lessons/{lessonId}")
-    public ResponseEntity<List<AssignmentResponse>> updateByLesson(
+    public ResponseEntity<List<AssignmentResponse>> updateLessonAssignments(
+        @Parameter(description = "ID занятия")
         @PathVariable UUID lessonId,
         @Valid @RequestBody BulkUpdateAssignmentsRequest request
     ) {
@@ -63,7 +66,10 @@ public class AssignmentController {
         summary = "Удалить задание (связанные оценки удаляются каскадно)"
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteAssignment(
+        @Parameter(description = "ID задания")
+        @PathVariable UUID id
+    ) {
         gradingApi.deleteAssignment(id);
         return ResponseEntity.noContent().build();
     }
@@ -72,7 +78,10 @@ public class AssignmentController {
         summary = "Удалить все задания занятия (связанные оценки удаляются каскадно)"
     )
     @DeleteMapping("/lessons/{lessonId}")
-    public ResponseEntity<Void> deleteAllOfLesson(@PathVariable UUID lessonId) {
+    public ResponseEntity<Void> deleteLessonAssignments(
+        @Parameter(description = "ID занятия")
+        @PathVariable UUID lessonId
+    ) {
         gradingApi.deleteAssignmentsOfLesson(lessonId);
         return ResponseEntity.noContent().build();
     }

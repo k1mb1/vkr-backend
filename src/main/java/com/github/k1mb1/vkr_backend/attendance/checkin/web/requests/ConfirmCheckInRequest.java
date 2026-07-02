@@ -16,7 +16,7 @@ public record ConfirmCheckInRequest(
     @Schema(description = "Ручные изменения статуса / комментариев для отдельных студентов")
     List<Override> overrides
 ) {
-    @Schema(description = "Ручное переопределение статуса студента")
+    @Schema(name = "ConfirmCheckInOverride", description = "Ручное переопределение статуса студента")
     public record Override(
         @NotNull
         @Schema(

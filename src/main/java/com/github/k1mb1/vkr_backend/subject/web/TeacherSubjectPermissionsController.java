@@ -5,6 +5,7 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.CreateTeacherSubjectPer
 import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.TeacherSubjectPermissionResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,8 @@ public class TeacherSubjectPermissionsController {
 
     @Operation(summary = "Получить список прав преподавателей на предмет")
     @GetMapping
-    public ResponseEntity<List<TeacherSubjectPermissionResponse>> getPermissionsBySubject(
+    public ResponseEntity<List<TeacherSubjectPermissionResponse>> getTeacherSubjectPermissions(
+        @Parameter(description = "ID предмета")
         @RequestParam UUID subjectId
     ) {
         return ResponseEntity.ok(teacherSubjectPermissionsApi.getPermissionsBySubject(subjectId));
@@ -38,8 +40,10 @@ public class TeacherSubjectPermissionsController {
 
     @Operation(summary = "Получить право преподавателя на предмет")
     @GetMapping("/single")
-    public ResponseEntity<TeacherSubjectPermissionResponse> getPermission(
+    public ResponseEntity<TeacherSubjectPermissionResponse> getTeacherSubjectPermission(
+        @Parameter(description = "ID предмета")
         @RequestParam UUID subjectId,
+        @Parameter(description = "ID преподавателя")
         @RequestParam UUID teacherId
     ) {
         return ResponseEntity.ok(teacherSubjectPermissionsApi.getPermission(subjectId, teacherId));
@@ -47,7 +51,7 @@ public class TeacherSubjectPermissionsController {
 
     @Operation(summary = "Создать право преподавателя на предмет")
     @PostMapping
-    public ResponseEntity<TeacherSubjectPermissionResponse> create(
+    public ResponseEntity<TeacherSubjectPermissionResponse> createTeacherSubjectPermission(
         @Valid
         @RequestBody
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -61,7 +65,8 @@ public class TeacherSubjectPermissionsController {
 
     @Operation(summary = "Обновить право преподавателя на предмет")
     @PatchMapping("/{id}")
-    public ResponseEntity<TeacherSubjectPermissionResponse> update(
+    public ResponseEntity<TeacherSubjectPermissionResponse> updateTeacherSubjectPermission(
+        @Parameter(description = "ID права")
         @PathVariable UUID id,
         @Valid
         @RequestBody
@@ -77,7 +82,8 @@ public class TeacherSubjectPermissionsController {
         summary = "Удалить (архивировать) право преподавателя на предмет"
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Void> deleteTeacherSubjectPermission(
+        @Parameter(description = "ID права")
         @PathVariable UUID id
     ) {
         teacherSubjectPermissionsApi.delete(id);

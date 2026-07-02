@@ -67,7 +67,7 @@ public class LessonController {
         description = "Активное занятие — точка отсчёта для понижения балла. Не более одного активного на (предмет, тип)."
     )
     @PatchMapping("/{id}/active")
-    public ResponseEntity<LessonResponse> setActive(
+    public ResponseEntity<LessonResponse> setLessonActive(
         @Parameter(description = "ID занятия") @PathVariable UUID id,
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Флаг активности занятия",
@@ -90,7 +90,7 @@ public class LessonController {
         summary = "Массовое создание занятий: N лекций + M практик с allGroups-scope"
     )
     @PostMapping("/bulk")
-    public ResponseEntity<List<LessonResponse>> bulkCreate(
+    public ResponseEntity<List<LessonResponse>> bulkCreateLessons(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Параметры массового создания",
             required = true
@@ -107,7 +107,7 @@ public class LessonController {
             "Создаёт count занятий: занятие k проводится на k-ю дату каждого item (scope для аудитории item)."
     )
     @PostMapping("/bulk-schedule")
-    public ResponseEntity<List<LessonResponse>> bulkSchedule(
+    public ResponseEntity<List<LessonResponse>> bulkScheduleLessons(
         @Valid @RequestBody @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Параметры расписания",
             required = true

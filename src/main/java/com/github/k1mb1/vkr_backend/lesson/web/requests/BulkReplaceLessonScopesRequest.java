@@ -25,7 +25,7 @@ public record BulkReplaceLessonScopesRequest(
     @Valid
     List<Item> items
 ) {
-    @Schema(description = "Целевое состояние одного scope")
+    @Schema(name = "ReplaceLessonScopeItem", description = "Целевое состояние одного scope")
     public record Item(
         @Schema(description = "ID scope", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull

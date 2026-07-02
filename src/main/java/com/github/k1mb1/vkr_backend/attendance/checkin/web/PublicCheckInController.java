@@ -9,6 +9,7 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheck
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicCheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.PublicStudentResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,8 @@ public class PublicCheckInController {
             "затем ищет себя по фамилии через POST /{id}/students."
     )
     @GetMapping("/{id}")
-    public ResponseEntity<PublicCheckInSessionResponse> get(
+    public ResponseEntity<PublicCheckInSessionResponse> getPublicCheckInSession(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id
     ) {
         return ResponseEntity.ok(checkInSessionApi.getPublic(id));
@@ -53,7 +55,8 @@ public class PublicCheckInController {
             "400 — код неверный либо сессия закрыта."
     )
     @PostMapping("/{id}/verify-code")
-    public ResponseEntity<Void> verifyCode(
+    public ResponseEntity<Void> verifyCheckInCode(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id,
         @Valid
         @RequestBody
@@ -70,7 +73,8 @@ public class PublicCheckInController {
             "посещаемости. Неверный код — 400; пустой/короткий запрос — пустой список."
     )
     @PostMapping("/{id}/students")
-    public ResponseEntity<List<PublicStudentResponse>> searchStudents(
+    public ResponseEntity<List<PublicStudentResponse>> searchPublicCheckInStudents(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id,
         @Valid
         @RequestBody
@@ -87,7 +91,8 @@ public class PublicCheckInController {
             "Возвращает только собственный статус отметки."
     )
     @PostMapping("/{id}/check-in")
-    public ResponseEntity<PublicCheckInRecordResponse> checkIn(
+    public ResponseEntity<PublicCheckInRecordResponse> submitCheckIn(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id,
         @Valid
         @RequestBody

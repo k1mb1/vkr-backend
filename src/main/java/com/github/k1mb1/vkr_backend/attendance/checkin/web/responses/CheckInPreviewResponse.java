@@ -20,7 +20,7 @@ public record CheckInPreviewResponse(
     List<Row> rows
 ) {
     @Builder
-    @Schema(description = "Строка сверки")
+    @Schema(name = "CheckInPreviewRow", description = "Строка сверки")
     public record Row(
         @Schema(description = "ID студента") UUID studentId,
 

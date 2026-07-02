@@ -62,6 +62,7 @@ public record BulkScheduleLessonsRequest(
     List<@NotNull Item> items
 ) {
     @Schema(
+        name = "ScheduleLessonItem",
         description = "Один элемент расписания: аудитория + её собственный старт и недельный шаблон."
     )
     public record Item(

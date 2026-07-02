@@ -61,9 +61,9 @@ public class SubjectsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(subjectsApi.createSubject(request));
     }
 
-    @Operation(summary = "Get subjects page filtered by name")
+    @Operation(summary = "Получить страницу предметов с фильтрацией по названию")
     @GetMapping
-    public ResponseEntity<Page<SubjectPageResponse>> getPage(
+    public ResponseEntity<Page<SubjectPageResponse>> getSubjectsPage(
         @ParameterObject
         @ModelAttribute
         SubjectFilter filter,

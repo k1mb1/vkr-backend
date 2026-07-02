@@ -31,6 +31,7 @@ public record AssignmentResponse(
     List<AdmissionTier> admissionTiers
 ) {
     @Schema(
+        name = "AssignmentAdmissionTier",
         description = "Уровень допуска задания: ссылка на банду и минимальный балл"
     )
     public record AdmissionTier(

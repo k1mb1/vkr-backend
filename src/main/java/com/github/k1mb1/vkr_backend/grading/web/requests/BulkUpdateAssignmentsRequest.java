@@ -24,7 +24,7 @@ public record BulkUpdateAssignmentsRequest(
     @Valid
     List<Item> items
 ) {
-    @Schema(description = "Целевое состояние задания")
+    @Schema(name = "UpdateAssignmentItem", description = "Целевое состояние задания")
     public record Item(
         @Schema(
             description = "ID задания",
@@ -70,6 +70,7 @@ public record BulkUpdateAssignmentsRequest(
         List<AdmissionTier> admissionTiers
     ) {
         @Schema(
+            name = "UpdateAssignmentAdmissionTier",
             description = "Уровень допуска задания: ссылка на банду и минимальный балл"
         )
         public record AdmissionTier(

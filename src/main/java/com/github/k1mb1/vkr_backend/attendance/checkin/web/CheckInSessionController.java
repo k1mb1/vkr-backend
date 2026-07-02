@@ -7,6 +7,7 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.web.requests.StartCheckIn
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInPreviewResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.web.responses.CheckInSessionResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ public class CheckInSessionController {
 
     @Operation(summary = "Запустить опрос по посещаемости на занятии")
     @PostMapping
-    public ResponseEntity<CheckInSessionResponse> start(
+    public ResponseEntity<CheckInSessionResponse> startCheckInSession(
         @Valid
         @RequestBody
         StartCheckInRequest request
@@ -42,7 +43,8 @@ public class CheckInSessionController {
 
     @Operation(summary = "Получить состояние одной check-in сессии")
     @GetMapping("/{id}")
-    public ResponseEntity<CheckInSessionResponse> get(
+    public ResponseEntity<CheckInSessionResponse> getCheckInSession(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id
     ) {
         return ResponseEntity.ok(checkInSessionApi.get(id));
@@ -50,7 +52,7 @@ public class CheckInSessionController {
 
     @Operation(summary = "Список check-in сессий с фильтрами по предмету разрешения / занятию / scope")
     @GetMapping
-    public ResponseEntity<List<CheckInSessionResponse>> list(
+    public ResponseEntity<List<CheckInSessionResponse>> getCheckInSessions(
         @ParameterObject
         @Valid
         @ModelAttribute
@@ -63,7 +65,8 @@ public class CheckInSessionController {
         summary = "Сверочный пред-просмотр (что попадёт в основную посещаемость)"
     )
     @GetMapping("/{id}/preview")
-    public ResponseEntity<CheckInPreviewResponse> preview(
+    public ResponseEntity<CheckInPreviewResponse> previewCheckInSession(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id
     ) {
         return ResponseEntity.ok(checkInSessionApi.preview(id));
@@ -73,7 +76,8 @@ public class CheckInSessionController {
         summary = "Подтвердить и перенести результаты в основную посещаемость"
     )
     @PostMapping("/{id}/confirm")
-    public ResponseEntity<CheckInSessionResponse> confirm(
+    public ResponseEntity<CheckInSessionResponse> confirmCheckInSession(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id,
         @Valid
         @RequestBody(required = false)
@@ -84,7 +88,8 @@ public class CheckInSessionController {
 
     @Operation(summary = "Отменить check-in сессию (без переноса в посещаемость)")
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<CheckInSessionResponse> cancel(
+    public ResponseEntity<CheckInSessionResponse> cancelCheckInSession(
+        @Parameter(description = "ID check-in сессии")
         @PathVariable UUID id
     ) {
         return ResponseEntity.ok(checkInSessionApi.cancel(id));

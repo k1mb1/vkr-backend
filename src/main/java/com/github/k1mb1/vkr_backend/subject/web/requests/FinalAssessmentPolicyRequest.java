@@ -69,6 +69,7 @@ public record FinalAssessmentPolicyRequest(
     Boolean attendanceCountExcused
 ) {
     @Schema(
+        name = "FinalAssessmentBandRequest",
         description = "Банда: ярлык и условия его получения (minPoints, minPercent и/или requiredTasks, AND)"
     )
     public record Band(

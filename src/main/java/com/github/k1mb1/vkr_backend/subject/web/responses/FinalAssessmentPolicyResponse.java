@@ -50,6 +50,7 @@ public record FinalAssessmentPolicyResponse(
     boolean attendanceCountExcused
 ) {
     @Schema(
+        name = "FinalAssessmentBandResponse",
         description = "Банда: ярлык и условия его получения (minPoints, minPercent и/или requiredTasks, AND)"
     )
     @Builder

@@ -62,9 +62,9 @@ public class TeachersController {
             .body(teachersApi.createOrUpdateTeacher(id, request));
     }
 
-    @Operation(summary = "Получение преподавателей")
+    @Operation(summary = "Получить страницу преподавателей с фильтрацией по имени")
     @GetMapping
-    public ResponseEntity<Page<TeacherResponse>> getPageTeachers(
+    public ResponseEntity<Page<TeacherResponse>> getTeachersPage(
         @ParameterObject
         @ModelAttribute
         TeacherFilter filter,

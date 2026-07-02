@@ -27,7 +27,7 @@ public class LessonScopesController {
     @PostMapping(
         value = "/api/lessons/{lessonId}/scopes", produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<List<LessonScopeResponse>> addScopes(
+    public ResponseEntity<List<LessonScopeResponse>> addLessonScopes(
         @Parameter(description = "ID занятия")
         @PathVariable
         UUID lessonId,
@@ -40,5 +40,21 @@ public class LessonScopesController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(lessonScopesApi.addScopes(lessonId, request));
+    }
+
+    @Operation(
+        summary = "Удалить один scope занятия",
+        description = "Помечает scope как архивный (soft-delete). Идентифицируется по глобальному ID scope'а."
+    )
+    @DeleteMapping(
+        value = "/api/lesson-scopes/{scopeId}", produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Void> deleteLessonScope(
+        @Parameter(description = "ID scope'а занятия")
+        @PathVariable
+        UUID scopeId
+    ) {
+        lessonScopesApi.deleteScope(scopeId);
+        return ResponseEntity.noContent().build();
     }
 }

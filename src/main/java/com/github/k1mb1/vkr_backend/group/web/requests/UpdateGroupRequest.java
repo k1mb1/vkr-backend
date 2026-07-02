@@ -26,7 +26,7 @@ public record UpdateGroupRequest(
     List<@Valid StudentPatchRequest> students
 ) {
     @Builder
-    @Schema(description = "Данные студента для обновления состава группы")
+    @Schema(name = "UpdateGroupStudentItem", description = "Данные студента для обновления состава группы")
     public record StudentPatchRequest(
         @Schema(
             description = "ID существующего студента (null для нового)"

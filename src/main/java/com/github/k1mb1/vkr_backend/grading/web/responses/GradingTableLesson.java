@@ -27,7 +27,7 @@ public record GradingTableLesson(
     @Schema(description = "Проведения этого занятия для соответствующих групп")
     List<Scope> scopes
 ) {
-    @Schema(description = "Проведение занятия для группы (для отображения даты в шапке колонки)")
+    @Schema(name = "GradingTableScope", description = "Проведение занятия для группы (для отображения даты в шапке колонки)")
     public record Scope(
         @Schema(description = "ID проведения")
         UUID id,

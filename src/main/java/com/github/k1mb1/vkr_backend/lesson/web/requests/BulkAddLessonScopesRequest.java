@@ -23,7 +23,7 @@ public record BulkAddLessonScopesRequest(
     @Valid
     List<Item> items
 ) {
-    @Schema(description = "Новый scope")
+    @Schema(name = "AddLessonScopeItem", description = "Новый scope")
     public record Item(
         @Schema(description = "Аудитория. null = allGroups=true; иначе — конкретная группа")
         @Valid

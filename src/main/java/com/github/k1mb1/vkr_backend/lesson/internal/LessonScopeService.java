@@ -112,6 +112,16 @@ class LessonScopeService
             .toList();
     }
 
+    @Transactional
+    @Override
+    @PreAuthorize("@authz.canAccessLessonScopes({#scopeId})")
+    public void deleteScope(UUID scopeId) {
+        var scope = lessonScopeRepository.findById(scopeId)
+            .orElseThrow(() -> new ResourceNotFoundException("LessonScope", scopeId));
+        scope.archive();
+        lessonScopeRepository.save(scope);
+    }
+
     private void applyAudience(LessonScope scope, LessonScopeAudienceRequest audience) {
         if (audience == null) {
             scope.setAllGroups(true);

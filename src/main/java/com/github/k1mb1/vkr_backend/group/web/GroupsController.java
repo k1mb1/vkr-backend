@@ -35,7 +35,7 @@ public class GroupsController {
 
     @Operation(summary = "Получить страницу групп с фильтрацией по названию")
     @GetMapping
-    public ResponseEntity<Page<GroupPageResponse>> getGroupPage(
+    public ResponseEntity<Page<GroupPageResponse>> getGroupsPage(
         @ParameterObject
         @ModelAttribute
         GroupFilter filter,

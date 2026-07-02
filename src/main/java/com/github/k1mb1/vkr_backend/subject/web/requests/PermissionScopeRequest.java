@@ -18,7 +18,7 @@ public record PermissionScopeRequest(
     @Schema(description = "Разрешённый тип занятия (null = все типы)")
     LessonType allowedLessonType
 ) {
-    @Schema(description = "Группа + опциональная подгруппа")
+    @Schema(name = "PermissionScopeGroupRef", description = "Группа + опциональная подгруппа")
     public record PermissionScopeGroupRef(
         @Schema(description = "ID группы", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull

@@ -11,4 +11,6 @@ public interface LessonScopesApi {
     List<LessonScopeResponse> addScopes(UUID lessonId, BulkAddLessonScopesRequest request);
 
     List<LessonScopeResponse> replaceScopesOfLesson(UUID lessonId, BulkReplaceLessonScopesRequest request);
+
+    void deleteScope(UUID scopeId);
 }

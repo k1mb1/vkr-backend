@@ -52,7 +52,7 @@ public class AttendanceController {
         summary = "Массовое создание/обновление ячеек посещаемости"
     )
     @PutMapping
-    public ResponseEntity<List<AttendanceCellResponse>> upsertAll(
+    public ResponseEntity<List<AttendanceCellResponse>> bulkUpsertAttendance(
         @Valid
         @RequestBody
         @io.swagger.v3.oas.annotations.parameters.RequestBody(

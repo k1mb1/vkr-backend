@@ -30,7 +30,7 @@ public record CreateAssignmentsRequest(
     )
     List<Item> items
 ) {
-    @Schema(description = "Описание одного задания в bulk-запросе")
+    @Schema(name = "CreateAssignmentItem", description = "Описание одного задания в bulk-запросе")
     public record Item(
         @Positive
         @Schema(
@@ -62,6 +62,7 @@ public record CreateAssignmentsRequest(
         List<AdmissionTier> admissionTiers
     ) {
         @Schema(
+            name = "CreateAssignmentAdmissionTier",
             description = "Уровень допуска задания: ссылка на банду и минимальный балл"
         )
         public record AdmissionTier(
