@@ -14,7 +14,7 @@
     <name>vkr-backend</name>
     <description>Demo project for Spring Boot</description>
     <properties>
-        <springdoc.version>3.0.2</springdoc.version>
+        <springdoc.version>3.0.3</springdoc.version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
         <java.version>25</java.version>
     </properties>

@@ -42,7 +42,7 @@ class SubjectService
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#id)")
+    @PreAuthorize("@authz.canManageSubject(#id)")
     public SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request) {
         var subject = subjectRepository.findById(id)
             .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + id));

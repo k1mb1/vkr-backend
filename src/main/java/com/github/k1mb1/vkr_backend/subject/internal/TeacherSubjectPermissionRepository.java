@@ -38,19 +38,25 @@ public interface TeacherSubjectPermissionRepository
     boolean existsByTeacherIdAndSubjectId(UUID teacherId, UUID subjectId);
 
     /**
-     * Лёгкая проекция для снапшота прав: id выданных permission'ов и предметов одного
-     * преподавателя одним запросом, без подтягивания scope'ов.
+     * Лёгкая проекция для снапшота прав: id выданных permission'ов, предметов и признак
+     * полного доступа одного преподавателя одним запросом, без подтягивания scope'ов.
      */
     @Query("""
-        SELECT p.id AS permissionId, p.subject.id AS subjectId
+        SELECT p.id AS permissionId, p.subject.id AS subjectId, p.allPermissions AS allPermissions
         FROM TeacherSubjectPermission p
         WHERE p.teacher.id = :teacherId
         """)
     List<OwnedPermissionView> findOwnedByTeacherId(UUID teacherId);
 
+    /** Предмет, к которому относится выданное право — для авторизации управления по id права. */
+    @Query("SELECT p.subject.id FROM TeacherSubjectPermission p WHERE p.id = :id")
+    Optional<UUID> findSubjectIdById(UUID id);
+
     interface OwnedPermissionView {
         UUID getPermissionId();
 
         UUID getSubjectId();
+
+        boolean getAllPermissions();
     }
 }

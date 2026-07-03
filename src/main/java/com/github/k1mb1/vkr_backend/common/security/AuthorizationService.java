@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.common.security;
 import com.github.k1mb1.vkr_backend.attendance.checkin.internal.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
+import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,7 @@ public class AuthorizationService {
     private final LessonScopeRepository lessonScopeRepository;
     private final LessonRepository lessonRepository;
     private final CheckInSessionRepository checkInSessionRepository;
+    private final TeacherSubjectPermissionRepository permissionRepository;
 
     public boolean isAdmin() {
         return security.isAdmin();
@@ -51,6 +53,32 @@ public class AuthorizationService {
             return true;
         }
         return current().map(p -> p.hasSubject(subjectId)).orElse(false);
+    }
+
+    /**
+     * Право управлять предметом: админ либо преподаватель с полным доступом
+     * ({@code allPermissions=true}) на этот предмет. В отличие от {@link #canAccessSubject},
+     * преподавателю со scope-ограниченным правом управление недоступно.
+     */
+    public boolean canManageSubject(UUID subjectId) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        return current().map(p -> p.hasFullAccessToSubject(subjectId)).orElse(false);
+    }
+
+    /** Право управлять предметом, к которому относится выданное право (по его id). */
+    public boolean canManagePermission(UUID permissionId) {
+        if (security.isAdmin()) {
+            return true;
+        }
+        if (permissionId == null) {
+            return false;
+        }
+        return permissionRepository
+            .findSubjectIdById(permissionId)
+            .map(this::canManageSubject)
+            .orElse(false);
     }
 
     /** Все указанные scope'ы (проведения занятий) принадлежат предметам, доступным пользователю. */

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.github.k1mb1.vkr_backend.attendance.checkin.internal.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
+import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +38,9 @@ class AuthorizationServiceTest {
 
     @Mock
     CheckInSessionRepository checkInSessionRepository;
+
+    @Mock
+    TeacherSubjectPermissionRepository permissionRepository;
 
     @InjectMocks
     AuthorizationService authz;
@@ -140,6 +144,65 @@ class AuthorizationServiceTest {
 
         assertThat(authz.canAccessSubject(subjectId)).isTrue();
         assertThat(authz.canAccessSubject(UUID.randomUUID())).isFalse();
+    }
+
+    // ---- canManageSubject / canManagePermission ----
+
+    @Test
+    void canManageSubjectRequiresFullAccessNotJustAnyAccess() {
+        var scopedSubject = UUID.randomUUID();
+        var fullSubject = UUID.randomUUID();
+        asUserWith(new UserPermissions(
+            Set.of(), Set.of(scopedSubject, fullSubject), Set.of(fullSubject)));
+
+        assertThat(authz.canManageSubject(fullSubject)).isTrue();
+        // доступ есть (scope), но полного нет — управлять нельзя
+        assertThat(authz.canManageSubject(scopedSubject)).isFalse();
+        assertThat(authz.canManageSubject(UUID.randomUUID())).isFalse();
+    }
+
+    @Test
+    void adminCanManageAnySubjectWithoutResolvingPermissions() {
+        when(security.isAdmin()).thenReturn(true);
+
+        assertThat(authz.canManageSubject(UUID.randomUUID())).isTrue();
+        assertThat(authz.canManagePermission(UUID.randomUUID())).isTrue();
+
+        verify(permissionResolver, never()).forUser(any());
+        verify(permissionRepository, never()).findSubjectIdById(any());
+    }
+
+    @Test
+    void canManagePermissionResolvedViaSubjectFullAccess() {
+        var fullSubject = UUID.randomUUID();
+        asUserWith(new UserPermissions(Set.of(), Set.of(fullSubject), Set.of(fullSubject)));
+        var permissionId = UUID.randomUUID();
+        when(permissionRepository.findSubjectIdById(permissionId))
+            .thenReturn(Optional.of(fullSubject));
+
+        assertThat(authz.canManagePermission(permissionId)).isTrue();
+    }
+
+    @Test
+    void canManagePermissionDeniedWhenOnlyScopedAccessToSubject() {
+        var scopedSubject = UUID.randomUUID();
+        asUserWith(new UserPermissions(Set.of(), Set.of(scopedSubject), Set.of()));
+        var permissionId = UUID.randomUUID();
+        when(permissionRepository.findSubjectIdById(permissionId))
+            .thenReturn(Optional.of(scopedSubject));
+
+        assertThat(authz.canManagePermission(permissionId)).isFalse();
+    }
+
+    @Test
+    void canManagePermissionDeniedWhenPermissionMissingOrNull() {
+        when(security.isAdmin()).thenReturn(false);
+        var permissionId = UUID.randomUUID();
+        lenient().when(permissionRepository.findSubjectIdById(permissionId))
+            .thenReturn(Optional.empty());
+
+        assertThat(authz.canManagePermission(permissionId)).isFalse();
+        assertThat(authz.canManagePermission(null)).isFalse();
     }
 
     @Test

@@ -30,10 +30,18 @@ public class PermissionResolver {
     public UserPermissions forUser(UUID teacherId) {
         Set<UUID> permissionIds = new HashSet<>();
         Set<UUID> subjectIds = new HashSet<>();
+        Set<UUID> fullAccessSubjectIds = new HashSet<>();
         for (var row : permissionRepository.findOwnedByTeacherId(teacherId)) {
             permissionIds.add(row.getPermissionId());
             subjectIds.add(row.getSubjectId());
+            if (row.getAllPermissions()) {
+                fullAccessSubjectIds.add(row.getSubjectId());
+            }
         }
-        return new UserPermissions(Set.copyOf(permissionIds), Set.copyOf(subjectIds));
+        return new UserPermissions(
+            Set.copyOf(permissionIds),
+            Set.copyOf(subjectIds),
+            Set.copyOf(fullAccessSubjectIds)
+        );
     }
 }

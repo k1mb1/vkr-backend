@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@PreAuthorize("@authz.canAccessSubject(#subjectId)")
 class SubjectAttendanceHighlightPolicyService
     implements SubjectAttendanceHighlightPolicyApi
 {
@@ -24,6 +23,7 @@ class SubjectAttendanceHighlightPolicyService
     final SubjectMapper subjectMapper;
 
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public AttendanceHighlightPolicyResponse getAttendanceHighlightPolicy(
         UUID subjectId
     ) {
@@ -39,6 +39,7 @@ class SubjectAttendanceHighlightPolicyService
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public AttendanceHighlightPolicyResponse updateAttendanceHighlightPolicy(
         UUID subjectId,
         AttendanceHighlightPolicyRequest request

@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@PreAuthorize("@authz.canAccessSubject(#subjectId)")
 class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
 
     final SubjectRepository subjectRepository;
@@ -22,6 +21,7 @@ class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
     final SubjectMapper subjectMapper;
 
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public PenaltyPolicyResponse getPenaltyPolicy(UUID subjectId) {
         var subject = subjectRepository
             .findById(subjectId)
@@ -35,6 +35,7 @@ class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public PenaltyPolicyResponse updatePenaltyPolicy(
         UUID subjectId,
         PenaltyPolicyRequest request

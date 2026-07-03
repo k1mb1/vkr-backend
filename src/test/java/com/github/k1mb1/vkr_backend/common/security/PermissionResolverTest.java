@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.common.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,9 +25,14 @@ class PermissionResolverTest {
     PermissionResolver resolver;
 
     private OwnedPermissionView view(UUID permissionId, UUID subjectId) {
+        return view(permissionId, subjectId, false);
+    }
+
+    private OwnedPermissionView view(UUID permissionId, UUID subjectId, boolean allPermissions) {
         var v = mock(OwnedPermissionView.class);
         when(v.getPermissionId()).thenReturn(permissionId);
         when(v.getSubjectId()).thenReturn(subjectId);
+        lenient().when(v.getAllPermissions()).thenReturn(allPermissions);
         return v;
     }
 
@@ -43,6 +49,24 @@ class PermissionResolverTest {
 
         assertThat(result.permissionIds()).containsExactlyInAnyOrder(p1, p2);
         assertThat(result.subjectIds()).containsExactly(subject);
+    }
+
+    @Test
+    void collectsOnlyFullAccessSubjectsIntoManageableSet() {
+        var teacherId = UUID.randomUUID();
+        var fullSubject = UUID.randomUUID();
+        var scopedSubject = UUID.randomUUID();
+        var views = List.of(
+            view(UUID.randomUUID(), fullSubject, true),
+            view(UUID.randomUUID(), scopedSubject, false));
+        when(permissionRepository.findOwnedByTeacherId(teacherId)).thenReturn(views);
+
+        var result = resolver.forUser(teacherId);
+
+        assertThat(result.subjectIds()).containsExactlyInAnyOrder(fullSubject, scopedSubject);
+        assertThat(result.fullAccessSubjectIds()).containsExactly(fullSubject);
+        assertThat(result.hasFullAccessToSubject(fullSubject)).isTrue();
+        assertThat(result.hasFullAccessToSubject(scopedSubject)).isFalse();
     }
 
     @Test

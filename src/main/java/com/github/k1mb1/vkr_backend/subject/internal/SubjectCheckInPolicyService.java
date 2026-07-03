@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@PreAuthorize("@authz.canAccessSubject(#subjectId)")
 class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
 
     final SubjectRepository subjectRepository;
@@ -22,6 +21,7 @@ class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
     final SubjectMapper subjectMapper;
 
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public CheckInPolicyResponse getCheckInPolicy(UUID subjectId) {
         var subject = subjectRepository
             .findById(subjectId)
@@ -35,6 +35,7 @@ class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public CheckInPolicyResponse updateCheckInPolicy(
         UUID subjectId,
         CheckInPolicyRequest request

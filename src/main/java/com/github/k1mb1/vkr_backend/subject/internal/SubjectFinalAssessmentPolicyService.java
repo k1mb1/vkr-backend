@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@PreAuthorize("@authz.canAccessSubject(#subjectId)")
 class SubjectFinalAssessmentPolicyService
     implements SubjectFinalAssessmentPolicyApi
 {
@@ -33,6 +32,7 @@ class SubjectFinalAssessmentPolicyService
     EntityManager entityManager;
 
     @Override
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public FinalAssessmentPolicyResponse getFinalAssessmentPolicy(
         UUID subjectId
     ) {
@@ -48,6 +48,7 @@ class SubjectFinalAssessmentPolicyService
 
     @Transactional
     @Override
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public FinalAssessmentPolicyResponse updateFinalAssessmentPolicy(
         UUID subjectId,
         FinalAssessmentPolicyRequest request
