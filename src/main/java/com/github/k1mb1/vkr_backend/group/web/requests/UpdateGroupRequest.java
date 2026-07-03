@@ -21,7 +21,8 @@ public record UpdateGroupRequest(
     String name,
 
     @Schema(
-        description = "Полный новый состав студентов. null — не трогать состав, []  — архивировать всех существующих"
+        description = "Полный новый состав студентов. null — не трогать состав, []  — архивировать всех существующих",
+        types = {"array", "null"}
     )
     List<@Valid StudentPatchRequest> students
 ) {

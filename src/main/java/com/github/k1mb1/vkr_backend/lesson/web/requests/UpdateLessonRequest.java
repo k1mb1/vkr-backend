@@ -14,13 +14,15 @@ import jakarta.validation.Valid;
 public record UpdateLessonRequest(
     @Valid
     @Schema(
-        description = "Шапка занятия (subject, type, topic, orderIndex). null — не трогать."
+        description = "Шапка занятия (subject, type, topic, orderIndex). null — не трогать.",
+        types = {"object", "null"}
     )
     UpdateLessonHeaderRequest header,
 
     @Valid
     @Schema(
-        description = "Замена scope'ов по id. Все scope'ы должны принадлежать этому уроку. null — не трогать."
+        description = "Замена scope'ов по id. Все scope'ы должны принадлежать этому уроку. null — не трогать.",
+        types = {"object", "null"}
     )
     BulkReplaceLessonScopesRequest scopes
 ) {}

@@ -23,7 +23,8 @@ public record UpdateTeacherSubjectPermissionRequest(
     Boolean allPermissions,
 
     @Schema(
-        description = "Новый список scopes (null — не менять). Если задан — должен быть непустым."
+        description = "Новый список scopes (null — не менять). Если задан — должен быть непустым.",
+        types = {"array", "null"}
     )
     @Valid
     List<PermissionScopeRequest> scopes

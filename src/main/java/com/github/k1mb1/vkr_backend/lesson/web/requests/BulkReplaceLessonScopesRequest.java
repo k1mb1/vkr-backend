@@ -31,7 +31,10 @@ public record BulkReplaceLessonScopesRequest(
         @NotNull
         UUID id,
 
-        @Schema(description = "Аудитория. null = allGroups=true; иначе — конкретная группа")
+        @Schema(
+            description = "Аудитория. null = allGroups=true; иначе — конкретная группа",
+            types = {"object", "null"}
+        )
         @Valid
         LessonScopeAudienceRequest audience,
 

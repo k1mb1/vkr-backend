@@ -83,21 +83,24 @@ public record FinalAssessmentPolicyRequest(
         String label,
 
         @Schema(
-            description = "Минимальный итоговый балл (включительно). null — без ограничения по баллам"
+            description = "Минимальный итоговый балл (включительно). null — без ограничения по баллам",
+            types = {"integer", "null"}
         )
         @Min(0)
         Integer minPoints,
 
         @Schema(
             description = "Минимальный процент (0..100) от максимально возможных баллов " +
-                "(включительно). Отдельное условие рядом с minPoints. null — без ограничения по проценту"
+                "(включительно). Отдельное условие рядом с minPoints. null — без ограничения по проценту",
+            types = {"integer", "null"}
         )
         @Min(0)
         @Max(100)
         Integer minPercent,
 
         @Schema(
-            description = "Минимум закрытых обязательных задач. null — без ограничения по задачам"
+            description = "Минимум закрытых обязательных задач. null — без ограничения по задачам",
+            types = {"integer", "null"}
         )
         @Min(0)
         Integer requiredTasks

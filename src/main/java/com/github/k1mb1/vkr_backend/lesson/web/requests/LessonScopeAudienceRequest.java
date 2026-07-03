@@ -11,6 +11,6 @@ public record LessonScopeAudienceRequest(
     @NotNull
     UUID groupId,
 
-    @Schema(description = "ID разрешённой подгруппы (null = вся группа)")
+    @Schema(description = "ID разрешённой подгруппы (null = вся группа)", types = {"string", "null"})
     UUID allowedSubgroupId
 ) {}

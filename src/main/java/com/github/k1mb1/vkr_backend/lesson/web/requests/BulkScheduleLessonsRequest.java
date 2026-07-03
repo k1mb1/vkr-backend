@@ -68,7 +68,8 @@ public record BulkScheduleLessonsRequest(
     public record Item(
         @Schema(
             description = "Аудитория для созданных пар (группа + опциональная подгруппа). " +
-                "null = все группы."
+                "null = все группы.",
+            types = {"object", "null"}
         )
         @Valid
         LessonScopeAudienceRequest audience,

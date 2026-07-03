@@ -25,7 +25,10 @@ public record BulkAddLessonScopesRequest(
 ) {
     @Schema(name = "AddLessonScopeItem", description = "Новый scope")
     public record Item(
-        @Schema(description = "Аудитория. null = allGroups=true; иначе — конкретная группа")
+        @Schema(
+            description = "Аудитория. null = allGroups=true; иначе — конкретная группа",
+            types = {"object", "null"}
+        )
         @Valid
         LessonScopeAudienceRequest audience,
 

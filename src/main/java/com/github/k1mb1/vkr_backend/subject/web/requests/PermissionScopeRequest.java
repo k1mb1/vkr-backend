@@ -11,11 +11,14 @@ import java.util.UUID;
     description = "Один scope права: группа (или все группы) + опциональный тип занятия. " + "Подгруппа допустима только внутри конкретной группы."
 )
 public record PermissionScopeRequest(
-    @Schema(description = "Группа scope'а; null = все группы предмета (тогда подгруппу указать нельзя)")
+    @Schema(
+        description = "Группа scope'а; null = все группы предмета (тогда подгруппу указать нельзя)",
+        types = {"object", "null"}
+    )
     @Valid
     PermissionScopeGroupRef group,
 
-    @Schema(description = "Разрешённый тип занятия (null = все типы)")
+    @Schema(description = "Разрешённый тип занятия (null = все типы)", types = {"string", "null"})
     LessonType allowedLessonType
 ) {
     @Schema(name = "PermissionScopeGroupRef", description = "Группа + опциональная подгруппа")
@@ -24,7 +27,7 @@ public record PermissionScopeRequest(
         @NotNull
         UUID groupId,
 
-        @Schema(description = "ID разрешённой подгруппы (null = вся группа)")
+        @Schema(description = "ID разрешённой подгруппы (null = вся группа)", types = {"string", "null"})
         UUID allowedSubgroupId
     ) {}
 }

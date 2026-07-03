@@ -16,7 +16,10 @@ public record UpsertGradeRequest(
     @Schema(description = "ID занятия", requiredMode = Schema.RequiredMode.REQUIRED)
     UUID lessonId,
 
-    @Schema(description = "ID задания. null = оценка вне задания (одна на пару студент+занятие)")
+    @Schema(
+        description = "ID задания. null = оценка вне задания (одна на пару студент+занятие)",
+        types = {"string", "null"}
+    )
     UUID assignmentId,
 
     @Positive
