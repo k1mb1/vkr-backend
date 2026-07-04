@@ -11,6 +11,8 @@ import com.github.k1mb1.vkr_backend.subject.web.requests.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
 import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
+import java.util.HashSet;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
@@ -19,14 +21,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class SubjectService
-    implements SubjectsApi {
+class SubjectService implements SubjectsApi {
 
     final SubjectRepository subjectRepository;
 
@@ -44,8 +42,9 @@ class SubjectService
     @Override
     @PreAuthorize("@authz.canManageSubject(#id)")
     public SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request) {
-        var subject = subjectRepository.findById(id)
-            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + id));
+        var subject = subjectRepository
+                .findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + id));
 
         subjectMapper.updateEntity(request, subject);
         return subjectMapper.toFullResponse(subjectRepository.save(subject));
@@ -56,9 +55,9 @@ class SubjectService
     @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public SubjectResponse createSubject(CreateSubjectRequest request) {
         var subject = Subject.builder()
-            .name(request.name())
-            .description(request.description())
-            .build();
+                .name(request.name())
+                .description(request.description())
+                .build();
 
         for (var groupId : new HashSet<>(request.groupIds())) {
             subject.getGroups().add(groupReferenceService.getGroupReferenceById(groupId));
@@ -68,10 +67,10 @@ class SubjectService
 
         var teacher = teacherReferenceService.getTeacherReferenceById(request.teacherId());
         var permission = TeacherSubjectPermission.builder()
-            .teacher(teacher)
-            .subject(subject)
-            .allPermissions(true)
-            .build();
+                .teacher(teacher)
+                .subject(subject)
+                .allPermissions(true)
+                .build();
 
         permissionRepository.save(permission);
 
@@ -83,15 +82,11 @@ class SubjectService
         // Не-админ всегда видит только свои предметы: teacherId жёстко берётся из токена,
         // что бы клиент ни прислал в фильтре. Админ может смотреть по любому teacherId.
         var effectiveFilter = securityService.isAdmin()
-            ? filter
-            : new SubjectFilter(
-                filter.name(),
-                securityService.currentSubjectId().orElseThrow()
-            );
-        return subjectRepository.findAll(
-                new SubjectSpecifications(effectiveFilter).toSpecification(),
-                pageable
-            )
-            .map(subjectMapper::toResponse);
+                ? filter
+                : new SubjectFilter(
+                        filter.name(), securityService.currentSubjectId().orElseThrow());
+        return subjectRepository
+                .findAll(new SubjectSpecifications(effectiveFilter).toSpecification(), pageable)
+                .map(subjectMapper::toResponse);
     }
 }

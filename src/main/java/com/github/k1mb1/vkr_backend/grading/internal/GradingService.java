@@ -14,7 +14,12 @@ import com.github.k1mb1.vkr_backend.grading.web.requests.BulkUpdateAssignmentsRe
 import com.github.k1mb1.vkr_backend.grading.web.requests.BulkUpsertGradesRequest;
 import com.github.k1mb1.vkr_backend.grading.web.requests.CreateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.web.requests.UpsertGradeRequest;
-import com.github.k1mb1.vkr_backend.grading.web.responses.*;
+import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
+import com.github.k1mb1.vkr_backend.grading.web.responses.GradeCellResponse;
+import com.github.k1mb1.vkr_backend.grading.web.responses.GradingAudienceScope;
+import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableLesson;
+import com.github.k1mb1.vkr_backend.grading.web.responses.GradingTableResponse;
+import com.github.k1mb1.vkr_backend.grading.web.responses.StudentAttendanceResponse;
 import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
@@ -31,8 +36,18 @@ import com.github.k1mb1.vkr_backend.subject.web.responses.FinalAssessmentPolicyR
 import com.github.k1mb1.vkr_backend.subject.web.responses.GradingHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -42,6 +57,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 class GradingService implements GradingApi {
+
+    // Временный сдвиг order при переупорядочивании заданий, чтобы обойти уникальное
+    // ограничение (lesson_id, order) до применения финальных значений.
+    private static final int ORDER_RESHUFFLE_OFFSET = 1_000_000;
 
     final GradeRepository gradeRepository;
 
@@ -65,14 +84,12 @@ class GradingService implements GradingApi {
 
     final AuthorizationService authz;
 
-    static LocalDate earliestStartedAt(Lesson lesson) {
-        return lesson
-            .getScopes()
-            .stream()
-            .map(LessonScope::getStartedAt)
-            .filter(Objects::nonNull)
-            .min(Comparator.naturalOrder())
-            .orElse(null);
+    static @Nullable LocalDate earliestStartedAt(Lesson lesson) {
+        return lesson.getScopes().stream()
+                .map(LessonScope::getStartedAt)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
     }
 
     /**
@@ -80,15 +97,9 @@ class GradingService implements GradingApi {
      * имеющих orderIndex {@code <=} данного. Используется для вычисления
      * {@code lessonsOffset} через разность рангов (только занятия с заданиями учитываются).
      */
-    private static int assignmentRank(
-        Lesson lesson,
-        List<Lesson> orderedLessonsWithAssignments
-    ) {
+    private static int assignmentRank(Lesson lesson, List<Lesson> orderedLessonsWithAssignments) {
         int idx = Collections.binarySearch(
-            orderedLessonsWithAssignments,
-            lesson,
-            Comparator.comparingInt(Lesson::getOrderIndex)
-        );
+                orderedLessonsWithAssignments, lesson, Comparator.comparingInt(Lesson::getOrderIndex));
         if (idx >= 0) {
             return idx + 1; // 1-based: сколько занятий с заданиями <= данного
         }
@@ -99,227 +110,144 @@ class GradingService implements GradingApi {
     @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public GradingTableResponse getGradingTable(GradingFilter filter) {
         var permission = permissionRepository
-            .findWithDetailsById(filter.permissionId())
-            .orElseThrow(() ->
-                new ResourceNotFoundException(
-                    "TeacherSubjectPermission",
-                    filter.permissionId()
-                )
-            );
+                .findWithDetailsById(filter.permissionId())
+                .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", filter.permissionId()));
 
-        var lessons = lessonResolver
-            .resolveLessons(
-                permission,
-                filter.lessonScopeId(),
-                filter.lessonId()
-            )
-            .stream()
-            .sorted(
-                Comparator.comparing(
-                    GradingService::earliestStartedAt,
-                    Comparator.nullsLast(Comparator.naturalOrder())
-                ).thenComparingInt(Lesson::getOrderIndex)
-            )
-            .toList();
+        var lessons = lessonResolver.resolveLessons(permission, filter.lessonScopeId(), filter.lessonId()).stream()
+                .sorted(Comparator.comparing(
+                                GradingService::earliestStartedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparingInt(Lesson::getOrderIndex))
+                .toList();
 
-        var visibleScopesByLesson = new java.util.LinkedHashMap<
-            Lesson,
-            List<LessonScope>
-        >();
+        var visibleScopesByLesson = new java.util.LinkedHashMap<Lesson, List<LessonScope>>();
         for (var lesson : lessons) {
-            visibleScopesByLesson.put(
-                lesson,
-                LessonSpecifications.visibleScopes(lesson, permission)
-            );
+            visibleScopesByLesson.put(lesson, LessonSpecifications.visibleScopes(lesson, permission));
         }
 
         var students = lessonStudentsApi.studentsOf(
-            visibleScopesByLesson
-                .values()
-                .stream()
-                .flatMap(List::stream)
-                .toList()
-        );
+                visibleScopesByLesson.values().stream().flatMap(List::stream).toList());
         var audience = audienceOf(permission);
-        var penaltyPolicy = subjectMapper.toPenaltyPolicyResponse(
-            permission.getSubject().getPenaltyPolicy()
-        );
-        var attendancePolicy = subjectMapper.toAttendancePolicyResponse(
-            permission.getSubject().getAttendancePolicy()
-        );
+        var penaltyPolicy =
+                subjectMapper.toPenaltyPolicyResponse(permission.getSubject().getPenaltyPolicy());
+        var attendancePolicy =
+                subjectMapper.toAttendancePolicyResponse(permission.getSubject().getAttendancePolicy());
         var highlightPolicy = subjectMapper.toGradingHighlightPolicyResponse(
-            permission.getSubject().getGradingHighlightPolicy()
-        );
-        var finalAssessmentPolicy =
-            subjectMapper.toFinalAssessmentPolicyResponse(
-                permission.getSubject().getFinalAssessmentPolicy()
-            );
+                permission.getSubject().getGradingHighlightPolicy());
+        var finalAssessmentPolicy = subjectMapper.toFinalAssessmentPolicyResponse(
+                permission.getSubject().getFinalAssessmentPolicy());
 
         return buildTable(
-            penaltyPolicy,
-            attendancePolicy,
-            highlightPolicy,
-            finalAssessmentPolicy,
-            audience,
-            students,
-            visibleScopesByLesson
-        );
+                penaltyPolicy,
+                attendancePolicy,
+                highlightPolicy,
+                finalAssessmentPolicy,
+                audience,
+                students,
+                visibleScopesByLesson);
     }
 
     private GradingTableResponse buildTable(
-        PenaltyPolicyResponse penaltyPolicy,
-        AttendancePolicyResponse attendancePolicy,
-        GradingHighlightPolicyResponse highlightPolicy,
-        FinalAssessmentPolicyResponse finalAssessmentPolicy,
-        List<GradingAudienceScope> audience,
-        List<Student> students,
-        java.util.Map<Lesson, List<LessonScope>> visibleScopesByLesson
-    ) {
+            PenaltyPolicyResponse penaltyPolicy,
+            AttendancePolicyResponse attendancePolicy,
+            GradingHighlightPolicyResponse highlightPolicy,
+            FinalAssessmentPolicyResponse finalAssessmentPolicy,
+            List<GradingAudienceScope> audience,
+            List<Student> students,
+            java.util.Map<Lesson, List<LessonScope>> visibleScopesByLesson) {
         var studentIds = students.stream().map(Student::getId).toList();
-        var lessonIds = visibleScopesByLesson
-            .keySet()
-            .stream()
-            .map(Lesson::getId)
-            .toList();
-        var scopeIds = visibleScopesByLesson
-            .values()
-            .stream()
-            .flatMap(List::stream)
-            .map(LessonScope::getId)
-            .toList();
+        var lessonIds =
+                visibleScopesByLesson.keySet().stream().map(Lesson::getId).toList();
+        var scopeIds = visibleScopesByLesson.values().stream()
+                .flatMap(List::stream)
+                .map(LessonScope::getId)
+                .toList();
 
         var assignments = lessonIds.isEmpty()
-            ? List.<Assignment>of()
-            : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
-                  lessonIds
-              );
+                ? List.<Assignment>of()
+                : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(lessonIds);
 
-        var grades =
-            studentIds.isEmpty() || lessonIds.isEmpty()
+        var grades = studentIds.isEmpty() || lessonIds.isEmpty()
                 ? List.<Grade>of()
-                : gradeRepository.findByLessonIdInAndStudentIdIn(
-                      lessonIds,
-                      studentIds
-                  );
+                : gradeRepository.findByLessonIdInAndStudentIdIn(lessonIds, studentIds);
 
         var attendanceByStudent = attendanceApi.summarize(scopeIds, studentIds);
-        var attendance = students
-            .stream()
-            .map(s -> {
-                var sum = attendanceByStudent.getOrDefault(
-                    s.getId(),
-                    AttendanceSummary.builder()
-                        .present(0)
-                        .late(0)
-                        .absent(0)
-                        .excused(0)
-                        .build()
-                );
-                return StudentAttendanceResponse.builder()
-                    .studentId(s.getId())
-                    .present(sum.present())
-                    .late(sum.late())
-                    .absent(sum.absent())
-                    .excused(sum.excused())
-                    .build();
-            })
-            .toList();
+        var attendance = students.stream()
+                .map(s -> {
+                    var sum = attendanceByStudent.getOrDefault(
+                            s.getId(),
+                            AttendanceSummary.builder()
+                                    .present(0)
+                                    .late(0)
+                                    .absent(0)
+                                    .excused(0)
+                                    .build());
+                    return StudentAttendanceResponse.builder()
+                            .studentId(s.getId())
+                            .present(sum.present())
+                            .late(sum.late())
+                            .absent(sum.absent())
+                            .excused(sum.excused())
+                            .build();
+                })
+                .toList();
 
         return GradingTableResponse.builder()
-            .penaltyPolicy(penaltyPolicy)
-            .attendancePolicy(attendancePolicy)
-            .highlightPolicy(highlightPolicy)
-            .finalAssessmentPolicy(finalAssessmentPolicy)
-            .attendance(attendance)
-            .audience(audience)
-            .students(
-                students.stream().map(gradingMapper::toTableStudent).toList()
-            )
-            .lessons(
-                visibleScopesByLesson
-                    .entrySet()
-                    .stream()
-                    .map(e -> toGradingLesson(e.getKey(), e.getValue()))
-                    .toList()
-            )
-            .assignments(
-                assignments
-                    .stream()
-                    .map(gradingMapper::toAssignmentResponse)
-                    .toList()
-            )
-            .grades(grades.stream().map(gradingMapper::toCell).toList())
-            .build();
+                .penaltyPolicy(penaltyPolicy)
+                .attendancePolicy(attendancePolicy)
+                .highlightPolicy(highlightPolicy)
+                .finalAssessmentPolicy(finalAssessmentPolicy)
+                .attendance(attendance)
+                .audience(audience)
+                .students(students.stream().map(gradingMapper::toTableStudent).toList())
+                .lessons(visibleScopesByLesson.entrySet().stream()
+                        .map(e -> toGradingLesson(e.getKey(), e.getValue()))
+                        .toList())
+                .assignments(assignments.stream()
+                        .map(gradingMapper::toAssignmentResponse)
+                        .toList())
+                .grades(grades.stream().map(gradingMapper::toCell).toList())
+                .build();
     }
 
-    private GradingTableLesson toGradingLesson(
-        Lesson lesson,
-        List<LessonScope> visibleScopes
-    ) {
-        var scopes = visibleScopes
-            .stream()
-            .sorted(
-                Comparator.comparing(
-                    (LessonScope s) -> s.getStartedAt(),
-                    Comparator.nullsLast(Comparator.naturalOrder())
-                )
-            )
-            .map(s ->
-                new GradingTableLesson.Scope(
-                    s.getId(),
-                    s.getGroup() != null ? s.getGroup().getId() : null,
-                    s.getAllowedSubgroup() != null
-                        ? s.getAllowedSubgroup().getId()
-                        : null,
-                    s.getStartedAt(),
-                    s.isAllGroups()
-                )
-            )
-            .toList();
+    private GradingTableLesson toGradingLesson(Lesson lesson, List<LessonScope> visibleScopes) {
+        var scopes = visibleScopes.stream()
+                .sorted(Comparator.comparing(
+                        (LessonScope s) -> s.getStartedAt(), Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(s -> new GradingTableLesson.Scope(
+                        s.getId(),
+                        s.getGroup() != null ? s.getGroup().getId() : null,
+                        s.getAllowedSubgroup() != null ? s.getAllowedSubgroup().getId() : null,
+                        s.getStartedAt(),
+                        s.isAllGroups()))
+                .toList();
         return new GradingTableLesson(
-            lesson.getId(),
-            lesson.getType(),
-            lesson.getOrderIndex(),
-            lesson.getTopic(),
-            lesson.isActive(),
-            scopes
-        );
+                lesson.getId(), lesson.getType(), lesson.getOrderIndex(), lesson.getTopic(), lesson.isActive(), scopes);
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLessons(#request.items().![lessonId()])")
-    public List<GradeCellResponse> upsertGrades(
-        BulkUpsertGradesRequest request
-    ) {
+    public List<GradeCellResponse> upsertGrades(BulkUpsertGradesRequest request) {
         var items = request.items();
 
         var seenKeys = new HashSet<String>();
         for (var item : items) {
-            var key =
-                item.studentId() +
-                "|" +
-                item.lessonId() +
-                "|" +
-                item.assignmentId();
+            var key = item.studentId() + "|" + item.lessonId() + "|" + item.assignmentId();
             if (!seenKeys.add(key)) {
                 throw new IllegalArgumentException(
-                    "Duplicate (studentId, lessonId, assignmentId) in request: " +
-                        item.studentId() +
-                        ", " +
-                        item.lessonId() +
-                        ", " +
-                        item.assignmentId()
-                );
+                        "Duplicate (studentId, lessonId, assignmentId) in request: " + item.studentId()
+                                + ", "
+                                + item.lessonId()
+                                + ", "
+                                + item.assignmentId());
             }
         }
 
-        var assignmentIds = items
-            .stream()
-            .map(UpsertGradeRequest::assignmentId)
-            .filter(Objects::nonNull)
-            .distinct()
-            .toList();
+        var assignmentIds = items.stream()
+                .map(UpsertGradeRequest::assignmentId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
         var assignmentsById = new HashMap<UUID, Assignment>();
         if (!assignmentIds.isEmpty()) {
             for (var a : assignmentRepository.findAllById(assignmentIds)) {
@@ -335,53 +263,29 @@ class GradingService implements GradingApi {
             if (item.assignmentId() == null) {
                 continue;
             }
-            var a = assignmentsById.get(item.assignmentId());
+            var a = Objects.requireNonNull(assignmentsById.get(item.assignmentId()));
             if (!a.getLesson().getId().equals(item.lessonId())) {
                 throw new IllegalArgumentException(
-                    "Assignment " +
-                        a.getId() +
-                        " does not belong to lesson " +
-                        item.lessonId()
-                );
+                        "Assignment " + a.getId() + " does not belong to lesson " + item.lessonId());
             }
             if (item.score() > a.getMaxPoints()) {
-                throw new IllegalArgumentException(
-                    "Score " +
-                        item.score() +
-                        " exceeds assignment maxPoints " +
-                        a.getMaxPoints() +
-                        " for assignment " +
-                        a.getId()
-                );
+                throw new IllegalArgumentException("Score " + item.score()
+                        + " exceeds assignment maxPoints "
+                        + a.getMaxPoints()
+                        + " for assignment "
+                        + a.getId());
             }
         }
 
-        var studentIds = items
-            .stream()
-            .map(UpsertGradeRequest::studentId)
-            .distinct()
-            .toList();
-        var lessonIds = items
-            .stream()
-            .map(UpsertGradeRequest::lessonId)
-            .distinct()
-            .toList();
-        var existing = gradeRepository.findByLessonIdInAndStudentIdIn(
-            lessonIds,
-            studentIds
-        );
+        var studentIds =
+                items.stream().map(UpsertGradeRequest::studentId).distinct().toList();
+        var lessonIds =
+                items.stream().map(UpsertGradeRequest::lessonId).distinct().toList();
+        var existing = gradeRepository.findByLessonIdInAndStudentIdIn(lessonIds, studentIds);
         var existingByKey = new HashMap<String, Grade>();
         for (var g : existing) {
-            var aId =
-                g.getAssignment() != null ? g.getAssignment().getId() : null;
-            existingByKey.put(
-                g.getStudent().getId() +
-                    "|" +
-                    g.getLesson().getId() +
-                    "|" +
-                    aId,
-                g
-            );
+            var aId = g.getAssignment() != null ? g.getAssignment().getId() : null;
+            existingByKey.put(g.getStudent().getId() + "|" + g.getLesson().getId() + "|" + aId, g);
         }
 
         // Кэш активного занятия и списка занятий с заданиями по (subjectId|type).
@@ -390,16 +294,8 @@ class GradingService implements GradingApi {
 
         var toSave = new ArrayList<Grade>(items.size());
         for (var item : items) {
-            var key =
-                item.studentId() +
-                "|" +
-                item.lessonId() +
-                "|" +
-                item.assignmentId();
-            var assignmentRef =
-                item.assignmentId() != null
-                    ? assignmentsById.get(item.assignmentId())
-                    : null;
+            var key = item.studentId() + "|" + item.lessonId() + "|" + item.assignmentId();
+            var assignmentRef = item.assignmentId() != null ? assignmentsById.get(item.assignmentId()) : null;
 
             // Смещение сдачи фиксируем один раз при создании ячейки и только для оценок с заданием.
             // Считается только по занятиям, у которых есть задания:
@@ -408,44 +304,33 @@ class GradingService implements GradingApi {
             Integer lessonsOffset = null;
             if (assignmentRef != null) {
                 var dueLesson = assignmentRef.getLesson();
-                var cacheKey =
-                    dueLesson.getSubject().getId() + "|" + dueLesson.getType();
-                var active = activeCache.computeIfAbsent(cacheKey, k ->
-                    lessonRepository.findBySubjectIdAndTypeAndActiveTrue(
-                        dueLesson.getSubject().getId(),
-                        dueLesson.getType()
-                    )
-                );
+                var cacheKey = dueLesson.getSubject().getId() + "|" + dueLesson.getType();
+                var active = activeCache.computeIfAbsent(
+                        cacheKey,
+                        k -> lessonRepository.findBySubjectIdAndTypeAndActiveTrue(
+                                dueLesson.getSubject().getId(), dueLesson.getType()));
                 if (active.isPresent()) {
                     awarded = active.get();
-                    var lessonsWithAssignments =
-                        lessonsWithAssignmentsCache.computeIfAbsent(
+                    var lessonsWithAssignments = lessonsWithAssignmentsCache.computeIfAbsent(
                             cacheKey,
-                            k ->
-                                lessonRepository.findWithAssignmentsBySubjectIdAndType(
-                                    dueLesson.getSubject().getId(),
-                                    dueLesson.getType()
-                                )
-                        );
-                    lessonsOffset =
-                        assignmentRank(awarded, lessonsWithAssignments) -
-                        assignmentRank(dueLesson, lessonsWithAssignments);
+                            k -> lessonRepository.findWithAssignmentsBySubjectIdAndType(
+                                    dueLesson.getSubject().getId(), dueLesson.getType()));
+                    lessonsOffset = assignmentRank(awarded, lessonsWithAssignments)
+                            - assignmentRank(dueLesson, lessonsWithAssignments);
                 }
             }
             final var awardedLesson = awarded;
             final var offset = lessonsOffset;
 
-            var grade = existingByKey.computeIfAbsent(key, k ->
-                Grade.builder()
-                    .student(
-                        studentRepository.getReferenceById(item.studentId())
-                    )
-                    .lesson(lessonRepository.getReferenceById(item.lessonId()))
-                    .assignment(assignmentRef)
-                    .awardedLesson(awardedLesson)
-                    .lessonsOffset(offset)
-                    .build()
-            );
+            var grade = existingByKey.computeIfAbsent(
+                    key,
+                    k -> Grade.builder()
+                            .student(studentRepository.getReferenceById(item.studentId()))
+                            .lesson(lessonRepository.getReferenceById(item.lessonId()))
+                            .assignment(assignmentRef)
+                            .awardedLesson(awardedLesson)
+                            .lessonsOffset(offset)
+                            .build());
             grade.setScore(item.score());
             grade.setComment(item.comment());
             toSave.add(grade);
@@ -458,17 +343,13 @@ class GradingService implements GradingApi {
     @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<AssignmentResponse> getAssignmentsByLesson(UUID lessonId) {
-        return assignmentRepository
-            .findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId))
-            .stream()
-            .map(gradingMapper::toAssignmentResponse)
-            .toList();
+        return assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId)).stream()
+                .map(gradingMapper::toAssignmentResponse)
+                .toList();
     }
 
     @Override
-    public Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(
-        java.util.Collection<UUID> lessonIds
-    ) {
+    public Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(java.util.Collection<UUID> lessonIds) {
         if (lessonIds.isEmpty()) {
             return Map.of();
         }
@@ -476,12 +357,9 @@ class GradingService implements GradingApi {
         for (var lessonId : lessonIds) {
             grouped.put(lessonId, new ArrayList<>());
         }
-        for (var assignment : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
-            lessonIds
-        )) {
-            grouped
-                .get(assignment.getLesson().getId())
-                .add(gradingMapper.toAssignmentResponse(assignment));
+        for (var assignment : assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(lessonIds)) {
+            Objects.requireNonNull(grouped.get(assignment.getLesson().getId()))
+                    .add(gradingMapper.toAssignmentResponse(assignment));
         }
         return grouped;
     }
@@ -489,16 +367,11 @@ class GradingService implements GradingApi {
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLesson(#request.lessonId())")
-    public List<AssignmentResponse> createAssignments(
-        CreateAssignmentsRequest request
-    ) {
+    public List<AssignmentResponse> createAssignments(CreateAssignmentsRequest request) {
         if (assignmentRepository.existsByLessonId(request.lessonId())) {
-            throw new ConflictException(
-                "Lesson " +
-                    request.lessonId() +
-                    " already has assignments. " +
-                    "Use PUT /api/lessons/{id} to update individual assignments."
-            );
+            throw new ConflictException("Lesson " + request.lessonId()
+                    + " already has assignments. "
+                    + "Use PUT /api/lessons/{id} to update individual assignments.");
         }
         var lessonRef = lessonRepository.getReferenceById(request.lessonId());
         var items = request.items();
@@ -508,8 +381,7 @@ class GradingService implements GradingApi {
         var assignments = new ArrayList<Assignment>(items.size());
         for (int i = 0; i < items.size(); i++) {
             var item = items.get(i);
-            assignments.add(
-                Assignment.builder()
+            assignments.add(Assignment.builder()
                     .lesson(lessonRef)
                     .order(i + 1)
                     .maxPoints(item.maxPoints())
@@ -517,36 +389,27 @@ class GradingService implements GradingApi {
                     .admissionMode(item.admissionMode())
                     .admissionMinScore(item.admissionMinScore())
                     .admissionTiers(
-                        item.admissionTiers() != null
-                            ? item
-                                  .admissionTiers()
-                                  .stream()
-                                  .map(t ->
-                                      com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionTier.builder()
-                                          .bandId(t.bandId())
-                                          .minScore(t.minScore())
-                                          .build()
-                                  )
-                                  .toList()
-                            : new ArrayList<>()
-                    )
-                    .build()
-            );
+                            item.admissionTiers() != null
+                                    ? item.admissionTiers().stream()
+                                            .map(
+                                                    t -> com.github.k1mb1.vkr_backend.grading.domain
+                                                            .AssignmentAdmissionTier.builder()
+                                                            .bandId(t.bandId())
+                                                            .minScore(t.minScore())
+                                                            .build())
+                                            .toList()
+                                    : new ArrayList<>())
+                    .build());
         }
-        return assignmentRepository
-            .saveAll(assignments)
-            .stream()
-            .map(gradingMapper::toAssignmentResponse)
-            .toList();
+        return assignmentRepository.saveAll(assignments).stream()
+                .map(gradingMapper::toAssignmentResponse)
+                .toList();
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
-    public List<AssignmentResponse> updateAssignmentsOfLesson(
-        UUID lessonId,
-        BulkUpdateAssignmentsRequest request
-    ) {
+    public List<AssignmentResponse> updateAssignmentsOfLesson(UUID lessonId, BulkUpdateAssignmentsRequest request) {
         var items = request.items();
         for (var item : items) {
             validateAdmission(item.admissionMode(), item.admissionMinScore());
@@ -555,18 +418,13 @@ class GradingService implements GradingApi {
         var seenIds = new HashSet<UUID>();
         for (var item : items) {
             if (!seenIds.add(item.id())) {
-                throw new IllegalArgumentException(
-                    "Duplicate assignment id in request: " + item.id()
-                );
+                throw new IllegalArgumentException("Duplicate assignment id in request: " + item.id());
             }
         }
 
         var assignments = assignmentRepository.findAllById(seenIds);
         if (assignments.size() != seenIds.size()) {
-            var found = assignments
-                .stream()
-                .map(Assignment::getId)
-                .collect(java.util.stream.Collectors.toSet());
+            var found = assignments.stream().map(Assignment::getId).collect(java.util.stream.Collectors.toSet());
             for (var id : seenIds) {
                 if (!found.contains(id)) {
                     throw new ResourceNotFoundException("Assignment", id);
@@ -576,11 +434,7 @@ class GradingService implements GradingApi {
         for (var a : assignments) {
             if (!a.getLesson().getId().equals(lessonId)) {
                 throw new IllegalArgumentException(
-                    "Assignment " +
-                        a.getId() +
-                        " does not belong to lesson " +
-                        lessonId
-                );
+                        "Assignment " + a.getId() + " does not belong to lesson " + lessonId);
             }
         }
 
@@ -593,60 +447,48 @@ class GradingService implements GradingApi {
             itemsById.put(item.id(), item);
         }
 
-        var siblings =
-            assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(
-                List.of(lessonId)
-            );
+        var siblings = assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId));
         var ordersInLesson = new HashSet<Integer>();
         for (var sibling : siblings) {
             var override = itemsById.get(sibling.getId());
-            int finalOrder =
-                override != null ? override.order() : sibling.getOrder();
+            int finalOrder = override != null ? override.order() : sibling.getOrder();
             if (!ordersInLesson.add(finalOrder)) {
-                throw new IllegalArgumentException(
-                    "Duplicate order " + finalOrder + " in lesson " + lessonId
-                );
+                throw new IllegalArgumentException("Duplicate order " + finalOrder + " in lesson " + lessonId);
             }
         }
 
         for (var assignment : assignments) {
-            assignment.setOrder(assignment.getOrder() + 1_000_000);
+            assignment.setOrder(assignment.getOrder() + ORDER_RESHUFFLE_OFFSET);
         }
         assignmentRepository.saveAllAndFlush(assignments);
 
         for (var item : items) {
-            var assignment = assignmentsById.get(item.id());
+            var assignment = Objects.requireNonNull(assignmentsById.get(item.id()));
             assignment.setOrder(item.order());
             assignment.setMaxPoints(item.maxPoints());
             assignment.setRequired(item.required());
             assignment.setAdmissionMode(item.admissionMode());
             assignment.setAdmissionMinScore(item.admissionMinScore());
             assignment.setAdmissionTiers(
-                item.admissionTiers() != null
-                    ? item
-                          .admissionTiers()
-                          .stream()
-                          .map(t ->
-                              com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionTier.builder()
-                                  .bandId(t.bandId())
-                                  .minScore(t.minScore())
-                                  .build()
-                          )
-                          .toList()
-                    : new ArrayList<>()
-            );
+                    item.admissionTiers() != null
+                            ? item.admissionTiers().stream()
+                                    .map(t ->
+                                            com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionTier
+                                                    .builder()
+                                                    .bandId(t.bandId())
+                                                    .minScore(t.minScore())
+                                                    .build())
+                                    .toList()
+                            : new ArrayList<>());
         }
         var persisted = assignmentRepository.saveAll(assignments);
         var byIdPersisted = new HashMap<UUID, Assignment>();
         for (var a : persisted) {
             byIdPersisted.put(a.getId(), a);
         }
-        return items
-            .stream()
-            .map(item ->
-                gradingMapper.toAssignmentResponse(byIdPersisted.get(item.id()))
-            )
-            .toList();
+        return items.stream()
+                .map(item -> gradingMapper.toAssignmentResponse(Objects.requireNonNull(byIdPersisted.get(item.id()))))
+                .toList();
     }
 
     @Transactional
@@ -655,12 +497,10 @@ class GradingService implements GradingApi {
         // Доступ по id задания: резолвим предмет задания и проверяем доступ к нему.
         // (через @PreAuthorize нельзя — решение зависит от сущности, которую ещё надо загрузить).
         var subjectId = assignmentRepository
-            .findSubjectIdById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Assignment", id));
+                .findSubjectIdById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignment", id));
         if (!authz.canAccessSubject(subjectId)) {
-            throw new AccessDeniedException(
-                "No access to assignment " + id
-            );
+            throw new AccessDeniedException("No access to assignment " + id);
         }
         assignmentRepository.deleteById(id);
     }
@@ -672,42 +512,30 @@ class GradingService implements GradingApi {
         assignmentRepository.deleteByLessonId(lessonId);
     }
 
-    private List<GradingAudienceScope> audienceOf(
-        TeacherSubjectPermission permission
-    ) {
-        return lessonResolver
-            .audienceScopes(permission)
-            .stream()
-            .map(s ->
-                GradingAudienceScope.builder()
-                    .groupId(s.getGroup().getId())
-                    .groupName(s.getGroup().getName())
-                    .allowedSubgroupId(
-                        s.getAllowedSubgroup() != null
-                            ? s.getAllowedSubgroup().getId()
-                            : null
-                    )
-                    .allowedSubgroupIndex(
-                        s.getAllowedSubgroup() != null
-                            ? s.getAllowedSubgroup().getIndex()
-                            : null
-                    )
-                    .build()
-            )
-            .toList();
+    private List<GradingAudienceScope> audienceOf(TeacherSubjectPermission permission) {
+        return lessonResolver.audienceScopes(permission).stream()
+                .map(s -> {
+                    // audienceScopes() excludes all-groups scopes, so the group is always present.
+                    var group = Objects.requireNonNull(s.getGroup());
+                    return GradingAudienceScope.builder()
+                            .groupId(group.getId())
+                            .groupName(group.getName())
+                            .allowedSubgroupId(
+                                    s.getAllowedSubgroup() != null
+                                            ? s.getAllowedSubgroup().getId()
+                                            : null)
+                            .allowedSubgroupIndex(
+                                    s.getAllowedSubgroup() != null
+                                            ? s.getAllowedSubgroup().getIndex()
+                                            : null)
+                            .build();
+                })
+                .toList();
     }
 
-    private void validateAdmission(
-        AssignmentAdmissionMode mode,
-        Integer admissionMinScore
-    ) {
-        if (
-            mode == AssignmentAdmissionMode.PASS_FAIL &&
-            admissionMinScore != null
-        ) {
-            throw new IllegalArgumentException(
-                "PASS_FAIL mode does not require admissionMinScore"
-            );
+    private void validateAdmission(AssignmentAdmissionMode mode, Integer admissionMinScore) {
+        if (mode == AssignmentAdmissionMode.PASS_FAIL && admissionMinScore != null) {
+            throw new IllegalArgumentException("PASS_FAIL mode does not require admissionMinScore");
         }
     }
 }

@@ -5,7 +5,12 @@ import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,6 +19,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import org.jspecify.annotations.Nullable;
 
 @Hidden
 @Entity
@@ -24,8 +30,7 @@ import org.hibernate.type.SqlTypes;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class PermissionScope
-    extends ArchivableEntity {
+public class PermissionScope extends ArchivableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "permission_id", nullable = false)
@@ -33,11 +38,11 @@ public class PermissionScope
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
-    Group group;
+    @Nullable Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "allowed_subgroup_id")
-    Subgroup allowedSubgroup;
+    @Nullable Subgroup allowedSubgroup;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "allowed_lesson_type", columnDefinition = "lesson_type")

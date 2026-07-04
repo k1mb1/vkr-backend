@@ -72,13 +72,13 @@ class GroupReferenceServiceImplTest {
         var subgroupId = UUID.randomUUID();
         var group = Group.builder().id(groupId).name("G").build();
         var foreignGroup = Group.builder().id(UUID.randomUUID()).name("Other").build();
-        var subgroup = Subgroup.builder().id(subgroupId).index(1).group(foreignGroup).build();
+        var subgroup =
+                Subgroup.builder().id(subgroupId).index(1).group(foreignGroup).build();
         when(groupRepository.getReferenceById(groupId)).thenReturn(group);
         when(subgroupRepository.getReferenceById(subgroupId)).thenReturn(subgroup);
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-            service.resolveAudience(groupId, subgroupId))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Subgroup does not belong");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.resolveAudience(groupId, subgroupId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Subgroup does not belong");
     }
 }

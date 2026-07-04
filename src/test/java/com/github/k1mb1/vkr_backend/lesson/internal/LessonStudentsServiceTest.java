@@ -38,11 +38,11 @@ class LessonStudentsServiceTest {
 
     private Student student(String username, Group group, Subgroup subgroup) {
         return Student.builder()
-            .id(UUID.randomUUID())
-            .username(username)
-            .group(group)
-            .subgroup(subgroup)
-            .build();
+                .id(UUID.randomUUID())
+                .username(username)
+                .group(group)
+                .subgroup(subgroup)
+                .build();
     }
 
     @Test
@@ -56,15 +56,14 @@ class LessonStudentsServiceTest {
         var group = group("G1");
         var lesson = Lesson.builder().id(UUID.randomUUID()).build();
         var scope = LessonScope.builder()
-            .id(UUID.randomUUID())
-            .lesson(lesson)
-            .group(group)
-            .allGroups(false)
-            .build();
+                .id(UUID.randomUUID())
+                .lesson(lesson)
+                .group(group)
+                .allGroups(false)
+                .build();
         var sveta = student("Света", group, null);
         var anna = student("Анна", group, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any()))
-            .thenReturn(List.of(sveta, anna));
+        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(sveta, anna));
 
         var result = service.studentsOf(List.of(scope));
 
@@ -74,21 +73,22 @@ class LessonStudentsServiceTest {
     @Test
     void subgroupRestrictedScopeFiltersBySubgroupInMemory() {
         var group = group("G1");
-        var sub1 = Subgroup.builder().id(UUID.randomUUID()).index(1).group(group).build();
-        var sub2 = Subgroup.builder().id(UUID.randomUUID()).index(2).group(group).build();
+        var sub1 =
+                Subgroup.builder().id(UUID.randomUUID()).index(1).group(group).build();
+        var sub2 =
+                Subgroup.builder().id(UUID.randomUUID()).index(2).group(group).build();
         var lesson = Lesson.builder().id(UUID.randomUUID()).build();
         var scope = LessonScope.builder()
-            .id(UUID.randomUUID())
-            .lesson(lesson)
-            .group(group)
-            .allowedSubgroup(sub1)
-            .allGroups(false)
-            .build();
+                .id(UUID.randomUUID())
+                .lesson(lesson)
+                .group(group)
+                .allowedSubgroup(sub1)
+                .allGroups(false)
+                .build();
         var inSub1 = student("Анна", group, sub1);
         var inSub2 = student("Борис", group, sub2);
         var noSub = student("Виктор", group, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any()))
-            .thenReturn(List.of(inSub1, inSub2, noSub));
+        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(inSub1, inSub2, noSub));
 
         var result = service.studentsOf(List.of(scope));
 
@@ -100,20 +100,19 @@ class LessonStudentsServiceTest {
         var g1 = group("G1");
         var g2 = group("G2");
         var subject = Subject.builder()
-            .id(UUID.randomUUID())
-            .name("Math")
-            .groups(Set.of(g1, g2))
-            .build();
+                .id(UUID.randomUUID())
+                .name("Math")
+                .groups(Set.of(g1, g2))
+                .build();
         var lesson = Lesson.builder().id(UUID.randomUUID()).subject(subject).build();
         var scope = LessonScope.builder()
-            .id(UUID.randomUUID())
-            .lesson(lesson)
-            .allGroups(true)
-            .build();
+                .id(UUID.randomUUID())
+                .lesson(lesson)
+                .allGroups(true)
+                .build();
         var a = student("Анна", g1, null);
         var b = student("Борис", g2, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any()))
-            .thenReturn(List.of(a, b));
+        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(a, b));
 
         var result = service.studentsOf(List.of(scope));
 
@@ -124,11 +123,20 @@ class LessonStudentsServiceTest {
     void dedupesStudentSharedAcrossScopesAndBatchesQuery() {
         var group = group("G1");
         var lesson = Lesson.builder().id(UUID.randomUUID()).build();
-        var scope1 = LessonScope.builder().id(UUID.randomUUID()).lesson(lesson).group(group).allGroups(false).build();
-        var scope2 = LessonScope.builder().id(UUID.randomUUID()).lesson(lesson).group(group).allGroups(false).build();
+        var scope1 = LessonScope.builder()
+                .id(UUID.randomUUID())
+                .lesson(lesson)
+                .group(group)
+                .allGroups(false)
+                .build();
+        var scope2 = LessonScope.builder()
+                .id(UUID.randomUUID())
+                .lesson(lesson)
+                .group(group)
+                .allGroups(false)
+                .build();
         var anna = student("Анна", group, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any()))
-            .thenReturn(List.of(anna));
+        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(anna));
 
         var result = service.studentsOf(List.of(scope1, scope2));
 
@@ -141,11 +149,11 @@ class LessonStudentsServiceTest {
     void scopeWithNullGroupAndNotAllGroupsContributesNothing() {
         var lesson = Lesson.builder().id(UUID.randomUUID()).build();
         var scope = LessonScope.builder()
-            .id(UUID.randomUUID())
-            .lesson(lesson)
-            .group(null)
-            .allGroups(false)
-            .build();
+                .id(UUID.randomUUID())
+                .lesson(lesson)
+                .group(null)
+                .allGroups(false)
+                .build();
 
         var result = service.studentsOf(List.of(scope));
 

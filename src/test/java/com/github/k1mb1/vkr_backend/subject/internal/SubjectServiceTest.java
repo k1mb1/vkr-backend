@@ -61,15 +61,14 @@ class SubjectServiceTest {
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         when(groupReferenceService.getGroupReferenceById(groupId))
-            .thenReturn(Group.builder().id(groupId).name("G").build());
-        when(subjectRepository.save(any()))
-            .thenAnswer(inv -> {
-                Subject s = inv.getArgument(0);
-                s.setId(subjectId);
-                return s;
-            });
+                .thenReturn(Group.builder().id(groupId).name("G").build());
+        when(subjectRepository.save(any())).thenAnswer(inv -> {
+            Subject s = inv.getArgument(0);
+            s.setId(subjectId);
+            return s;
+        });
         when(teacherReferenceService.getTeacherReferenceById(teacherId))
-            .thenReturn(Teacher.builder().id(teacherId).build());
+                .thenReturn(Teacher.builder().id(teacherId).build());
         lenient().when(subjectMapper.toFullResponse(any())).thenReturn(mock(SubjectResponse.class));
 
         service.createSubject(new CreateSubjectRequest("Math", "desc", List.of(groupId), teacherId));
@@ -86,7 +85,7 @@ class SubjectServiceTest {
         when(subjectRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.updateSubject(id, mock(UpdateSubjectRequest.class)))
-            .isInstanceOf(EntityNotFoundException.class);
+                .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
@@ -107,13 +106,13 @@ class SubjectServiceTest {
         var tokenTeacherId = UUID.randomUUID();
         when(securityService.isAdmin()).thenReturn(false);
         when(securityService.currentSubjectId()).thenReturn(Optional.of(tokenTeacherId));
-        when(subjectRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class)))
-            .thenReturn(Page.empty());
+        when(subjectRepository.findAll(
+                        any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class)))
+                .thenReturn(Page.empty());
 
         var result = service.getPage(
-            new com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter("q", UUID.randomUUID()),
-            Pageable.unpaged()
-        );
+                new com.github.k1mb1.vkr_backend.subject.web.filters.SubjectFilter("q", UUID.randomUUID()),
+                Pageable.unpaged());
 
         assertThat(result).isEmpty();
         // не-админ не может подменить teacherId — берётся из токена

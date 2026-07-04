@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -20,13 +21,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
-@RequestMapping(
-    value = "/api/teachers", produces = MediaType.APPLICATION_JSON_VALUE
-)
+@RequestMapping(value = "/api/teachers", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Teachers", description = "Управление преподавателями")
 @RestController
 @RequiredArgsConstructor
@@ -35,41 +38,28 @@ public class TeachersController {
     final TeachersApi teachersApi;
 
     @Operation(summary = "Создать или обновить преподавателя")
-    @ApiResponses(
-        {
-            @ApiResponse(
-                responseCode = "200", description = "Преподаватель создан или обновлен"
-            ), @ApiResponse(
-            responseCode = "400", description = "Ошибка валидации", content = @Content(
-            schema = @Schema(implementation = ErrorDto.class)
-        )
-        ),
-        }
-    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Преподаватель создан или обновлен"),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Ошибка валидации",
+                content = @Content(schema = @Schema(implementation = ErrorDto.class))),
+    })
     @PutMapping("/{id}")
     public ResponseEntity<TeacherResponse> createOrUpdateTeacher(
-        @Parameter(description = "ID преподавателя")
-        @PathVariable
-        UUID id,
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Данные преподавателя", required = true
-        )
-        CreateOrUpdateTeacherRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.OK)
-            .body(teachersApi.createOrUpdateTeacher(id, request));
+            @Parameter(description = "ID преподавателя") @PathVariable UUID id,
+            @Valid @RequestBody
+                    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            description = "Данные преподавателя",
+                            required = true)
+                    CreateOrUpdateTeacherRequest request) {
+        return ResponseEntity.status(HttpStatus.OK).body(teachersApi.createOrUpdateTeacher(id, request));
     }
 
     @Operation(summary = "Получить страницу преподавателей с фильтрацией по имени")
     @GetMapping
     public ResponseEntity<Page<TeacherResponse>> getTeachersPage(
-        @ParameterObject
-        @ModelAttribute
-        TeacherFilter filter,
-        @ParameterObject Pageable pageable
-    ) {
+            @ParameterObject @ModelAttribute TeacherFilter filter, @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(teachersApi.getPage(filter, pageable));
     }
 }

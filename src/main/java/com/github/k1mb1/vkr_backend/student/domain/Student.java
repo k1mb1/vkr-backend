@@ -4,23 +4,30 @@ import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.jspecify.annotations.Nullable;
 
 @Hidden
 @Entity
 @Table(name = "students")
 @NamedEntityGraph(
-    name = "Student.withGroups",
-    attributeNodes = {
-        @NamedAttributeNode("group"),
-        @NamedAttributeNode("subgroup"),
-    }
-)
+        name = "Student.withGroups",
+        attributeNodes = {
+            @NamedAttributeNode("group"),
+            @NamedAttributeNode("subgroup"),
+        })
 @Getter
 @Setter
 @SuperBuilder(toBuilder = true)
@@ -37,5 +44,5 @@ public class Student extends ArchivableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subgroup_id")
-    Subgroup subgroup;
+    @Nullable Subgroup subgroup;
 }

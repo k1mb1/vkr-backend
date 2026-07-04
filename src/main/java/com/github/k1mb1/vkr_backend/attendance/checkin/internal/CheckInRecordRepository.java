@@ -13,8 +13,5 @@ interface CheckInRecordRepository extends JpaRepository<CheckInRecord, UUID> {
     @EntityGraph("CheckInRecord.withStudent")
     List<CheckInRecord> findBySessionId(UUID sessionId);
 
-    Optional<CheckInRecord> findBySessionIdAndStudentId(
-        UUID sessionId,
-        UUID studentId
-    );
+    Optional<CheckInRecord> findBySessionIdAndStudentId(UUID sessionId, UUID studentId);
 }

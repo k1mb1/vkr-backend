@@ -13,9 +13,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 interface AssignmentRepository extends JpaRepository<Assignment, UUID> {
     @EntityGraph("Assignment.withLesson")
-    List<Assignment> findByLessonIdInOrderByLessonIdAscOrderAsc(
-        Collection<UUID> lessonIds
-    );
+    List<Assignment> findByLessonIdInOrderByLessonIdAscOrderAsc(Collection<UUID> lessonIds);
 
     boolean existsByLessonId(UUID lessonId);
 

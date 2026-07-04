@@ -1,11 +1,10 @@
 package com.github.k1mb1.vkr_backend.common.security;
 
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Тонкая обёртка над {@link SecurityContextHolder}: достаёт идентичность текущего
@@ -40,7 +39,6 @@ public class SecurityService {
     public boolean isAdmin() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null
-            && authentication.getAuthorities().stream()
-                .anyMatch(a -> ROLE_ADMIN.equals(a.getAuthority()));
+                && authentication.getAuthorities().stream().anyMatch(a -> ROLE_ADMIN.equals(a.getAuthority()));
     }
 }

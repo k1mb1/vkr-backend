@@ -6,30 +6,21 @@ import java.util.List;
 import lombok.Builder;
 
 @Builder
-@Schema(
-    description = "Таблица посещаемости: студенты × занятия с существующими ячейками"
-)
+@Schema(description = "Таблица посещаемости: студенты × занятия с существующими ячейками")
 public record AttendanceTableResponse(
-    @Schema(
-        description = "Цветовая подсветка таблицы посещаемости. Если enabled=true — фронт раскрашивает " +
-            "ячейки по этим цветам (HEX вида #00C16A)."
-    )
-    AttendanceHighlightPolicyResponse highlightPolicy,
+        @Schema(
+                description = "Цветовая подсветка таблицы посещаемости. Если enabled=true — фронт раскрашивает "
+                        + "ячейки по этим цветам (HEX вида #00C16A).")
+        AttendanceHighlightPolicyResponse highlightPolicy,
 
-    @Schema(
-        description = "Аудитория таблицы — группы/подгруппы из scope'ов разрешения. " +
-            "Пустой список при allPermissions=true: клиент должен взять группы из subject.groups."
-    )
-    List<AttendanceAudienceScope> audience,
+        @Schema(
+                description = "Аудитория таблицы — группы/подгруппы из scope'ов разрешения. "
+                        + "Пустой список при allPermissions=true: клиент должен взять группы из subject.groups.")
+        List<AttendanceAudienceScope> audience,
 
-    @Schema(description = "Строки таблицы — студенты")
-    List<AttendanceTableStudent> students,
+        @Schema(description = "Строки таблицы — студенты") List<AttendanceTableStudent> students,
 
-    @Schema(description = "Колонки таблицы — занятия")
-    List<AttendanceTableLesson> lessons,
+        @Schema(description = "Колонки таблицы — занятия") List<AttendanceTableLesson> lessons,
 
-    @Schema(
-        description = "Проставленные ячейки; если ячейки нет — отметка ещё не проставлена"
-    )
-    List<AttendanceCellResponse> attendances
-) {}
+        @Schema(description = "Проставленные ячейки; если ячейки нет — отметка ещё не проставлена")
+        List<AttendanceCellResponse> attendances) {}

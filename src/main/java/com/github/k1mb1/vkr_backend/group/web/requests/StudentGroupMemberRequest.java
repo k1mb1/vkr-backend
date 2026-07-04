@@ -9,17 +9,7 @@ import lombok.Builder;
 @Builder
 @Schema(description = "Данные студента при создании группы")
 public record StudentGroupMemberRequest(
-    @Schema(
-        description = "Имя пользователя студента", requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotBlank
-    String username,
+        @Schema(description = "Имя пользователя студента", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank String username,
 
-    @Schema(
-        description = "Индекс подгруппы (1, 2, ...)",
-        requiredMode = Schema.RequiredMode.NOT_REQUIRED
-    )
-    @Min(1)
-    @Nullable
-    Integer subgroupIndex
-) {}
+        @Schema(description = "Индекс подгруппы (1, 2, ...)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+        @Min(1) @Nullable Integer subgroupIndex) {}

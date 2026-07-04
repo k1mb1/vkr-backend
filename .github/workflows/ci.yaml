@@ -21,7 +21,11 @@ jobs:
           filters: |
             backend:
               - '**/*.java'
-              - 'pom.xml'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'gradle.properties'
+              - 'gradle/**'
+              - 'config/**'
               - 'src/main/resources/**'
               - 'src/test/**'
 
@@ -30,21 +34,26 @@ jobs:
         with:
           java-version: "25"
           distribution: "temurin"
-          cache: "maven"
 
-      - name: Compile
-        run: ./mvnw -B -q clean compile
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Compiles main+test and runs Spotless, Checkstyle, PMD and SpotBugs
+      # (Error Prone / NullAway run as part of compilation). Tests are excluded
+      # here and run in the dedicated step below.
+      - name: Static analysis & compile
+        run: ./gradlew --no-daemon check -x test
 
       - name: Run tests
         if: steps.changes.outputs.backend == 'true'
-        run: ./mvnw -B test
+        run: ./gradlew --no-daemon test
 
-      - name: Upload test reports
+      - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports
-          path: target/surefire-reports/
+          name: build-reports
+          path: build/reports/
 
   docker:
     name: Docker build (JVM)

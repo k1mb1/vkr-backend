@@ -7,7 +7,6 @@ import lombok.Builder;
 @Builder
 @Schema(description = "Краткая информация о подгруппе в составе scope")
 public record PermissionScopeSubgroupResponse(
-    @Schema(description = "ID подгруппы") UUID id,
+        @Schema(description = "ID подгруппы") UUID id,
 
-    @Schema(description = "Индекс подгруппы") Integer index
-) {}
+        @Schema(description = "Индекс подгруппы") Integer index) {}

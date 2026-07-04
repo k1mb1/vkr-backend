@@ -8,10 +8,8 @@ import lombok.Builder;
 @Builder
 @Schema(description = "Группа в составе scope с полным списком её подгрупп")
 public record PermissionScopeGroupResponse(
-    @Schema(description = "ID группы") UUID id,
+        @Schema(description = "ID группы") UUID id,
 
-    @Schema(description = "Название группы") String name,
+        @Schema(description = "Название группы") String name,
 
-    @Schema(description = "Все подгруппы этой группы")
-    List<PermissionScopeSubgroupResponse> subgroups
-) {}
+        @Schema(description = "Все подгруппы этой группы") List<PermissionScopeSubgroupResponse> subgroups) {}

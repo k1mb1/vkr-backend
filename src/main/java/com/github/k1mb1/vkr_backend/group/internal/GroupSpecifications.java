@@ -6,7 +6,7 @@ import com.github.k1mb1.vkr_backend.group.web.filters.GroupFilter;
 import org.springframework.data.jpa.domain.Specification;
 
 record GroupSpecifications(GroupFilter filter) {
-    public Specification<Group> toSpecification() {
+    Specification<Group> toSpecification() {
         return Specs.containsIgnoreCase("name", filter.name());
     }
 }

@@ -56,9 +56,7 @@ class PermissionResolverTest {
         var teacherId = UUID.randomUUID();
         var fullSubject = UUID.randomUUID();
         var scopedSubject = UUID.randomUUID();
-        var views = List.of(
-            view(UUID.randomUUID(), fullSubject, true),
-            view(UUID.randomUUID(), scopedSubject, false));
+        var views = List.of(view(UUID.randomUUID(), fullSubject, true), view(UUID.randomUUID(), scopedSubject, false));
         when(permissionRepository.findOwnedByTeacherId(teacherId)).thenReturn(views);
 
         var result = resolver.forUser(teacherId);

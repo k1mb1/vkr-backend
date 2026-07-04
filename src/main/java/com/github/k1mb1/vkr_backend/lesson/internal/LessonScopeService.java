@@ -9,22 +9,22 @@ import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkAddLessonScopesReque
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkReplaceLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.LessonScopeAudienceRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonScopeResponse;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class LessonScopeService
-    implements LessonScopesApi {
+class LessonScopeService implements LessonScopesApi {
 
     final LessonRepository lessonRepository;
 
@@ -37,19 +37,17 @@ class LessonScopeService
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
-    public List<LessonScopeResponse> addScopes(
-        UUID lessonId,
-        BulkAddLessonScopesRequest request
-    ) {
-        var lesson = lessonRepository.findWithDetailsById(lessonId)
-            .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+    public List<LessonScopeResponse> addScopes(UUID lessonId, BulkAddLessonScopesRequest request) {
+        var lesson = lessonRepository
+                .findWithDetailsById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
 
         var added = new ArrayList<LessonScope>();
         for (var item : request.items()) {
             var scope = LessonScope.builder()
-                .lesson(lesson)
-                .startedAt(item.startedAt())
-                .build();
+                    .lesson(lesson)
+                    .startedAt(item.startedAt())
+                    .build();
             applyAudience(scope, item.audience());
             lesson.getScopes().add(scope);
             added.add(scope);
@@ -64,11 +62,10 @@ class LessonScopeService
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
-    public List<LessonScopeResponse> replaceScopesOfLesson(
-        UUID lessonId,
-        BulkReplaceLessonScopesRequest request
-    ) {
-        var ids = request.items().stream().map(BulkReplaceLessonScopesRequest.Item::id).toList();
+    public List<LessonScopeResponse> replaceScopesOfLesson(UUID lessonId, BulkReplaceLessonScopesRequest request) {
+        var ids = request.items().stream()
+                .map(BulkReplaceLessonScopesRequest.Item::id)
+                .toList();
         if (new HashSet<>(ids).size() != ids.size()) {
             throw new IllegalArgumentException("Duplicate scope ids in request");
         }
@@ -77,12 +74,13 @@ class LessonScopeService
         if (scopes.size() != ids.size()) {
             var found = scopes.stream().map(LessonScope::getId).collect(java.util.stream.Collectors.toSet());
             var missing = ids.stream().filter(id -> !found.contains(id)).toList();
-            throw new ResourceNotFoundException("LessonScope", missing.iterator().next());
+            throw new ResourceNotFoundException(
+                    "LessonScope", missing.iterator().next());
         }
         for (var s : scopes) {
             if (!s.getLesson().getId().equals(lessonId)) {
                 throw new IllegalArgumentException(
-                    "LessonScope " + s.getId() + " does not belong to lesson " + lessonId);
+                        "LessonScope " + s.getId() + " does not belong to lesson " + lessonId);
             }
         }
 
@@ -92,13 +90,14 @@ class LessonScopeService
         }
 
         for (var item : request.items()) {
-            var scope = byId.get(item.id());
+            var scope = Objects.requireNonNull(byId.get(item.id()));
             scope.setStartedAt(item.startedAt());
             applyAudience(scope, item.audience());
         }
 
-        var lesson = lessonRepository.findWithDetailsById(lessonId)
-            .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+        var lesson = lessonRepository
+                .findWithDetailsById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
         validateNoInternalOverlap(lesson);
 
         var saved = lessonScopeRepository.saveAll(scopes);
@@ -107,30 +106,30 @@ class LessonScopeService
             savedById.put(s.getId(), s);
         }
         return ids.stream()
-            .map(savedById::get)
-            .map(lessonMapper::toScopeResponse)
-            .toList();
+                .map(savedById::get)
+                .map(lessonMapper::toScopeResponse)
+                .toList();
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLessonScopes({#scopeId})")
     public void deleteScope(UUID scopeId) {
-        var scope = lessonScopeRepository.findById(scopeId)
-            .orElseThrow(() -> new ResourceNotFoundException("LessonScope", scopeId));
+        var scope = lessonScopeRepository
+                .findById(scopeId)
+                .orElseThrow(() -> new ResourceNotFoundException("LessonScope", scopeId));
         scope.archive();
         lessonScopeRepository.save(scope);
     }
 
-    private void applyAudience(LessonScope scope, LessonScopeAudienceRequest audience) {
+    private void applyAudience(LessonScope scope, @Nullable LessonScopeAudienceRequest audience) {
         if (audience == null) {
             scope.setAllGroups(true);
             scope.setGroup(null);
             scope.setAllowedSubgroup(null);
             return;
         }
-        var ref = groupReferenceService.resolveAudience(
-            audience.groupId(), audience.allowedSubgroupId());
+        var ref = groupReferenceService.resolveAudience(audience.groupId(), audience.allowedSubgroupId());
         scope.setAllGroups(false);
         scope.setGroup(ref.group());
         scope.setAllowedSubgroup(ref.allowedSubgroup());
@@ -141,9 +140,8 @@ class LessonScopeService
         for (int i = 0; i < scopes.size(); i++) {
             for (int j = i + 1; j < scopes.size(); j++) {
                 if (overlaps(scopes.get(i), scopes.get(j))) {
-                    throw new IllegalArgumentException(
-                        "Scope audience overlap within lesson " + lesson.getId() + " between " + describe(
-                            scopes.get(i)) + " and " + describe(scopes.get(j)));
+                    throw new IllegalArgumentException("Scope audience overlap within lesson " + lesson.getId()
+                            + " between " + describe(scopes.get(i)) + " and " + describe(scopes.get(j)));
                 }
             }
         }
@@ -156,11 +154,8 @@ class LessonScopeService
         if (s.isAllGroups()) {
             return "[new allGroups]";
         }
-        return "[new group=" + (s.getGroup() != null
-                                ? s.getGroup().getId()
-                                : null) + ", subgroup=" + (s.getAllowedSubgroup() != null
-                                                           ? s.getAllowedSubgroup().getId()
-                                                           : null) + "]";
+        return "[new group=" + (s.getGroup() != null ? s.getGroup().getId() : null) + ", subgroup="
+                + (s.getAllowedSubgroup() != null ? s.getAllowedSubgroup().getId() : null) + "]";
     }
 
     private boolean overlaps(LessonScope a, LessonScope b) {

@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.student;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
-
 import java.util.List;
 import java.util.UUID;
 

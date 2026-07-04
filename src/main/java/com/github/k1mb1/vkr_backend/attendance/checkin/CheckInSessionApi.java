@@ -19,10 +19,7 @@ public interface CheckInSessionApi {
 
     CheckInPreviewResponse preview(UUID sessionId);
 
-    CheckInSessionResponse confirm(
-        UUID sessionId,
-        ConfirmCheckInRequest request
-    );
+    CheckInSessionResponse confirm(UUID sessionId, ConfirmCheckInRequest request);
 
     CheckInSessionResponse cancel(UUID sessionId);
 
@@ -43,9 +40,5 @@ public interface CheckInSessionApi {
      * доступны без кода и не скрейпились одним запросом. Слишком короткий или пустой запрос,
      * а также неоднозначный запрос (найдено 0 или более 1 студента), возвращает пустой список.
      */
-    List<PublicStudentResponse> searchStudents(
-        UUID sessionId,
-        String code,
-        String query
-    );
+    List<PublicStudentResponse> searchStudents(UUID sessionId, String code, String query);
 }

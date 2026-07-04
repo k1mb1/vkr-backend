@@ -3,7 +3,9 @@
 
 # Include what we need
 !src/**
-!.mvn/**
-!pom.xml
-!mvnw
+!gradle/**
+!build.gradle.kts
+!settings.gradle.kts
+!gradle.properties
+!gradlew
 !lombok.config

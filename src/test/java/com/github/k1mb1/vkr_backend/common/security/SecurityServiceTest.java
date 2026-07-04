@@ -24,19 +24,15 @@ class SecurityServiceTest {
 
     private void authenticateWithSubject(String subject, String... roles) {
         var jwt = Jwt.withTokenValue("token")
-            .header("alg", "none")
-            .subject(subject)
-            .claim("sub", subject)
-            .build();
+                .header("alg", "none")
+                .subject(subject)
+                .claim("sub", subject)
+                .build();
         var authentication = mock(Authentication.class);
         when(authentication.getPrincipal()).thenReturn(jwt);
-        var authorities = List.of(roles).stream()
-            .map(SimpleGrantedAuthority::new)
-            .toList();
-        org.mockito.Mockito.lenient()
-            .doReturn(authorities)
-            .when(authentication)
-            .getAuthorities();
+        var authorities =
+                List.of(roles).stream().map(SimpleGrantedAuthority::new).toList();
+        org.mockito.Mockito.lenient().doReturn(authorities).when(authentication).getAuthorities();
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 

@@ -6,20 +6,19 @@ import com.github.k1mb1.vkr_backend.subject.domain.PermissionScope;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermission;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
-import org.springframework.data.jpa.domain.Specification;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.jpa.domain.Specification;
 
 public final class LessonSpecifications {
 
-    private LessonSpecifications() {
-    }
+    private LessonSpecifications() {}
 
     /**
      * Lessons that satisfy a single permission scope:
@@ -34,9 +33,8 @@ public final class LessonSpecifications {
             List<Predicate> predicates = new ArrayList<>();
 
             predicates.add(cb.equal(
-                root.get("subject").get("id"),
-                scope.getPermission().getSubject().getId()
-            ));
+                    root.get("subject").get("id"),
+                    scope.getPermission().getSubject().getId()));
 
             if (scope.getGroup() != null) {
                 Subquery<UUID> scopeMatch = query.subquery(UUID.class);
@@ -44,17 +42,16 @@ public final class LessonSpecifications {
                 scopeMatch.select(ls.get("id"));
                 List<Predicate> scopePredicates = new ArrayList<>();
                 scopePredicates.add(cb.equal(ls.get("lesson"), root));
-                Predicate groupMatch = cb.equal(ls.get("group").get("id"), scope.getGroup().getId());
+                Predicate groupMatch =
+                        cb.equal(ls.get("group").get("id"), scope.getGroup().getId());
                 if (scope.getAllowedSubgroup() != null) {
                     groupMatch = cb.and(
-                        groupMatch, cb.or(
-                            cb.isNull(ls.get("allowedSubgroup")),
-                            cb.equal(
-                                ls.get("allowedSubgroup").get("id"),
-                                scope.getAllowedSubgroup().getId()
-                            )
-                        )
-                    );
+                            groupMatch,
+                            cb.or(
+                                    cb.isNull(ls.get("allowedSubgroup")),
+                                    cb.equal(
+                                            ls.get("allowedSubgroup").get("id"),
+                                            scope.getAllowedSubgroup().getId())));
                 }
                 scopePredicates.add(cb.or(cb.isTrue(ls.get("allGroups")), groupMatch));
                 scopeMatch.where(scopePredicates.toArray(new Predicate[0]));
@@ -84,25 +81,19 @@ public final class LessonSpecifications {
      * - AND the lesson's type equals the permission scope's allowedLessonType (or the permission
      *   scope has no type restriction).
      */
-    public static Specification<Lesson> forPermission(
-        TeacherSubjectPermission permission
-    ) {
+    public static Specification<Lesson> forPermission(TeacherSubjectPermission permission) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             predicates.add(cb.equal(
-                root.get("subject").get("id"),
-                permission.getSubject().getId()
-            ));
+                    root.get("subject").get("id"), permission.getSubject().getId()));
 
             if (!permission.isAllPermissions()) {
                 List<Predicate> orParts = new ArrayList<>();
                 for (var ps : permission.getScopes()) {
                     orParts.add(scopePredicate(ps, root, query, cb));
                 }
-                predicates.add(orParts.isEmpty()
-                               ? cb.disjunction()
-                               : cb.or(orParts.toArray(new Predicate[0])));
+                predicates.add(orParts.isEmpty() ? cb.disjunction() : cb.or(orParts.toArray(new Predicate[0])));
             }
 
             if (query.getResultType() != Long.class && query.getResultType() != long.class) {
@@ -113,33 +104,28 @@ public final class LessonSpecifications {
     }
 
     private static Predicate scopePredicate(
-        PermissionScope ps,
-        jakarta.persistence.criteria.Root<Lesson> root,
-        jakarta.persistence.criteria.CriteriaQuery<?> query,
-        jakarta.persistence.criteria.CriteriaBuilder cb
-    ) {
+            PermissionScope ps,
+            jakarta.persistence.criteria.Root<Lesson> root,
+            jakarta.persistence.criteria.CriteriaQuery<?> query,
+            jakarta.persistence.criteria.CriteriaBuilder cb) {
         List<Predicate> parts = new ArrayList<>();
 
         if (ps.getGroup() != null) {
             Subquery<UUID> scopeMatch = query.subquery(UUID.class);
             var ls = scopeMatch.from(LessonScope.class);
             scopeMatch.select(ls.get("id"));
-            Predicate groupMatch = cb.equal(ls.get("group").get("id"), ps.getGroup().getId());
+            Predicate groupMatch =
+                    cb.equal(ls.get("group").get("id"), ps.getGroup().getId());
             if (ps.getAllowedSubgroup() != null) {
                 groupMatch = cb.and(
-                    groupMatch, cb.or(
-                        cb.isNull(ls.get("allowedSubgroup")),
-                        cb.equal(
-                            ls.get("allowedSubgroup").get("id"),
-                            ps.getAllowedSubgroup().getId()
-                        )
-                    )
-                );
+                        groupMatch,
+                        cb.or(
+                                cb.isNull(ls.get("allowedSubgroup")),
+                                cb.equal(
+                                        ls.get("allowedSubgroup").get("id"),
+                                        ps.getAllowedSubgroup().getId())));
             }
-            scopeMatch.where(
-                cb.equal(ls.get("lesson"), root),
-                cb.or(cb.isTrue(ls.get("allGroups")), groupMatch)
-            );
+            scopeMatch.where(cb.equal(ls.get("lesson"), root), cb.or(cb.isTrue(ls.get("allGroups")), groupMatch));
             parts.add(cb.exists(scopeMatch));
         }
 
@@ -147,9 +133,7 @@ public final class LessonSpecifications {
             parts.add(cb.equal(root.get("type"), ps.getAllowedLessonType()));
         }
 
-        return parts.isEmpty()
-               ? cb.conjunction()
-               : cb.and(parts.toArray(new Predicate[0]));
+        return parts.isEmpty() ? cb.conjunction() : cb.and(parts.toArray(new Predicate[0]));
     }
 
     /**
@@ -162,10 +146,9 @@ public final class LessonSpecifications {
         if (permissionAllowsAllGroups(permission)) {
             return Set.of();
         }
-        return permission.getScopes()
-            .stream()
-            .map(s -> s.getGroup().getId())
-            .collect(Collectors.toSet());
+        return permission.getScopes().stream()
+                .map(s -> Objects.requireNonNull(s.getGroup()).getId())
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -173,10 +156,7 @@ public final class LessonSpecifications {
      * allPermissions=true, or via at least one scope with group=null.
      */
     public static boolean permissionAllowsAllGroups(TeacherSubjectPermission permission) {
-        if (permission.isAllPermissions()) {
-            return true;
-        }
-        return permission.getScopes().stream().anyMatch(ps -> ps.getGroup() == null);
+        return permission.isAllPermissions() || permission.getScopes().stream().anyMatch(ps -> ps.getGroup() == null);
     }
 
     /**
@@ -186,28 +166,23 @@ public final class LessonSpecifications {
      * audience logic. Always includes a lesson_scope with allGroups=true if any relevant
      * permission scope exists.
      */
-    public static List<LessonScope> visibleScopes(
-        Lesson lesson,
-        TeacherSubjectPermission permission
-    ) {
+    public static List<LessonScope> visibleScopes(Lesson lesson, TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
             return new ArrayList<>(lesson.getScopes());
         }
 
-        var relevant = permission.getScopes()
-            .stream()
-            .filter(ps -> ps.getAllowedLessonType() == null || ps.getAllowedLessonType()
-                .equals(lesson.getType()))
-            .toList();
+        var relevant = permission.getScopes().stream()
+                .filter(ps -> ps.getAllowedLessonType() == null || ps.getAllowedLessonType() == lesson.getType())
+                .toList();
         if (relevant.isEmpty()) {
             return List.of();
         }
 
         boolean allowAllGroups = relevant.stream().anyMatch(ps -> ps.getGroup() == null);
         Set<UUID> permittedGroupIds = relevant.stream()
-            .filter(ps -> ps.getGroup() != null)
-            .map(ps -> ps.getGroup().getId())
-            .collect(Collectors.toSet());
+                .filter(ps -> ps.getGroup() != null)
+                .map(ps -> ps.getGroup().getId())
+                .collect(Collectors.toSet());
         Map<UUID, UUID> subgroupRestrictions = new HashMap<>();
         for (var ps : relevant) {
             if (ps.getGroup() == null) {
@@ -215,9 +190,7 @@ public final class LessonSpecifications {
             }
             if (ps.getAllowedSubgroup() != null) {
                 subgroupRestrictions.putIfAbsent(
-                    ps.getGroup().getId(),
-                    ps.getAllowedSubgroup().getId()
-                );
+                        ps.getGroup().getId(), ps.getAllowedSubgroup().getId());
             } else {
                 subgroupRestrictions.put(ps.getGroup().getId(), null);
             }
@@ -233,9 +206,11 @@ public final class LessonSpecifications {
                 continue;
             }
             if (allowAllGroups || permittedGroupIds.contains(scope.getGroup().getId())) {
-                var allowedSubgroupId = subgroupRestrictions.get(scope.getGroup().getId());
-                if (allowedSubgroupId == null || scope.getAllowedSubgroup() == null || allowedSubgroupId.equals(
-                    scope.getAllowedSubgroup().getId())) {
+                var allowedSubgroupId =
+                        subgroupRestrictions.get(scope.getGroup().getId());
+                if (allowedSubgroupId == null
+                        || scope.getAllowedSubgroup() == null
+                        || allowedSubgroupId.equals(scope.getAllowedSubgroup().getId())) {
                     result.add(scope);
                 }
             }

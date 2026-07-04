@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RequestMapping(
-    value = "/api/results", produces = MediaType.APPLICATION_JSON_VALUE
-)
+@RequestMapping(value = "/api/results", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Results", description = "Итоги семестра (оценки + посещаемость одним запросом)")
 @RestController
 @RequiredArgsConstructor
@@ -30,33 +28,20 @@ public class ResultsController {
 
     final AttendanceApi attendanceApi;
 
-    @Operation(
-        summary = "Получить итоги по permissionId одним запросом (оценки + посещаемость)"
-    )
+    @Operation(summary = "Получить итоги по permissionId одним запросом (оценки + посещаемость)")
     @GetMapping
-    public ResponseEntity<ResultsResponse> getResults(
-        @ParameterObject
-        @Valid
-        @ModelAttribute
-        ResultsFilter filter
-    ) {
-        var grading = gradingApi.getGradingTable(
-            GradingFilter.builder()
+    public ResponseEntity<ResultsResponse> getResults(@ParameterObject @Valid @ModelAttribute ResultsFilter filter) {
+        var grading = gradingApi.getGradingTable(GradingFilter.builder()
                 .permissionId(filter.permissionId())
                 .lessonId(filter.lessonId())
-                .build()
-        );
-        var attendance = attendanceApi.getAttendanceTable(
-            AttendanceFilter.builder()
+                .build());
+        var attendance = attendanceApi.getAttendanceTable(AttendanceFilter.builder()
                 .permissionId(filter.permissionId())
                 .lessonId(filter.lessonId())
-                .build()
-        );
-        return ResponseEntity.ok(
-            ResultsResponse.builder()
+                .build());
+        return ResponseEntity.ok(ResultsResponse.builder()
                 .grading(grading)
                 .attendance(attendance)
-                .build()
-        );
+                .build());
     }
 }

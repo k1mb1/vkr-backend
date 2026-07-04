@@ -9,17 +9,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
-
-@RequestMapping(
-    value = "/api/grades", produces = MediaType.APPLICATION_JSON_VALUE
-)
+@RequestMapping(value = "/api/grades", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Grades", description = "Оценивание")
 @RestController
 @RequiredArgsConstructor
@@ -28,38 +30,28 @@ public class GradingController {
     final GradingApi gradingApi;
 
     @Operation(
-        summary = "Получить полную таблицу оценок по permissionId",
-        description = "Таблица по всем занятиям предмета разрешения. Пер-урочный режим " +
-            "(grades+attendance по одному занятию) — на GET /api/results?permissionId=&lessonId="
-    )
+            summary = "Получить полную таблицу оценок по permissionId",
+            description = "Таблица по всем занятиям предмета разрешения. Пер-урочный режим "
+                    + "(grades+attendance по одному занятию) — на GET /api/results?permissionId=&lessonId=")
     @GetMapping
     public ResponseEntity<GradingTableResponse> getGradingTable(
-        @Parameter(
-            description = "ID разрешения преподавателя (обязательно — определяет, что видно)",
-            required = true
-        )
-        @RequestParam
-        UUID permissionId
-    ) {
-        return ResponseEntity.ok(
-            gradingApi.getGradingTable(
-                GradingFilter.builder().permissionId(permissionId).build()
-            )
-        );
+            @Parameter(
+                            description = "ID разрешения преподавателя (обязательно — определяет, что видно)",
+                            required = true)
+                    @RequestParam
+                    UUID permissionId) {
+        return ResponseEntity.ok(gradingApi.getGradingTable(
+                GradingFilter.builder().permissionId(permissionId).build()));
     }
 
-    @Operation(
-        summary = "Массовое создание/обновление ячеек оценок"
-    )
+    @Operation(summary = "Массовое создание/обновление ячеек оценок")
     @PutMapping
     public ResponseEntity<List<GradeCellResponse>> upsertGrades(
-        @Valid
-        @RequestBody
-        @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Список ячеек оценок", required = true
-        )
-        BulkUpsertGradesRequest request
-    ) {
+            @Valid @RequestBody
+                    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                            description = "Список ячеек оценок",
+                            required = true)
+                    BulkUpsertGradesRequest request) {
         return ResponseEntity.ok(gradingApi.upsertGrades(request));
     }
 }

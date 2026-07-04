@@ -23,10 +23,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     List<Student> findByGroupIdInAndArchivedAtIsNull(Collection<UUID> groupIds);
 
     @EntityGraph("Student.withGroups")
-    List<Student> findByGroupIdAndSubgroupIdAndArchivedAtIsNull(
-        UUID groupId,
-        UUID subgroupId
-    );
+    List<Student> findByGroupIdAndSubgroupIdAndArchivedAtIsNull(UUID groupId, UUID subgroupId);
 
     @Modifying
     @Query("DELETE FROM Student s WHERE s.group.id = :groupId")

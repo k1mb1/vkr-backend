@@ -63,7 +63,10 @@ class AttendanceServiceTest {
 
     private UpsertAttendanceRequest item(UUID studentId, UUID scopeId, AttendanceStatus status) {
         return UpsertAttendanceRequest.builder()
-            .studentId(studentId).lessonScopeId(scopeId).status(status).build();
+                .studentId(studentId)
+                .lessonScopeId(scopeId)
+                .status(status)
+                .build();
     }
 
     // ---- upsertAll ----
@@ -73,13 +76,11 @@ class AttendanceServiceTest {
         var studentId = UUID.randomUUID();
         var scopeId = UUID.randomUUID();
         var request = new BulkUpsertAttendanceRequest(List.of(
-            item(studentId, scopeId, AttendanceStatus.PRESENT),
-            item(studentId, scopeId, AttendanceStatus.LATE)
-        ));
+                item(studentId, scopeId, AttendanceStatus.PRESENT), item(studentId, scopeId, AttendanceStatus.LATE)));
 
         assertThatThrownBy(() -> service.upsertAll(request))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Duplicate");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Duplicate");
     }
 
     @Test
@@ -92,23 +93,21 @@ class AttendanceServiceTest {
 
         // существующая ячейка для s2; для s1 — новая
         var existing = Attendance.builder()
-            .id(UUID.randomUUID())
-            .student(student2)
-            .lessonScope(scope)
-            .status(AttendanceStatus.ABSENT)
-            .build();
+                .id(UUID.randomUUID())
+                .student(student2)
+                .lessonScope(scope)
+                .status(AttendanceStatus.ABSENT)
+                .build();
         when(attendanceRepository.findByLessonScopeIdInAndStudentIdIn(any(), any()))
-            .thenReturn(List.of(existing));
+                .thenReturn(List.of(existing));
         when(studentRepository.getReferenceById(s1))
-            .thenReturn(Student.builder().id(s1).username("A").build());
+                .thenReturn(Student.builder().id(s1).username("A").build());
         when(lessonScopeRepository.getReferenceById(scopeId)).thenReturn(scope);
         when(attendanceRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(attendanceMapper.toCell(any())).thenReturn(mock(AttendanceCellResponse.class));
 
-        var request = new BulkUpsertAttendanceRequest(List.of(
-            item(s1, scopeId, AttendanceStatus.PRESENT),
-            item(s2, scopeId, AttendanceStatus.LATE)
-        ));
+        var request = new BulkUpsertAttendanceRequest(
+                List.of(item(s1, scopeId, AttendanceStatus.PRESENT), item(s2, scopeId, AttendanceStatus.LATE)));
 
         service.upsertAll(request);
 
@@ -134,13 +133,33 @@ class AttendanceServiceTest {
         var student = Student.builder().id(studentId).username("A").build();
         var scopeId = UUID.randomUUID();
         var rows = List.of(
-            Attendance.builder().id(UUID.randomUUID()).student(student).status(AttendanceStatus.PRESENT).build(),
-            Attendance.builder().id(UUID.randomUUID()).student(student).status(AttendanceStatus.PRESENT).build(),
-            Attendance.builder().id(UUID.randomUUID()).student(student).status(AttendanceStatus.LATE).build(),
-            Attendance.builder().id(UUID.randomUUID()).student(student).status(AttendanceStatus.ABSENT).build(),
-            Attendance.builder().id(UUID.randomUUID()).student(student).status(AttendanceStatus.EXCUSED).build()
-        );
-        when(attendanceRepository.findByLessonScopeIdInAndStudentIdIn(any(), any())).thenReturn(rows);
+                Attendance.builder()
+                        .id(UUID.randomUUID())
+                        .student(student)
+                        .status(AttendanceStatus.PRESENT)
+                        .build(),
+                Attendance.builder()
+                        .id(UUID.randomUUID())
+                        .student(student)
+                        .status(AttendanceStatus.PRESENT)
+                        .build(),
+                Attendance.builder()
+                        .id(UUID.randomUUID())
+                        .student(student)
+                        .status(AttendanceStatus.LATE)
+                        .build(),
+                Attendance.builder()
+                        .id(UUID.randomUUID())
+                        .student(student)
+                        .status(AttendanceStatus.ABSENT)
+                        .build(),
+                Attendance.builder()
+                        .id(UUID.randomUUID())
+                        .student(student)
+                        .status(AttendanceStatus.EXCUSED)
+                        .build());
+        when(attendanceRepository.findByLessonScopeIdInAndStudentIdIn(any(), any()))
+                .thenReturn(rows);
 
         var result = service.summarize(List.of(scopeId), List.of(studentId));
 
@@ -158,10 +177,8 @@ class AttendanceServiceTest {
         var permissionId = UUID.randomUUID();
         when(permissionRepository.findWithDetailsById(permissionId)).thenReturn(Optional.empty());
 
-        var filter = new com.github.k1mb1.vkr_backend.attendance.web.filters.AttendanceFilter(
-            permissionId, null, null);
+        var filter = new com.github.k1mb1.vkr_backend.attendance.web.filters.AttendanceFilter(permissionId, null, null);
 
-        assertThatThrownBy(() -> service.getAttendanceTable(filter))
-            .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.getAttendanceTable(filter)).isInstanceOf(ResourceNotFoundException.class);
     }
 }

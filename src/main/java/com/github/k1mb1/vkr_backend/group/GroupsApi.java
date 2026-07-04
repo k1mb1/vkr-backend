@@ -6,11 +6,10 @@ import com.github.k1mb1.vkr_backend.group.web.requests.UpdateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.web.response.GroupWithSubgroupsResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface GroupsApi {
     GroupResponse createGroup(CreateGroupRequest request);

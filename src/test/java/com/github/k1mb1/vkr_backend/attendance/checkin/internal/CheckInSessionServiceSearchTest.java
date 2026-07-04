@@ -66,43 +66,31 @@ class CheckInSessionServiceSearchTest {
     final LessonScope scope = mock(LessonScope.class);
 
     static Student student(String username) {
-        return Student.builder()
-            .id(UUID.randomUUID())
-            .username(username)
-            .build();
+        return Student.builder().id(UUID.randomUUID()).username(username).build();
     }
 
     CheckInSession givenSessionWithStudents(List<Student> students) {
         var session = mock(CheckInSession.class);
         lenient().when(session.getCode()).thenReturn(CODE);
         lenient().when(session.getLessonScope()).thenReturn(scope);
-        lenient()
-            .when(session.stateAt(any()))
-            .thenReturn(CheckInSessionState.OPEN);
-        lenient()
-            .when(sessionRepository.findWithDetailsById(sessionId))
-            .thenReturn(Optional.of(session));
-        lenient()
-            .when(lessonStudentsApi.studentsOf(scope))
-            .thenReturn(students);
+        lenient().when(session.stateAt(any())).thenReturn(CheckInSessionState.OPEN);
+        lenient().when(sessionRepository.findWithDetailsById(sessionId)).thenReturn(Optional.of(session));
+        lenient().when(lessonStudentsApi.studentsOf(scope)).thenReturn(students);
         return session;
     }
 
     @Test
     void returnsOnlyMatchesBySurnameWithMaskedNameAndNoStatus() {
         var ivanov = student("Иванов Иван Иванович");
-        givenSessionWithStudents(
-            List.of(ivanov, student("Петров Пётр Петрович"))
-        );
+        givenSessionWithStudents(List.of(ivanov, student("Петров Пётр Петрович")));
 
         var result = service.searchStudents(sessionId, CODE, "иванов");
 
-        assertThat(result).containsExactly(
-            PublicStudentResponse.builder()
-                .id(ivanov.getId())
-                .username("Иванов И. И.")
-                .build()
-        );
+        assertThat(result)
+                .containsExactly(PublicStudentResponse.builder()
+                        .id(ivanov.getId())
+                        .username("Иванов И. И.")
+                        .build());
     }
 
     @Test
@@ -112,20 +100,16 @@ class CheckInSessionServiceSearchTest {
 
         var result = service.searchStudents(sessionId, CODE, "  ПЕТРОВ  ");
 
-        assertThat(result)
-            .extracting(PublicStudentResponse::id)
-            .containsExactly(petrov.getId());
+        assertThat(result).extracting(PublicStudentResponse::id).containsExactly(petrov.getId());
     }
 
     @Test
     void rejectsWrongCodeWithoutTouchingRoster() {
         givenSessionWithStudents(List.of(student("Иванов Иван Иванович")));
 
-        assertThatThrownBy(() ->
-            service.searchStudents(sessionId, "WRONG", "иванов")
-        )
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("код");
+        assertThatThrownBy(() -> service.searchStudents(sessionId, "WRONG", "иванов"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("код");
 
         verify(lessonStudentsApi, never()).studentsOf(scope);
     }
@@ -149,9 +133,7 @@ class CheckInSessionServiceSearchTest {
 
     @Test
     void returnsEmptyWhenSessionIsClosed() {
-        var session = givenSessionWithStudents(
-            List.of(student("Иванов Иван Иванович"))
-        );
+        var session = givenSessionWithStudents(List.of(student("Иванов Иван Иванович")));
         when(session.stateAt(any())).thenReturn(CheckInSessionState.CONFIRMED);
 
         assertThat(service.searchStudents(sessionId, CODE, "иванов")).isEmpty();
@@ -159,9 +141,7 @@ class CheckInSessionServiceSearchTest {
 
     @Test
     void returnsEmptyWhenMoreThanOneMatch() {
-        givenSessionWithStudents(
-            List.of(student("Иванов Иван"), student("Иванов Пётр"))
-        );
+        givenSessionWithStudents(List.of(student("Иванов Иван"), student("Иванов Пётр")));
 
         var result = service.searchStudents(sessionId, CODE, "иванов");
 
@@ -170,9 +150,7 @@ class CheckInSessionServiceSearchTest {
 
     @Test
     void returnsEmptyWhenNoMatches() {
-        givenSessionWithStudents(
-            List.of(student("Петров Пётр"), student("Сидоров Сидор"))
-        );
+        givenSessionWithStudents(List.of(student("Петров Пётр"), student("Сидоров Сидор")));
 
         var result = service.searchStudents(sessionId, CODE, "иванов");
 
@@ -183,18 +161,14 @@ class CheckInSessionServiceSearchTest {
     void verifyCodePassesForValidCodeOnOpenSession() {
         givenSessionWithStudents(List.of());
 
-        assertThatCode(() ->
-            service.verifyCode(sessionId, "abc123")
-        ).doesNotThrowAnyException();
+        assertThatCode(() -> service.verifyCode(sessionId, "abc123")).doesNotThrowAnyException();
     }
 
     @Test
     void verifyCodeRejectsWrongCode() {
         givenSessionWithStudents(List.of());
 
-        assertThatThrownBy(() ->
-            service.verifyCode(sessionId, "WRONG")
-        ).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.verifyCode(sessionId, "WRONG")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -202,8 +176,6 @@ class CheckInSessionServiceSearchTest {
         var session = givenSessionWithStudents(List.of());
         when(session.stateAt(any())).thenReturn(CheckInSessionState.CONFIRMED);
 
-        assertThatThrownBy(() ->
-            service.verifyCode(sessionId, CODE)
-        ).isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> service.verifyCode(sessionId, CODE)).isInstanceOf(ConflictException.class);
     }
 }

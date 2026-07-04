@@ -5,17 +5,24 @@ import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class LessonStudentsService
-    implements LessonStudentsApi {
+class LessonStudentsService implements LessonStudentsApi {
 
     final StudentRepository studentRepository;
 
@@ -53,12 +60,10 @@ class LessonStudentsService
         }
 
         var studentsByGroup = new HashMap<UUID, List<Student>>();
-        for (var s : studentRepository.findByGroupIdInAndArchivedAtIsNull(
-            groupIds
-        )) {
+        for (var s : studentRepository.findByGroupIdInAndArchivedAtIsNull(groupIds)) {
             studentsByGroup
-                .computeIfAbsent(s.getGroup().getId(), k -> new ArrayList<>())
-                .add(s);
+                    .computeIfAbsent(s.getGroup().getId(), k -> new ArrayList<>())
+                    .add(s);
         }
 
         var seen = new LinkedHashMap<UUID, Student>();
@@ -71,10 +76,7 @@ class LessonStudentsService
     }
 
     private void collectScopeStudents(
-        LessonScope scope,
-        Map<UUID, List<Student>> studentsByGroup,
-        Map<UUID, Student> seen
-    ) {
+            LessonScope scope, Map<UUID, List<Student>> studentsByGroup, Map<UUID, Student> seen) {
         if (scope.isAllGroups()) {
             for (var group : scope.getLesson().getSubject().getGroups()) {
                 putAll(studentsByGroup.get(group.getId()), seen);
@@ -100,7 +102,7 @@ class LessonStudentsService
         }
     }
 
-    private static void putAll(List<Student> students, Map<UUID, Student> seen) {
+    private static void putAll(@Nullable List<Student> students, Map<UUID, Student> seen) {
         if (students == null) {
             return;
         }

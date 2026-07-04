@@ -1,5 +1,8 @@
 package com.github.k1mb1.vkr_backend.lesson.internal;
 
+import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+
 import com.github.k1mb1.vkr_backend.grading.web.responses.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
@@ -10,9 +13,6 @@ import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-
-import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
-import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 @Mapper(componentModel = SPRING)
 interface LessonMapper {
@@ -28,10 +28,7 @@ interface LessonMapper {
     @Mapping(target = "scopes", source = "scopes")
     @Mapping(target = "assignments", source = "assignments")
     LessonResponse toResponse(
-        Lesson lesson,
-        java.util.List<LessonScope> scopes,
-        java.util.List<AssignmentResponse> assignments
-    );
+            Lesson lesson, java.util.List<LessonScope> scopes, java.util.List<AssignmentResponse> assignments);
 
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")
@@ -46,8 +43,5 @@ interface LessonMapper {
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "scopes", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
-    void updateEntity(
-        UpdateLessonHeaderRequest request,
-        @MappingTarget Lesson lesson
-    );
+    void updateEntity(UpdateLessonHeaderRequest request, @MappingTarget Lesson lesson);
 }

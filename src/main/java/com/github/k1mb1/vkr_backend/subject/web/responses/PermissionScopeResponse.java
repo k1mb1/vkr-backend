@@ -4,23 +4,17 @@ import com.github.k1mb1.vkr_backend.lesson.domain.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
 import lombok.Builder;
+import org.jspecify.annotations.Nullable;
 
 @Builder
 @Schema(
-    description = "Scope права преподавателя — группа (с полным списком подгрупп) + опц. разрешённая подгруппа + опц. тип занятия"
-)
+        description =
+                "Scope права преподавателя — группа (с полным списком подгрупп) + опц. разрешённая подгруппа + опц. тип занятия")
 public record PermissionScopeResponse(
-    @Schema(
-        description = "ID scope (null для синтетических scope при allPermissions=true)"
-    )
-    UUID id,
+        @Schema(description = "ID scope (null для синтетических scope при allPermissions=true)") @Nullable UUID id,
 
-    @Schema(description = "Группа с полным списком её подгрупп")
-    PermissionScopeGroupResponse group,
+        @Schema(description = "Группа с полным списком её подгрупп") @Nullable PermissionScopeGroupResponse group,
 
-    @Schema(description = "Разрешённая подгруппа (null = все подгруппы группы)")
-    PermissionScopeSubgroupResponse allowedSubgroup,
+        @Schema(description = "Разрешённая подгруппа (null = все подгруппы группы)") @Nullable PermissionScopeSubgroupResponse allowedSubgroup,
 
-    @Schema(description = "Разрешённый тип занятия (null = все типы)")
-    LessonType allowedLessonType
-) {}
+        @Schema(description = "Разрешённый тип занятия (null = все типы)") @Nullable LessonType allowedLessonType) {}

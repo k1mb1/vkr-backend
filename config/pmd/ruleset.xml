@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<ruleset name="Project rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Curated PMD rules. Formatting is owned by Spotless and many naming/import
+        rules by Checkstyle, so PMD focuses on real bug patterns, design smells and
+        performance. Rules that fight Lombok, Spring or our DTO/entity style are
+        excluded explicitly.
+    </description>
+
+    <!-- Likely bugs. -->
+    <rule ref="category/java/errorprone.xml">
+        <!-- We rely on null returns + Optional in the persistence layer. -->
+        <exclude name="AvoidLiteralsInIfCondition"/>
+        <!-- Duplicate string literals are common and low value to chase. -->
+        <exclude name="AvoidDuplicateLiterals"/>
+        <!-- JPA entities are not Serializable by our convention. -->
+        <exclude name="MissingSerialVersionUID"/>
+        <!-- Lombok @Builder.Default / field initialisers trip this. -->
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <!-- Constructors calling overridable methods: not relevant here. -->
+        <exclude name="ConstructorCallsOverridableMethod"/>
+        <!-- Assigning null is a legitimate way to clear optional state. -->
+        <exclude name="NullAssignment"/>
+    </rule>
+
+    <!-- Recommended practices. -->
+    <rule ref="category/java/bestpractices.xml">
+        <!-- We do not gate on a logging framework yet. -->
+        <exclude name="GuardLogStatement"/>
+        <!-- Lombok generates accessors; flagging the fields is noise. -->
+        <exclude name="AbstractClassWithoutAbstractMethod"/>
+        <!-- MapStruct @Mapper interfaces often declare a single abstract mapping
+             method; they are deliberately not @FunctionalInterface (more mappings
+             get added over time), so this "clarify intent" nudge is noise here. -->
+        <exclude name="ImplicitFunctionalInterface"/>
+    </rule>
+
+    <!-- Performance smells. -->
+    <rule ref="category/java/performance.xml">
+        <!-- Lombok @Builder.Default requires the field initializer to define the
+             builder default, so "redundant" default-value initializers are load-bearing. -->
+        <exclude name="RedundantFieldInitializer"/>
+        <!-- Per-iteration allocations (a fresh DTO / list per element) are the
+             intended pattern in our mapping loops, not a smell. -->
+        <exclude name="AvoidInstantiatingObjectsInLoops"/>
+    </rule>
+
+    <!-- Selected design rules; the noisier metric-based ones are left out. -->
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/>
+        <exclude name="LoosePackageCoupling"/>
+        <exclude name="ExcessiveImports"/>
+        <exclude name="TooManyMethods"/>
+        <exclude name="DataClass"/>
+        <!-- Metric-based rules: our domain services (grading, lesson scopes, policy
+             validation) are legitimately branchy; keeping these would only produce
+             noise, consistent with the exclusions above. -->
+        <exclude name="CyclomaticComplexity"/>
+        <exclude name="CognitiveComplexity"/>
+        <exclude name="NPathComplexity"/>
+        <exclude name="GodClass"/>
+        <exclude name="CouplingBetweenObjects"/>
+        <!-- Spring @Configuration bean factory methods (e.g. SecurityFilterChain)
+             idiomatically declare `throws Exception`. -->
+        <exclude name="SignatureDeclareThrowsException"/>
+    </rule>
+
+    <!--
+      NOTE: the testing reference project also ships a custom
+      ControllerReturnsResponseEntityStatusBody rule enforcing the
+      ResponseEntity.status(...).body(...) shape in every @RestController return.
+      vkr-backend controllers do not follow that convention (they use
+      ResponseEntity.ok(...) and similar), so that rule is intentionally not
+      carried over here.
+    -->
+</ruleset>

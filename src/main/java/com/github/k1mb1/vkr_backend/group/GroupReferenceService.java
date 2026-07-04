@@ -2,8 +2,8 @@ package com.github.k1mb1.vkr_backend.group;
 
 import com.github.k1mb1.vkr_backend.group.domain.Group;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
-
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 public interface GroupReferenceService {
 
@@ -17,5 +17,5 @@ public interface GroupReferenceService {
      * (вызывающий трактует как allGroups). Бросает {@link IllegalArgumentException},
      * если подгруппа не принадлежит указанной группе.
      */
-    AudienceRef resolveAudience(UUID groupId, UUID allowedSubgroupId);
+    AudienceRef resolveAudience(@Nullable UUID groupId, @Nullable UUID allowedSubgroupId);
 }

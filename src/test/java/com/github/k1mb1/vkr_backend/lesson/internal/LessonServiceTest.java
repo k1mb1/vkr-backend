@@ -71,45 +71,37 @@ class LessonServiceTest {
     @Test
     void scheduleGeneratesWeeklyPatternUntilCount() {
         var monday = LocalDate.of(2026, 1, 5); // понедельник
-        var dates = LessonService.schedule(
-            monday, 5, List.of(List.of(DayOfWeek.MONDAY, DayOfWeek.THURSDAY))
-        );
+        var dates = LessonService.schedule(monday, 5, List.of(List.of(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)));
 
-        assertThat(dates).containsExactly(
-            LocalDate.of(2026, 1, 5),
-            LocalDate.of(2026, 1, 8),
-            LocalDate.of(2026, 1, 12),
-            LocalDate.of(2026, 1, 15),
-            LocalDate.of(2026, 1, 19)
-        );
+        assertThat(dates)
+                .containsExactly(
+                        LocalDate.of(2026, 1, 5),
+                        LocalDate.of(2026, 1, 8),
+                        LocalDate.of(2026, 1, 12),
+                        LocalDate.of(2026, 1, 15),
+                        LocalDate.of(2026, 1, 19));
     }
 
     @Test
     void scheduleSkipsEmptyWeeksInCyclingPattern() {
         var monday = LocalDate.of(2026, 1, 5);
-        var dates = LessonService.schedule(
-            monday, 3, List.of(List.of(DayOfWeek.MONDAY, DayOfWeek.THURSDAY), List.of())
-        );
+        var dates =
+                LessonService.schedule(monday, 3, List.of(List.of(DayOfWeek.MONDAY, DayOfWeek.THURSDAY), List.of()));
 
         // через неделю: пн/чт первой недели, затем пропуск, затем пн третьей недели
-        assertThat(dates).containsExactly(
-            LocalDate.of(2026, 1, 5),
-            LocalDate.of(2026, 1, 8),
-            LocalDate.of(2026, 1, 19)
-        );
+        assertThat(dates)
+                .containsExactly(LocalDate.of(2026, 1, 5), LocalDate.of(2026, 1, 8), LocalDate.of(2026, 1, 19));
     }
 
     @Test
     void scheduleSortsDaysWithinWeek() {
         var monday = LocalDate.of(2026, 1, 5);
-        var dates = LessonService.schedule(
-            monday, 2, List.of(List.of(DayOfWeek.THURSDAY, DayOfWeek.MONDAY))
-        );
+        var dates = LessonService.schedule(monday, 2, List.of(List.of(DayOfWeek.THURSDAY, DayOfWeek.MONDAY)));
 
-        assertThat(dates).containsExactly(
-            LocalDate.of(2026, 1, 5),  // MON раньше THU несмотря на порядок в списке
-            LocalDate.of(2026, 1, 8)
-        );
+        assertThat(dates)
+                .containsExactly(
+                        LocalDate.of(2026, 1, 5), // MON раньше THU несмотря на порядок в списке
+                        LocalDate.of(2026, 1, 8));
     }
 
     // ---- earliestStartedAt (pure) ----
@@ -117,20 +109,29 @@ class LessonServiceTest {
     @Test
     void earliestStartedAtReturnsMinIgnoringNulls() {
         var lesson = Lesson.builder()
-            .id(UUID.randomUUID())
-            .scopes(new HashSet<>(Set.of(
-                LessonScope.builder().id(UUID.randomUUID()).startedAt(LocalDate.of(2026, 3, 10)).build(),
-                LessonScope.builder().id(UUID.randomUUID()).startedAt(LocalDate.of(2026, 2, 1)).build(),
-                LessonScope.builder().id(UUID.randomUUID()).startedAt(null).build()
-            )))
-            .build();
+                .id(UUID.randomUUID())
+                .scopes(new HashSet<>(Set.of(
+                        LessonScope.builder()
+                                .id(UUID.randomUUID())
+                                .startedAt(LocalDate.of(2026, 3, 10))
+                                .build(),
+                        LessonScope.builder()
+                                .id(UUID.randomUUID())
+                                .startedAt(LocalDate.of(2026, 2, 1))
+                                .build(),
+                        LessonScope.builder()
+                                .id(UUID.randomUUID())
+                                .startedAt(null)
+                                .build())))
+                .build();
 
         assertThat(LessonService.earliestStartedAt(lesson)).isEqualTo(LocalDate.of(2026, 2, 1));
     }
 
     @Test
     void earliestStartedAtNullWhenNoDates() {
-        var lesson = Lesson.builder().id(UUID.randomUUID()).scopes(new HashSet<>()).build();
+        var lesson =
+                Lesson.builder().id(UUID.randomUUID()).scopes(new HashSet<>()).build();
         assertThat(LessonService.earliestStartedAt(lesson)).isNull();
     }
 
@@ -140,26 +141,29 @@ class LessonServiceTest {
     void bulkCreateContinuesOrderIndexAndAssignsDefaultTopics() {
         var subjectId = UUID.randomUUID();
         when(subjectRepository.findById(subjectId))
-            .thenReturn(Optional.of(Subject.builder().id(subjectId).name("Math").build()));
+                .thenReturn(
+                        Optional.of(Subject.builder().id(subjectId).name("Math").build()));
         when(subjectRepository.getReferenceById(subjectId))
-            .thenReturn(Subject.builder().id(subjectId).name("Math").build());
+                .thenReturn(Subject.builder().id(subjectId).name("Math").build());
         when(lessonRepository.findMaxOrderIndex(subjectId, LessonType.LECTURE)).thenReturn(null);
         when(lessonRepository.findMaxOrderIndex(subjectId, LessonType.PRACTICE)).thenReturn(2);
         when(lessonRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
-        lenient().when(lessonMapper.toResponse(any(), any(), any()))
-            .thenReturn(mock(LessonResponse.class));
+        lenient().when(lessonMapper.toResponse(any(), any(), any())).thenReturn(mock(LessonResponse.class));
 
         service.bulkCreate(new BulkCreateLessonsRequest(subjectId, 2, 1));
 
         verify(lessonRepository).saveAll(lessonsCaptor.capture());
         var lessons = lessonsCaptor.getValue();
         assertThat(lessons).hasSize(3);
-        assertThat(lessons).filteredOn(l -> l.getType() == LessonType.LECTURE)
-            .extracting(Lesson::getOrderIndex).containsExactly(1, 2);
-        assertThat(lessons).filteredOn(l -> l.getType() == LessonType.PRACTICE)
-            .extracting(Lesson::getOrderIndex).containsExactly(3);
-        assertThat(lessons).extracting(Lesson::getTopic)
-            .contains("Лекция 1", "Лекция 2", "Практика 3");
+        assertThat(lessons)
+                .filteredOn(l -> l.getType() == LessonType.LECTURE)
+                .extracting(Lesson::getOrderIndex)
+                .containsExactly(1, 2);
+        assertThat(lessons)
+                .filteredOn(l -> l.getType() == LessonType.PRACTICE)
+                .extracting(Lesson::getOrderIndex)
+                .containsExactly(3);
+        assertThat(lessons).extracting(Lesson::getTopic).contains("Лекция 1", "Лекция 2", "Практика 3");
     }
 
     @Test
@@ -167,9 +171,8 @@ class LessonServiceTest {
         var subjectId = UUID.randomUUID();
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() ->
-            service.bulkCreate(new BulkCreateLessonsRequest(subjectId, 1, 0))
-        ).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.bulkCreate(new BulkCreateLessonsRequest(subjectId, 1, 0)))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     // ---- deleteLesson ----
@@ -179,12 +182,12 @@ class LessonServiceTest {
         var id = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var lesson = Lesson.builder()
-            .id(id)
-            .subject(Subject.builder().id(subjectId).build())
-            .type(LessonType.LECTURE)
-            .orderIndex(4)
-            .scopes(new HashSet<>())
-            .build();
+                .id(id)
+                .subject(Subject.builder().id(subjectId).build())
+                .type(LessonType.LECTURE)
+                .orderIndex(4)
+                .scopes(new HashSet<>())
+                .build();
         when(lessonRepository.findById(id)).thenReturn(Optional.of(lesson));
 
         service.deleteLesson(id);

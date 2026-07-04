@@ -39,8 +39,10 @@ class SubjectPolicyServicesTest {
 
     @BeforeEach
     void stubSubject() {
-        lenient().when(subjectRepository.findById(subjectId))
-            .thenReturn(Optional.of(Subject.builder().id(subjectId).name("S").build()));
+        lenient()
+                .when(subjectRepository.findById(subjectId))
+                .thenReturn(
+                        Optional.of(Subject.builder().id(subjectId).name("S").build()));
         lenient().when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -54,15 +56,14 @@ class SubjectPolicyServicesTest {
     void penaltyGetThrowsWhenSubjectMissing() {
         subjectMissing();
         var service = new SubjectPenaltyPolicyService(subjectRepository, subjectMapper);
-        assertThatThrownBy(() -> service.getPenaltyPolicy(subjectId))
-            .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.getPenaltyPolicy(subjectId)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void penaltyUpdateDisabledSucceeds() {
         var service = new SubjectPenaltyPolicyService(subjectRepository, subjectMapper);
-        var request = new PenaltyPolicyRequest(false, null, null, null, null, null,
-            false, null, null, null, null, null);
+        var request =
+                new PenaltyPolicyRequest(false, null, null, null, null, null, false, null, null, null, null, null);
         assertThatCode(() -> service.updatePenaltyPolicy(subjectId, request)).doesNotThrowAnyException();
         verify(subjectRepository).save(any());
     }
@@ -70,19 +71,17 @@ class SubjectPolicyServicesTest {
     @Test
     void penaltyUpdateEnabledWithoutRequiredFieldsThrows() {
         var service = new SubjectPenaltyPolicyService(subjectRepository, subjectMapper);
-        var request = new PenaltyPolicyRequest(true, null, null, null, null, null,
-            false, null, null, null, null, null);
+        var request = new PenaltyPolicyRequest(true, null, null, null, null, null, false, null, null, null, null, null);
         assertThatThrownBy(() -> service.updatePenaltyPolicy(subjectId, request))
-            .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void penaltyUpdateBonusEnabledWithoutRequiredFieldsThrows() {
         var service = new SubjectPenaltyPolicyService(subjectRepository, subjectMapper);
-        var request = new PenaltyPolicyRequest(false, null, null, null, null, null,
-            true, null, null, null, null, null);
+        var request = new PenaltyPolicyRequest(false, null, null, null, null, null, true, null, null, null, null, null);
         assertThatThrownBy(() -> service.updatePenaltyPolicy(subjectId, request))
-            .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     // ---- Attendance ----
@@ -90,17 +89,17 @@ class SubjectPolicyServicesTest {
     @Test
     void attendanceUpdateDisabledSucceeds() {
         var service = new SubjectAttendancePolicyService(subjectRepository, subjectMapper);
-        assertThatCode(() ->
-            service.updateAttendancePolicy(subjectId, new AttendancePolicyRequest(false, null, null, null, null))
-        ).doesNotThrowAnyException();
+        assertThatCode(() -> service.updateAttendancePolicy(
+                        subjectId, new AttendancePolicyRequest(false, null, null, null, null)))
+                .doesNotThrowAnyException();
     }
 
     @Test
     void attendanceUpdateEnabledWithoutPointsThrows() {
         var service = new SubjectAttendancePolicyService(subjectRepository, subjectMapper);
-        assertThatThrownBy(() ->
-            service.updateAttendancePolicy(subjectId, new AttendancePolicyRequest(true, null, null, null, null))
-        ).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.updateAttendancePolicy(
+                        subjectId, new AttendancePolicyRequest(true, null, null, null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     // ---- CheckIn ----
@@ -108,17 +107,15 @@ class SubjectPolicyServicesTest {
     @Test
     void checkInUpdateDisabledSucceeds() {
         var service = new SubjectCheckInPolicyService(subjectRepository, subjectMapper);
-        assertThatCode(() ->
-            service.updateCheckInPolicy(subjectId, new CheckInPolicyRequest(false, null, null))
-        ).doesNotThrowAnyException();
+        assertThatCode(() -> service.updateCheckInPolicy(subjectId, new CheckInPolicyRequest(false, null, null)))
+                .doesNotThrowAnyException();
     }
 
     @Test
     void checkInUpdateEnabledWithoutWindowsThrows() {
         var service = new SubjectCheckInPolicyService(subjectRepository, subjectMapper);
-        assertThatThrownBy(() ->
-            service.updateCheckInPolicy(subjectId, new CheckInPolicyRequest(true, null, null))
-        ).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.updateCheckInPolicy(subjectId, new CheckInPolicyRequest(true, null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     // ---- Attendance highlight ----
@@ -126,19 +123,17 @@ class SubjectPolicyServicesTest {
     @Test
     void attendanceHighlightUpdateEnabledWithoutColorsThrows() {
         var service = new SubjectAttendanceHighlightPolicyService(subjectRepository, subjectMapper);
-        assertThatThrownBy(() ->
-            service.updateAttendanceHighlightPolicy(subjectId,
-                new AttendanceHighlightPolicyRequest(true, null, null, null, null))
-        ).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.updateAttendanceHighlightPolicy(
+                        subjectId, new AttendanceHighlightPolicyRequest(true, null, null, null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void attendanceHighlightUpdateDisabledSucceeds() {
         var service = new SubjectAttendanceHighlightPolicyService(subjectRepository, subjectMapper);
-        assertThatCode(() ->
-            service.updateAttendanceHighlightPolicy(subjectId,
-                new AttendanceHighlightPolicyRequest(false, null, null, null, null))
-        ).doesNotThrowAnyException();
+        assertThatCode(() -> service.updateAttendanceHighlightPolicy(
+                        subjectId, new AttendanceHighlightPolicyRequest(false, null, null, null, null)))
+                .doesNotThrowAnyException();
     }
 
     // ---- Grading highlight ----
@@ -146,18 +141,16 @@ class SubjectPolicyServicesTest {
     @Test
     void gradingHighlightUpdateEnabledWithoutColorsThrows() {
         var service = new SubjectGradingHighlightPolicyService(subjectRepository, subjectMapper);
-        assertThatThrownBy(() ->
-            service.updateGradingHighlightPolicy(subjectId,
-                new GradingHighlightPolicyRequest(true, null, null, null, null))
-        ).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.updateGradingHighlightPolicy(
+                        subjectId, new GradingHighlightPolicyRequest(true, null, null, null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void gradingHighlightUpdateDisabledSucceeds() {
         var service = new SubjectGradingHighlightPolicyService(subjectRepository, subjectMapper);
-        assertThatCode(() ->
-            service.updateGradingHighlightPolicy(subjectId,
-                new GradingHighlightPolicyRequest(false, null, null, null, null))
-        ).doesNotThrowAnyException();
+        assertThatCode(() -> service.updateGradingHighlightPolicy(
+                        subjectId, new GradingHighlightPolicyRequest(false, null, null, null, null)))
+                .doesNotThrowAnyException();
     }
 }

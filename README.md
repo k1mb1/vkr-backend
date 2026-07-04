@@ -68,7 +68,7 @@ REST API для системы учёта учебного процесса: г�
 ## Требования
 
 - JDK 25
-- Maven (можно использовать встроенный `./mvnw`)
+- Gradle (можно использовать встроенный `./gradlew`)
 - PostgreSQL 17 (или `docker compose`)
 - OAuth2/OIDC-провайдер (issuer для проверки JWT)
 
@@ -105,7 +105,7 @@ docker compose up -d db-postgres
 ## Запуск
 
 ```bash
-./mvnw spring-boot:run          # запуск приложения
+./gradlew bootRun               # запуск приложения
 ```
 
 API поднимется на `http://localhost:8080`. В профиле `dev` доступны:
@@ -118,8 +118,8 @@ API поднимется на `http://localhost:8080`. В профиле `dev` �
 ## Сборка
 
 ```bash
-./mvnw clean package            # JAR в target/
-./mvnw test                     # тесты (Testcontainers поднимает PostgreSQL)
+./gradlew clean build           # JAR в build/libs/
+./gradlew test                  # тесты (Testcontainers поднимает PostgreSQL)
 ```
 
 ### Docker
@@ -132,7 +132,7 @@ docker build -f Dockerfile.native -t vkr-backend:native .   # GraalVM native
 ### Нативная сборка (GraalVM)
 
 ```bash
-./mvnw -Pnative native:compile
+./gradlew nativeCompile
 ```
 
 ## Профили

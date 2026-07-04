@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.Lesson;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
-
 import java.util.Collection;
 import java.util.List;
 

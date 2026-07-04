@@ -5,6 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,9 +15,6 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.Objects;
-import java.util.UUID;
-
 @Hidden
 @MappedSuperclass
 @Getter
@@ -23,8 +22,7 @@ import java.util.UUID;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public abstract class BaseEntity
-    extends Auditable {
+public abstract class BaseEntity extends Auditable {
 
     @Id
     @UuidGenerator
@@ -41,11 +39,11 @@ public abstract class BaseEntity
             return false;
         }
         Class<?> objectEffectiveClass = o instanceof HibernateProxy proxy
-                                        ? proxy.getHibernateLazyInitializer().getPersistentClass()
-                                        : o.getClass();
+                ? proxy.getHibernateLazyInitializer().getPersistentClass()
+                : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy
-                                      ? proxy.getHibernateLazyInitializer().getPersistentClass()
-                                      : this.getClass();
+                ? proxy.getHibernateLazyInitializer().getPersistentClass()
+                : this.getClass();
         if (thisEffectiveClass != objectEffectiveClass) {
             return false;
         }
@@ -56,7 +54,7 @@ public abstract class BaseEntity
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy proxy
-               ? proxy.getHibernateLazyInitializer().getPersistentClass().hashCode()
-               : getClass().hashCode();
+                ? proxy.getHibernateLazyInitializer().getPersistentClass().hashCode()
+                : getClass().hashCode();
     }
 }

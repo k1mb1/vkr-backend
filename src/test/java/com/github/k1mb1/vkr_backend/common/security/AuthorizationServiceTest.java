@@ -100,8 +100,7 @@ class AuthorizationServiceTest {
         var subjectId = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(subjectId)));
         var lessonId = UUID.randomUUID();
-        when(lessonRepository.findSubjectIdsByLessonIds(List.of(lessonId)))
-            .thenReturn(Set.of(subjectId));
+        when(lessonRepository.findSubjectIdsByLessonIds(List.of(lessonId))).thenReturn(Set.of(subjectId));
 
         assertThat(authz.canAccessLessons(List.of(lessonId))).isTrue();
     }
@@ -113,7 +112,7 @@ class AuthorizationServiceTest {
         var l1 = UUID.randomUUID();
         var l2 = UUID.randomUUID();
         when(lessonRepository.findSubjectIdsByLessonIds(List.of(l1, l2)))
-            .thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
+                .thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
 
         assertThat(authz.canAccessLessons(List.of(l1, l2))).isFalse();
     }
@@ -152,8 +151,7 @@ class AuthorizationServiceTest {
     void canManageSubjectRequiresFullAccessNotJustAnyAccess() {
         var scopedSubject = UUID.randomUUID();
         var fullSubject = UUID.randomUUID();
-        asUserWith(new UserPermissions(
-            Set.of(), Set.of(scopedSubject, fullSubject), Set.of(fullSubject)));
+        asUserWith(new UserPermissions(Set.of(), Set.of(scopedSubject, fullSubject), Set.of(fullSubject)));
 
         assertThat(authz.canManageSubject(fullSubject)).isTrue();
         // доступ есть (scope), но полного нет — управлять нельзя
@@ -177,8 +175,7 @@ class AuthorizationServiceTest {
         var fullSubject = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(fullSubject), Set.of(fullSubject)));
         var permissionId = UUID.randomUUID();
-        when(permissionRepository.findSubjectIdById(permissionId))
-            .thenReturn(Optional.of(fullSubject));
+        when(permissionRepository.findSubjectIdById(permissionId)).thenReturn(Optional.of(fullSubject));
 
         assertThat(authz.canManagePermission(permissionId)).isTrue();
     }
@@ -188,8 +185,7 @@ class AuthorizationServiceTest {
         var scopedSubject = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(scopedSubject), Set.of()));
         var permissionId = UUID.randomUUID();
-        when(permissionRepository.findSubjectIdById(permissionId))
-            .thenReturn(Optional.of(scopedSubject));
+        when(permissionRepository.findSubjectIdById(permissionId)).thenReturn(Optional.of(scopedSubject));
 
         assertThat(authz.canManagePermission(permissionId)).isFalse();
     }
@@ -198,8 +194,7 @@ class AuthorizationServiceTest {
     void canManagePermissionDeniedWhenPermissionMissingOrNull() {
         when(security.isAdmin()).thenReturn(false);
         var permissionId = UUID.randomUUID();
-        lenient().when(permissionRepository.findSubjectIdById(permissionId))
-            .thenReturn(Optional.empty());
+        lenient().when(permissionRepository.findSubjectIdById(permissionId)).thenReturn(Optional.empty());
 
         assertThat(authz.canManagePermission(permissionId)).isFalse();
         assertThat(authz.canManagePermission(null)).isFalse();
@@ -228,8 +223,7 @@ class AuthorizationServiceTest {
         var subjectId = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(subjectId)));
         var scopeId = UUID.randomUUID();
-        when(lessonScopeRepository.findSubjectIdsByScopeIds(List.of(scopeId)))
-            .thenReturn(Set.of(subjectId));
+        when(lessonScopeRepository.findSubjectIdsByScopeIds(List.of(scopeId))).thenReturn(Set.of(subjectId));
 
         assertThat(authz.canAccessLessonScopes(List.of(scopeId))).isTrue();
     }
@@ -240,7 +234,7 @@ class AuthorizationServiceTest {
         asUserWith(new UserPermissions(Set.of(), Set.of(ownedSubject)));
         var scopeId = UUID.randomUUID();
         when(lessonScopeRepository.findSubjectIdsByScopeIds(List.of(scopeId)))
-            .thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
+                .thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
 
         assertThat(authz.canAccessLessonScopes(List.of(scopeId))).isFalse();
     }
@@ -251,8 +245,7 @@ class AuthorizationServiceTest {
     void canAccessLessonDeniedWhenSubjectsUnknown() {
         asUserWith(new UserPermissions(Set.of(), Set.of(UUID.randomUUID())));
         var lessonId = UUID.randomUUID();
-        when(lessonRepository.findSubjectIdsByLessonIds(List.of(lessonId)))
-            .thenReturn(Set.of());
+        when(lessonRepository.findSubjectIdsByLessonIds(List.of(lessonId))).thenReturn(Set.of());
 
         // пустой набор предметов => нет подтверждённого доступа
         assertThat(authz.canAccessLesson(lessonId)).isFalse();
@@ -272,8 +265,7 @@ class AuthorizationServiceTest {
         var subjectId = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(subjectId)));
         var sessionId = UUID.randomUUID();
-        when(checkInSessionRepository.findSubjectIdById(sessionId))
-            .thenReturn(Optional.of(subjectId));
+        when(checkInSessionRepository.findSubjectIdById(sessionId)).thenReturn(Optional.of(subjectId));
 
         assertThat(authz.canAccessCheckInSession(sessionId)).isTrue();
     }
@@ -282,8 +274,7 @@ class AuthorizationServiceTest {
     void checkInSessionDeniedWhenSessionMissing() {
         when(security.isAdmin()).thenReturn(false);
         var sessionId = UUID.randomUUID();
-        when(checkInSessionRepository.findSubjectIdById(sessionId))
-            .thenReturn(Optional.empty());
+        when(checkInSessionRepository.findSubjectIdById(sessionId)).thenReturn(Optional.empty());
 
         assertThat(authz.canAccessCheckInSession(sessionId)).isFalse();
     }

@@ -9,7 +9,7 @@ import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 record SubjectSpecifications(SubjectFilter filter) {
-    public Specification<Subject> toSpecification() {
+    Specification<Subject> toSpecification() {
         return Specs.<Subject>containsIgnoreCase("name", filter.name()).and(hasTeacherSpec());
     }
 
@@ -20,10 +20,10 @@ record SubjectSpecifications(SubjectFilter filter) {
             }
             Subquery<TeacherSubjectPermission> sub = query.subquery(TeacherSubjectPermission.class);
             Root<TeacherSubjectPermission> permission = sub.from(TeacherSubjectPermission.class);
-            sub.select(permission.get("id")).where(
-                cb.equal(permission.get("subject").get("id"), root.get("id")),
-                cb.equal(permission.get("teacher").get("id"), filter.teacherId())
-            );
+            sub.select(permission.get("id"))
+                    .where(
+                            cb.equal(permission.get("subject").get("id"), root.get("id")),
+                            cb.equal(permission.get("teacher").get("id"), filter.teacherId()));
             return cb.exists(sub);
         };
     }

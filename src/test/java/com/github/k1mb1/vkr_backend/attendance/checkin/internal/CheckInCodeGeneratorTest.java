@@ -18,11 +18,10 @@ class CheckInCodeGeneratorTest {
 
     @Test
     void generatesVariedCodes() {
-        var codes = IntStream
-            .range(0, 200)
-            .mapToObj(i -> CheckInCodeGenerator.generate())
-            .distinct()
-            .count();
+        var codes = IntStream.range(0, 200)
+                .mapToObj(i -> CheckInCodeGenerator.generate())
+                .distinct()
+                .count();
 
         // На 200 генерациях коллизий почти не бывает — допускаем небольшой запас.
         assertThat(codes).isGreaterThan(190);

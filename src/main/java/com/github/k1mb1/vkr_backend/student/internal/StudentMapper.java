@@ -1,26 +1,27 @@
 package com.github.k1mb1.vkr_backend.student.internal;
 
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+
 import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.web.requests.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.student.internal.web.response.StudentResponse;
-import org.mapstruct.*;
-
 import java.util.UUID;
-
-import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
+import org.jspecify.annotations.Nullable;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Context;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface StudentMapper {
     @Named("subgroupRef")
-    static Subgroup toSubgroupRef(
-        UUID subgroupId,
-        @Context GroupReferenceService groupReferenceService
-    ) {
-        return subgroupId != null
-               ? groupReferenceService.getSubgroupReferenceById(subgroupId)
-               : null;
+    static @Nullable Subgroup toSubgroupRef(
+            @Nullable UUID subgroupId, @Context GroupReferenceService groupReferenceService) {
+        return subgroupId != null ? groupReferenceService.getSubgroupReferenceById(subgroupId) : null;
     }
 
     @Mapping(target = "groupId", source = "group.id")
@@ -32,21 +33,15 @@ public interface StudentMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "archivedAt", ignore = true)
-    @Mapping(
-        target = "subgroup", source = "subgroupId", qualifiedByName = "subgroupRef"
-    )
+    @Mapping(target = "subgroup", source = "subgroupId", qualifiedByName = "subgroupRef")
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(
-        UpdateStudentRequest request,
-        @MappingTarget Student student,
-        @Context GroupReferenceService groupReferenceService
-    );
+            UpdateStudentRequest request,
+            @MappingTarget Student student,
+            @Context GroupReferenceService groupReferenceService);
 
     @org.mapstruct.AfterMapping
-    default void afterUpdate(
-        UpdateStudentRequest request,
-        @MappingTarget Student student
-    ) {
+    default void afterUpdate(UpdateStudentRequest request, @MappingTarget Student student) {
         if (request.archived() == null) {
             return;
         }

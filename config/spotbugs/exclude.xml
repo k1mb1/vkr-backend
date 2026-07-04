@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+      SpotBugs runs at HIGH confidence, so this filter only needs to silence
+      patterns that are structurally inherent to our style rather than bugs.
+    -->
+
+    <!-- Lombok-generated code carries @lombok.Generated; never analyse it. -->
+    <Match>
+        <Source name="~.*generated.*"/>
+    </Match>
+
+    <!-- Hibernate bytecode-enhanced accessors ($$_hibernate_*) are generated. -->
+    <Match>
+        <Method name="~\$\$_hibernate.*"/>
+    </Match>
+
+    <!--
+      JPA entities and DTOs deliberately expose their mutable collections /
+      components (getters/records). EI_EXPOSE_REP(2) is expected there and the
+      JPA layer owns defensive copying, so suppress it in the domain and DTOs.
+    -->
+    <Match>
+        <Or>
+            <Package name="~.*\.domain"/>
+            <Package name="~.*\.dto"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

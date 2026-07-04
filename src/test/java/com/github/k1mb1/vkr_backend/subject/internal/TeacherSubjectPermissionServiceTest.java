@@ -61,37 +61,39 @@ class TeacherSubjectPermissionServiceTest {
     void createThrowsConflictWhenPermissionExists() {
         var teacherId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
-        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(true);
+        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId))
+                .thenReturn(true);
 
-        assertThatThrownBy(() -> service.create(
-            new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, true, null)))
-            .isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() ->
+                        service.create(new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, true, null)))
+                .isInstanceOf(ConflictException.class);
     }
 
     @Test
     void createRejectsNonAllPermissionsWithoutScopes() {
         var teacherId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
-        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(false);
+        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId))
+                .thenReturn(false);
 
         assertThatThrownBy(() -> service.create(
-            new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, false, List.of())))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("scopes must be non-empty");
+                        new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, false, List.of())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("scopes must be non-empty");
     }
 
     @Test
     void createAllPermissionsSavesPermission() {
         var teacherId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
-        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(false);
+        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId))
+                .thenReturn(false);
         when(subjectRepository.getReferenceById(subjectId))
-            .thenReturn(Subject.builder().id(subjectId).name("S").build());
+                .thenReturn(Subject.builder().id(subjectId).name("S").build());
         when(teacherReferenceService.getTeacherReferenceById(teacherId))
-            .thenReturn(Teacher.builder().id(teacherId).build());
+                .thenReturn(Teacher.builder().id(teacherId).build());
         when(permissionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        lenient().when(permissionMapper.toFullResponse(any()))
-            .thenReturn(mock(TeacherSubjectPermissionResponse.class));
+        lenient().when(permissionMapper.toFullResponse(any())).thenReturn(mock(TeacherSubjectPermissionResponse.class));
 
         service.create(new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, true, null));
 
@@ -103,20 +105,24 @@ class TeacherSubjectPermissionServiceTest {
         var teacherId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var foreignGroupId = UUID.randomUUID();
-        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(false);
+        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId))
+                .thenReturn(false);
         // предмет без групп — любой groupId в scope считается не привязанным
         when(subjectRepository.getReferenceById(subjectId))
-            .thenReturn(Subject.builder().id(subjectId).name("S").groups(new HashSet<>()).build());
+                .thenReturn(Subject.builder()
+                        .id(subjectId)
+                        .name("S")
+                        .groups(new HashSet<>())
+                        .build());
         when(teacherReferenceService.getTeacherReferenceById(teacherId))
-            .thenReturn(Teacher.builder().id(teacherId).build());
+                .thenReturn(Teacher.builder().id(teacherId).build());
 
-        var scope = new PermissionScopeRequest(
-            new PermissionScopeGroupRef(foreignGroupId, null), LessonType.LECTURE);
+        var scope = new PermissionScopeRequest(new PermissionScopeGroupRef(foreignGroupId, null), LessonType.LECTURE);
 
         assertThatThrownBy(() -> service.create(
-            new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, false, List.of(scope))))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("not attached to subject");
+                        new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, false, List.of(scope))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not attached to subject");
     }
 
     @Test
@@ -124,21 +130,27 @@ class TeacherSubjectPermissionServiceTest {
         var teacherId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var groupId = UUID.randomUUID();
-        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId)).thenReturn(false);
+        when(permissionRepository.existsByTeacherIdAndSubjectId(teacherId, subjectId))
+                .thenReturn(false);
         var group = Group.builder().id(groupId).name("G").build();
         when(subjectRepository.getReferenceById(subjectId))
-            .thenReturn(Subject.builder().id(subjectId).name("S").groups(new HashSet<>(Set.of(group))).build());
+                .thenReturn(Subject.builder()
+                        .id(subjectId)
+                        .name("S")
+                        .groups(new HashSet<>(Set.of(group)))
+                        .build());
         when(teacherReferenceService.getTeacherReferenceById(teacherId))
-            .thenReturn(Teacher.builder().id(teacherId).build());
-        lenient().when(groupReferenceService.resolveAudience(groupId, null))
-            .thenReturn(new com.github.k1mb1.vkr_backend.group.AudienceRef(group, null));
+                .thenReturn(Teacher.builder().id(teacherId).build());
+        lenient()
+                .when(groupReferenceService.resolveAudience(groupId, null))
+                .thenReturn(new com.github.k1mb1.vkr_backend.group.AudienceRef(group, null));
 
         var scope = new PermissionScopeRequest(new PermissionScopeGroupRef(groupId, null), LessonType.LECTURE);
 
         assertThatThrownBy(() -> service.create(
-            new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, false, List.of(scope, scope))))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("Duplicate scope");
+                        new CreateTeacherSubjectPermissionRequest(teacherId, subjectId, false, List.of(scope, scope))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Duplicate scope");
     }
 
     // ---- update ----
@@ -148,28 +160,27 @@ class TeacherSubjectPermissionServiceTest {
         var id = UUID.randomUUID();
         when(permissionRepository.findWithDetailsById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.update(id,
-            new UpdateTeacherSubjectPermissionRequest(null, null, null)))
-            .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.update(id, new UpdateTeacherSubjectPermissionRequest(null, null, null)))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void updateRejectsScopesWhenAllPermissions() {
         var id = UUID.randomUUID();
         var permission = TeacherSubjectPermission.builder()
-            .id(id)
-            .allPermissions(true)
-            .teacher(Teacher.builder().id(UUID.randomUUID()).build())
-            .subject(Subject.builder().id(UUID.randomUUID()).name("S").build())
-            .build();
+                .id(id)
+                .allPermissions(true)
+                .teacher(Teacher.builder().id(UUID.randomUUID()).build())
+                .subject(Subject.builder().id(UUID.randomUUID()).name("S").build())
+                .build();
         when(permissionRepository.findWithDetailsById(id)).thenReturn(Optional.of(permission));
 
         var scope = new PermissionScopeRequest(null, LessonType.LECTURE);
 
-        assertThatThrownBy(() -> service.update(id,
-            new UpdateTeacherSubjectPermissionRequest(null, null, List.of(scope))))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("must not be provided when allPermissions=true");
+        assertThatThrownBy(
+                        () -> service.update(id, new UpdateTeacherSubjectPermissionRequest(null, null, List.of(scope))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not be provided when allPermissions=true");
     }
 
     // ---- delete ----
@@ -201,9 +212,9 @@ class TeacherSubjectPermissionServiceTest {
         var subjectId = UUID.randomUUID();
         var teacherId = UUID.randomUUID();
         when(permissionRepository.findBySubjectIdAndTeacherId(subjectId, teacherId))
-            .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getPermission(subjectId, teacherId))
-            .isInstanceOf(EntityNotFoundException.class);
+                .isInstanceOf(EntityNotFoundException.class);
     }
 }

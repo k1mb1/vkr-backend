@@ -3,7 +3,6 @@ package com.github.k1mb1.vkr_backend.lesson;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkAddLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.requests.BulkReplaceLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.web.responses.LessonScopeResponse;
-
 import java.util.List;
 import java.util.UUID;
 

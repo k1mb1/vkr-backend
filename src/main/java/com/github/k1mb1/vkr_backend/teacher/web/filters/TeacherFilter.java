@@ -5,8 +5,6 @@ import lombok.Builder;
 
 @Builder
 @Schema(description = "Фильтр для поиска учителей")
-public record TeacherFilter
-    (
+public record TeacherFilter(
         @Schema(description = "Имя учителя (частичное совпадение)")
-        String username
-    ) {}
+        String username) {}

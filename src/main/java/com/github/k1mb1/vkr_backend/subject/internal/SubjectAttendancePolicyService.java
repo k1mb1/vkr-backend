@@ -24,60 +24,44 @@ class SubjectAttendancePolicyService implements SubjectAttendancePolicyApi {
     @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public AttendancePolicyResponse getAttendancePolicy(UUID subjectId) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
-        return subjectMapper.toAttendancePolicyResponse(
-            subject.getAttendancePolicy()
-        );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
+        return subjectMapper.toAttendancePolicyResponse(subject.getAttendancePolicy());
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canManageSubject(#subjectId)")
-    public AttendancePolicyResponse updateAttendancePolicy(
-        UUID subjectId,
-        AttendancePolicyRequest request
-    ) {
+    public AttendancePolicyResponse updateAttendancePolicy(UUID subjectId, AttendancePolicyRequest request) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
         subject.setAttendancePolicy(toAttendancePolicy(request));
         return subjectMapper.toAttendancePolicyResponse(
-            subjectRepository.save(subject).getAttendancePolicy()
-        );
+                subjectRepository.save(subject).getAttendancePolicy());
     }
 
     /**
      * Собирает новую политику из запроса. Если enabled=false — все поля получают
      * значения по умолчанию (через {@code @Builder.Default}).
      */
-    private AttendancePolicy toAttendancePolicy(
-        AttendancePolicyRequest request
-    ) {
+    private AttendancePolicy toAttendancePolicy(AttendancePolicyRequest request) {
         if (!Boolean.TRUE.equals(request.enabled())) {
             return AttendancePolicy.builder().build();
         }
-        if (
-            request.pointsPresent() == null ||
-            request.pointsLate() == null ||
-            request.pointsAbsent() == null ||
-            request.pointsExcused() == null
-        ) {
-            throw new IllegalArgumentException(
-                "При включённой связке посещаемости (enabled=true) обязательны: " +
-                    "pointsPresent, pointsLate, pointsAbsent, pointsExcused"
-            );
+        if (request.pointsPresent() == null
+                || request.pointsLate() == null
+                || request.pointsAbsent() == null
+                || request.pointsExcused() == null) {
+            throw new IllegalArgumentException("При включённой связке посещаемости (enabled=true) обязательны: "
+                    + "pointsPresent, pointsLate, pointsAbsent, pointsExcused");
         }
         return AttendancePolicy.builder()
-            .enabled(true)
-            .pointsPresent(request.pointsPresent())
-            .pointsLate(request.pointsLate())
-            .pointsAbsent(request.pointsAbsent())
-            .pointsExcused(request.pointsExcused())
-            .build();
+                .enabled(true)
+                .pointsPresent(request.pointsPresent())
+                .pointsLate(request.pointsLate())
+                .pointsAbsent(request.pointsAbsent())
+                .pointsExcused(request.pointsExcused())
+                .build();
     }
 }

@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,45 +52,35 @@ class LessonService implements LessonApi {
 
     final GroupReferenceService groupReferenceService;
 
-    static LocalDate earliestStartedAt(Lesson lesson) {
-        return lesson
-            .getScopes()
-            .stream()
-            .map(LessonScope::getStartedAt)
-            .filter(Objects::nonNull)
-            .min(Comparator.naturalOrder())
-            .orElse(null);
+    static @Nullable LocalDate earliestStartedAt(Lesson lesson) {
+        return lesson.getScopes().stream()
+                .map(LessonScope::getStartedAt)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
     }
 
     @Override
     @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse getLessonById(UUID id) {
-        var lesson = lessonRepository
-            .findWithDetailsById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+        var lesson =
+                lessonRepository.findWithDetailsById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
         var assignments = gradingApi.getAssignmentsByLesson(id);
-        return lessonMapper.toResponse(
-            lesson,
-            lesson.getScopes().stream().toList(),
-            assignments
-        );
+        return lessonMapper.toResponse(lesson, lesson.getScopes().stream().toList(), assignments);
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
-        var lesson = lessonRepository
-            .findWithDetailsById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+        var lesson =
+                lessonRepository.findWithDetailsById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         if (request.header() != null) {
             var header = request.header();
             lessonMapper.updateEntity(header, lesson);
             if (header.subjectId() != null) {
-                lesson.setSubject(
-                    subjectRepository.getReferenceById(header.subjectId())
-                );
+                lesson.setSubject(subjectRepository.getReferenceById(header.subjectId()));
             }
             if (header.orderIndex() != null) {
                 lesson.setOrderIndex(header.orderIndex());
@@ -108,16 +99,11 @@ class LessonService implements LessonApi {
     @Override
     @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse setActive(UUID id, boolean active) {
-        var lesson = lessonRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+        var lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
         if (active) {
             // Не более одного активного занятия на (предмет, тип) — снимаем флаг с остальных того же типа.
-            lessonRepository.clearActiveForSubjectAndType(
-                lesson.getSubject().getId(),
-                lesson.getType()
-            );
+            lessonRepository.clearActiveForSubjectAndType(lesson.getSubject().getId(), lesson.getType());
             lessonRepository.flush();
         }
         lesson.setActive(active);
@@ -130,9 +116,7 @@ class LessonService implements LessonApi {
     @Override
     @PreAuthorize("@authz.canAccessLesson(#id)")
     public void deleteLesson(UUID id) {
-        var lesson = lessonRepository
-            .findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+        var lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
         var subjectId = lesson.getSubject().getId();
         var type = lesson.getType();
         var removedIndex = lesson.getOrderIndex();
@@ -148,38 +132,22 @@ class LessonService implements LessonApi {
     @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public List<LessonResponse> getLessons(LessonFilter filter) {
         var permission = permissionRepository
-            .findWithDetailsById(filter.permissionId())
-            .orElseThrow(() ->
-                new ResourceNotFoundException(
-                    "TeacherSubjectPermission",
-                    filter.permissionId()
-                )
-            );
-        var lessons = lessonRepository.findAllWithDetails(
-            LessonSpecifications.forPermission(permission)
-        );
-        var sorted = lessons
-            .stream()
-            .sorted(
-                Comparator.comparing(
-                    LessonService::earliestStartedAt,
-                    Comparator.nullsLast(Comparator.naturalOrder())
-                ).thenComparingInt(Lesson::getOrderIndex)
-            )
-            .toList();
+                .findWithDetailsById(filter.permissionId())
+                .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", filter.permissionId()));
+        var lessons = lessonRepository.findAllWithDetails(LessonSpecifications.forPermission(permission));
+        var sorted = lessons.stream()
+                .sorted(Comparator.comparing(
+                                LessonService::earliestStartedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparingInt(Lesson::getOrderIndex))
+                .toList();
         var assignmentsByLesson = gradingApi.getAssignmentsByLessons(
-            sorted.stream().map(Lesson::getId).toList()
-        );
-        return sorted
-            .stream()
-            .map(lesson ->
-                lessonMapper.toResponse(
-                    lesson,
-                    LessonSpecifications.visibleScopes(lesson, permission),
-                    assignmentsByLesson.getOrDefault(lesson.getId(), List.of())
-                )
-            )
-            .toList();
+                sorted.stream().map(Lesson::getId).toList());
+        return sorted.stream()
+                .map(lesson -> lessonMapper.toResponse(
+                        lesson,
+                        LessonSpecifications.visibleScopes(lesson, permission),
+                        assignmentsByLesson.getOrDefault(lesson.getId(), List.of())))
+                .toList();
     }
 
     @Transactional
@@ -187,45 +155,25 @@ class LessonService implements LessonApi {
     @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkCreate(BulkCreateLessonsRequest request) {
         var subject = subjectRepository
-            .findById(request.subjectId())
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", request.subjectId())
-            );
+                .findById(request.subjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", request.subjectId()));
         var counters = nextOrderIndexByType(subject.getId());
         var lessons = new ArrayList<Lesson>();
 
         for (int i = 0; i < request.lectureCount(); i++) {
-            lessons.add(
-                lessonTemplate(
-                    subject.getId(),
-                    LessonType.LECTURE,
-                    counters.merge(LessonType.LECTURE, 1, Integer::sum)
-                )
-            );
+            lessons.add(lessonTemplate(
+                    subject.getId(), LessonType.LECTURE, counters.merge(LessonType.LECTURE, 1, Integer::sum)));
         }
         for (int i = 0; i < request.practiceCount(); i++) {
-            lessons.add(
-                lessonTemplate(
-                    subject.getId(),
-                    LessonType.PRACTICE,
-                    counters.merge(LessonType.PRACTICE, 1, Integer::sum)
-                )
-            );
+            lessons.add(lessonTemplate(
+                    subject.getId(), LessonType.PRACTICE, counters.merge(LessonType.PRACTICE, 1, Integer::sum)));
         }
 
         assignDefaultTopics(lessons);
 
-        return lessonRepository
-            .saveAll(lessons)
-            .stream()
-            .map(lesson ->
-                lessonMapper.toResponse(
-                    lesson,
-                    List.<LessonScope>of(),
-                    List.<AssignmentResponse>of()
-                )
-            )
-            .toList();
+        return lessonRepository.saveAll(lessons).stream()
+                .map(lesson -> lessonMapper.toResponse(lesson, List.<LessonScope>of(), List.<AssignmentResponse>of()))
+                .toList();
     }
 
     @Transactional
@@ -233,19 +181,13 @@ class LessonService implements LessonApi {
     @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
         var subject = subjectRepository
-            .findById(request.subjectId())
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", request.subjectId())
-            );
+                .findById(request.subjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", request.subjectId()));
 
         // Для каждого item — своя серия из count дат (count общий для всех).
-        var datesPerItem = request
-            .items()
-            .stream()
-            .map(item ->
-                schedule(item.firstLessonDate(), request.count(), item.days())
-            )
-            .toList();
+        var datesPerItem = request.items().stream()
+                .map(item -> schedule(item.firstLessonDate(), request.count(), item.days()))
+                .toList();
 
         // count занятий: занятие k проводится на k-ю дату каждого item —
         // по проведению (scope) для аудитории этого item на его k-ю дату.
@@ -253,10 +195,7 @@ class LessonService implements LessonApi {
         var lessons = new ArrayList<Lesson>(request.count());
         for (int k = 0; k < request.count(); k++) {
             var lesson = lessonTemplate(
-                subject.getId(),
-                request.lessonType(),
-                counters.merge(request.lessonType(), 1, Integer::sum)
-            );
+                    subject.getId(), request.lessonType(), counters.merge(request.lessonType(), 1, Integer::sum));
             for (int i = 0; i < request.items().size(); i++) {
                 var audience = request.items().get(i).audience();
                 var date = datesPerItem.get(i).get(k);
@@ -266,39 +205,22 @@ class LessonService implements LessonApi {
         }
         assignDefaultTopics(lessons);
 
-        return lessonRepository
-            .saveAll(lessons)
-            .stream()
-            .map(lesson ->
-                lessonMapper.toResponse(
-                    lesson,
-                    lesson.getScopes().stream().toList(),
-                    List.<AssignmentResponse>of()
-                )
-            )
-            .toList();
+        return lessonRepository.saveAll(lessons).stream()
+                .map(lesson -> lessonMapper.toResponse(
+                        lesson, lesson.getScopes().stream().toList(), List.<AssignmentResponse>of()))
+                .toList();
     }
 
     /**
      * Даты пар по недельному шаблону: первая пара = firstLessonDate, затем шаблон зацикливается
      * по неделям, пока не наберётся count дат. Внешний список — недели, внутренний — дни недели.
      */
-    static List<LocalDate> schedule(
-        LocalDate firstLessonDate,
-        int count,
-        List<List<DayOfWeek>> weeks
-    ) {
+    static List<LocalDate> schedule(LocalDate firstLessonDate, int count, List<List<DayOfWeek>> weeks) {
         // Понедельник недели, в которой стоит первая пара, — точка отсчёта.
-        var weekStart = firstLessonDate.with(
-            TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
-        );
+        var weekStart = firstLessonDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         var dates = new ArrayList<LocalDate>(count);
         for (int w = 0; dates.size() < count; w++) {
-            var days = weeks
-                .get(w % weeks.size())
-                .stream()
-                .sorted()
-                .toList();
+            var days = weeks.get(w % weeks.size()).stream().sorted().toList();
             for (var day : days) {
                 if (dates.size() == count) {
                     break;
@@ -309,39 +231,25 @@ class LessonService implements LessonApi {
         return dates;
     }
 
-    private LessonScope buildScope(
-        Lesson lesson,
-        LocalDate startedAt,
-        LessonScopeAudienceRequest audience
-    ) {
-        var scope = LessonScope.builder()
-            .lesson(lesson)
-            .startedAt(startedAt)
-            .build();
+    private LessonScope buildScope(Lesson lesson, LocalDate startedAt, LessonScopeAudienceRequest audience) {
+        var scope = LessonScope.builder().lesson(lesson).startedAt(startedAt).build();
         if (audience == null) {
             scope.setAllGroups(true);
             return scope;
         }
-        var ref = groupReferenceService.resolveAudience(
-            audience.groupId(),
-            audience.allowedSubgroupId()
-        );
+        var ref = groupReferenceService.resolveAudience(audience.groupId(), audience.allowedSubgroupId());
         scope.setAllGroups(false);
         scope.setGroup(ref.group());
         scope.setAllowedSubgroup(ref.allowedSubgroup());
         return scope;
     }
 
-    private Lesson lessonTemplate(
-        UUID subjectId,
-        LessonType type,
-        int orderIndex
-    ) {
+    private Lesson lessonTemplate(UUID subjectId, LessonType type, int orderIndex) {
         return Lesson.builder()
-            .subject(subjectRepository.getReferenceById(subjectId))
-            .type(type)
-            .orderIndex(orderIndex)
-            .build();
+                .subject(subjectRepository.getReferenceById(subjectId))
+                .type(type)
+                .orderIndex(orderIndex)
+                .build();
     }
 
     private void assignDefaultTopics(List<Lesson> lessons) {
@@ -350,12 +258,8 @@ class LessonService implements LessonApi {
                 continue;
             }
             switch (lesson.getType()) {
-                case LECTURE -> lesson.setTopic(
-                    "Лекция " + lesson.getOrderIndex()
-                );
-                case PRACTICE -> lesson.setTopic(
-                    "Практика " + lesson.getOrderIndex()
-                );
+                case LECTURE -> lesson.setTopic("Лекция " + lesson.getOrderIndex());
+                case PRACTICE -> lesson.setTopic("Практика " + lesson.getOrderIndex());
             }
         }
     }

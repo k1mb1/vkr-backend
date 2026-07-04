@@ -1,14 +1,13 @@
 package com.github.k1mb1.vkr_backend.common.security;
 
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Резолвит тонкие права пользователя из БД и кэширует результат под ключом {@code sub}.
@@ -38,10 +37,6 @@ public class PermissionResolver {
                 fullAccessSubjectIds.add(row.getSubjectId());
             }
         }
-        return new UserPermissions(
-            Set.copyOf(permissionIds),
-            Set.copyOf(subjectIds),
-            Set.copyOf(fullAccessSubjectIds)
-        );
+        return new UserPermissions(Set.copyOf(permissionIds), Set.copyOf(subjectIds), Set.copyOf(fullAccessSubjectIds));
     }
 }

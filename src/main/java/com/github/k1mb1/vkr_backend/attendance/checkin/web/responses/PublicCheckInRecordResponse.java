@@ -7,12 +7,11 @@ import lombok.Builder;
 
 @Builder
 @Schema(
-    description = "Подтверждение собственной отметки студента. " +
-        "Содержит только его собственный результат — ни ID записи, ни данные других студентов не раскрываются."
-)
+        description =
+                "Подтверждение собственной отметки студента. "
+                        + "Содержит только его собственный результат — ни ID записи, ни данные других студентов не раскрываются.")
 public record PublicCheckInRecordResponse(
-    @Schema(description = "Статус собственной отметки (вовремя / с опозданием)")
-    CheckInRecordStatus status,
+        @Schema(description = "Статус собственной отметки (вовремя / с опозданием)")
+        CheckInRecordStatus status,
 
-    @Schema(description = "Момент отметки") Instant checkedInAt
-) {}
+        @Schema(description = "Момент отметки") Instant checkedInAt) {}

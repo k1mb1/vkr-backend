@@ -17,4 +17,6 @@ public final class ErrorMessages {
     public static final String INTERNAL_ERROR = "An unexpected error occurred";
 
     public static final String DATA_INTEGRITY_VIOLATION = "Resource conflict: duplicate or invalid reference";
+
+    private ErrorMessages() {}
 }

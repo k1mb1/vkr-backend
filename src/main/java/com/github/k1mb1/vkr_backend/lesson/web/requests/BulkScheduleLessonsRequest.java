@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-@Schema(
-    description = """
+@Schema(description = """
     Создание серии из `count` занятий по недельным шаблонам.
     `count` — общий для всех элементов: для каждого элемента `items` генерируется ровно `count` дат,
     и создаётся `count` занятий-шаблонов выбранного типа.
@@ -28,99 +27,60 @@ import java.util.UUID;
     scope'ами.
     Пример: items=[{audience, firstLessonDate=понедельник, days=[["MONDAY","THURSDAY"], []]}], count=5
     → 5 занятий на пн/чт 1-й недели, пн/чт 3-й недели, пн 5-й недели (раз в 2 недели).
-    """
-)
+    """)
 public record BulkScheduleLessonsRequest(
-    @Schema(
-        description = "ID предмета",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotNull
-    UUID subjectId,
+        @Schema(description = "ID предмета", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID subjectId,
 
-    @Schema(
-        description = "Тип создаваемого занятия",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotNull
-    LessonType lessonType,
+        @Schema(description = "Тип создаваемого занятия", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull LessonType lessonType,
 
-    @Schema(
-        description = "Сколько проведений (дат) создать для каждого элемента items",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @Positive
-    int count,
+        @Schema(
+                description = "Сколько проведений (дат) создать для каждого элемента items",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        @Positive int count,
 
+        @Schema(
+                description =
+                        "Элементы расписания: каждая аудитория со своим собственным " + "стартом и недельным шаблоном.",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotEmpty @Valid List<@NotNull Item> items) {
     @Schema(
-        description = "Элементы расписания: каждая аудитория со своим собственным " +
-            "стартом и недельным шаблоном.",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    @NotEmpty
-    @Valid
-    List<@NotNull Item> items
-) {
-    @Schema(
-        name = "ScheduleLessonItem",
-        description = "Один элемент расписания: аудитория + её собственный старт и недельный шаблон."
-    )
+            name = "ScheduleLessonItem",
+            description = "Один элемент расписания: аудитория + её собственный старт и недельный шаблон.")
     public record Item(
-        @Schema(
-            description = "Аудитория для созданных пар (группа + опциональная подгруппа). " +
-                "null = все группы.",
-            types = {"object", "null"}
-        )
-        @Valid
-        LessonScopeAudienceRequest audience,
+            @Schema(
+                    description =
+                            "Аудитория для созданных пар (группа + опциональная подгруппа). " + "null = все группы.",
+                    types = {"object", "null"})
+            @Valid LessonScopeAudienceRequest audience,
 
-        @Schema(
-            description = "Дата первой пары (первого проведения)",
-            requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull
-        LocalDate firstLessonDate,
+            @Schema(description = "Дата первой пары (первого проведения)", requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotNull LocalDate firstLessonDate,
 
-        @Schema(
-            description = "Недельный шаблон. Внешний список — недели, внутренний — дни недели этой недели.",
-            requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotEmpty
-        List<@NotNull List<@NotNull DayOfWeek>> days
-    ) {
+            @Schema(
+                    description = "Недельный шаблон. Внешний список — недели, внутренний — дни недели этой недели.",
+                    requiredMode = Schema.RequiredMode.REQUIRED)
+            @NotEmpty List<@NotNull List<@NotNull DayOfWeek>> days) {
         @Schema(hidden = true)
-        @AssertTrue(message = "At least one week in the pattern must contain a day")
-        public boolean hasAnyDay() {
-            return (
-                days != null &&
-                days.stream().anyMatch(week -> week != null && !week.isEmpty())
-            );
+        @AssertTrue(message = "At least one week in the pattern must contain a day") public boolean hasAnyDay() {
+            return days != null && days.stream().anyMatch(week -> week != null && !week.isEmpty());
         }
 
         @Schema(hidden = true)
-        @AssertTrue(
-            message = "firstLessonDate must fall on the earliest weekday of the first non-empty week"
-        )
-        public boolean isFirstLessonDateConsistent() {
+        @AssertTrue(message = "firstLessonDate must fall on the earliest weekday of the first non-empty week") public boolean isFirstLessonDateConsistent() {
             if (days == null || firstLessonDate == null) {
                 return true; // отловят @NotNull / @NotEmpty
             }
-            return days
-                .stream()
-                .filter(week -> week != null && !week.isEmpty())
-                .findFirst()
-                .map(week ->
-                    week.stream().min(Comparator.naturalOrder()).orElseThrow()
-                )
-                .map(earliest -> firstLessonDate.getDayOfWeek() == earliest)
-                .orElse(true);
+            return days.stream()
+                    .filter(week -> week != null && !week.isEmpty())
+                    .findFirst()
+                    .map(week -> week.stream().min(Comparator.naturalOrder()).orElseThrow())
+                    .map(earliest -> firstLessonDate.getDayOfWeek() == earliest)
+                    .orElse(true);
         }
     }
 
     @Schema(hidden = true)
-    @AssertTrue(
-        message = "Audiences must not overlap (same group or nested subgroup) within the request"
-    )
+    @AssertTrue(message = "Audiences must not overlap (same group or nested subgroup) within the request")
     public boolean hasNoOverlappingAudiences() {
         if (items == null) {
             return true;
@@ -142,10 +102,7 @@ public record BulkScheduleLessonsRequest(
         return audiencesOverlap(a.audience(), b.audience());
     }
 
-    private static boolean audiencesOverlap(
-        LessonScopeAudienceRequest a,
-        LessonScopeAudienceRequest b
-    ) {
+    private static boolean audiencesOverlap(LessonScopeAudienceRequest a, LessonScopeAudienceRequest b) {
         // null-аудитория = все группы: пересекается с любой другой аудиторией.
         if (a == null || b == null) {
             return true;

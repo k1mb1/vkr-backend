@@ -12,6 +12,7 @@ import com.github.k1mb1.vkr_backend.subject.web.responses.PermissionScopeSubgrou
 import com.github.k1mb1.vkr_backend.subject.web.responses.TeacherSubjectPermissionResponse;
 import java.util.Comparator;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -21,60 +22,54 @@ interface TeacherSubjectPermissionMapper {
     @Mapping(target = "teacherName", source = "teacher.username")
     @Mapping(target = "subjectId", source = "subject.id")
     @Mapping(target = "scopes", ignore = true)
-    TeacherSubjectPermissionResponse toResponse(
-        TeacherSubjectPermission permission
-    );
+    TeacherSubjectPermissionResponse toResponse(TeacherSubjectPermission permission);
 
-    default TeacherSubjectPermissionResponse toFullResponse(
-        TeacherSubjectPermission permission
-    ) {
+    default TeacherSubjectPermissionResponse toFullResponse(TeacherSubjectPermission permission) {
         var base = toResponse(permission);
         return TeacherSubjectPermissionResponse.builder()
-            .id(base.id())
-            .teacherId(base.teacherId())
-            .teacherName(base.teacherName())
-            .subjectId(base.subjectId())
-            .allPermissions(base.allPermissions())
-            .scopes(scopesForPermission(permission))
-            .createdAt(base.createdAt())
-            .updatedAt(base.updatedAt())
-            .build();
+                .id(base.id())
+                .teacherId(base.teacherId())
+                .teacherName(base.teacherName())
+                .subjectId(base.subjectId())
+                .allPermissions(base.allPermissions())
+                .scopes(scopesForPermission(permission))
+                .createdAt(base.createdAt())
+                .updatedAt(base.updatedAt())
+                .build();
     }
 
-    default PermissionScopeSubgroupResponse toSubgroup(Subgroup subgroup) {
+    default @Nullable PermissionScopeSubgroupResponse toSubgroup(@Nullable Subgroup subgroup) {
         if (subgroup == null) {
             return null;
         }
         return PermissionScopeSubgroupResponse.builder()
-            .id(subgroup.getId())
-            .index(subgroup.getIndex())
-            .build();
+                .id(subgroup.getId())
+                .index(subgroup.getIndex())
+                .build();
     }
 
-    default PermissionScopeGroupResponse toGroup(Group group) {
+    default @Nullable PermissionScopeGroupResponse toGroup(@Nullable Group group) {
         if (group == null) {
             return null;
         }
-        var subgroups = group
-            .getSubgroups()
-            .stream()
-            .sorted(Comparator.comparing(Subgroup::getIndex))
-            .map(this::toSubgroup)
-            .toList();
+        var subgroups = group.getSubgroups().stream()
+                .sorted(Comparator.comparing(Subgroup::getIndex))
+                .map(this::toSubgroup)
+                .toList();
         return PermissionScopeGroupResponse.builder()
-            .id(group.getId())
-            .name(group.getName())
-            .subgroups(subgroups)
-            .build();
+                .id(group.getId())
+                .name(group.getName())
+                .subgroups(subgroups)
+                .build();
     }
 
     default PermissionScopeResponse toScopeResponse(PermissionScope scope) {
         return PermissionScopeResponse.builder()
-            .id(scope.getId())
-            .group(toGroup(scope.getGroup()))
-            .allowedSubgroup(toSubgroup(scope.getAllowedSubgroup()))
-            .allowedLessonType(scope.getAllowedLessonType())
-            .build();
+                .id(scope.getId())
+                .group(toGroup(scope.getGroup()))
+                .allowedSubgroup(toSubgroup(scope.getAllowedSubgroup()))
+                .allowedLessonType(scope.getAllowedLessonType())
+                .build();
     }
 
     /**
@@ -82,23 +77,16 @@ interface TeacherSubjectPermissionMapper {
      * the client should consult subject.groups directly). Otherwise the explicit per-group scopes;
      * all-groups scopes (group=null) sort first.
      */
-    default List<PermissionScopeResponse> scopesForPermission(
-        TeacherSubjectPermission permission
-    ) {
+    default List<PermissionScopeResponse> scopesForPermission(TeacherSubjectPermission permission) {
         if (permission.isAllPermissions()) {
             return List.of();
         }
-        return permission
-            .getScopes()
-            .stream()
-            .sorted(
-                Comparator.comparing(
-                    (PermissionScope s) ->
-                        s.getGroup() == null ? null : s.getGroup().getName(),
-                    Comparator.nullsFirst(Comparator.naturalOrder())
-                )
-            )
-            .map(this::toScopeResponse)
-            .toList();
+        return permission.getScopes().stream()
+                .sorted(Comparator.comparing(
+                        (PermissionScope s) ->
+                                s.getGroup() == null ? null : s.getGroup().getName(),
+                        Comparator.nullsFirst(Comparator.naturalOrder())))
+                .map(this::toScopeResponse)
+                .toList();
     }
 }

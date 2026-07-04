@@ -29,15 +29,32 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CheckInSessionServiceConfirmCancelTest {
 
-    @Mock CheckInSessionRepository sessionRepository;
-    @Mock CheckInRecordRepository recordRepository;
-    @Mock LessonRepository lessonRepository;
-    @Mock LessonResolver lessonResolver;
-    @Mock LessonScopeRepository lessonScopeRepository;
-    @Mock TeacherSubjectPermissionRepository permissionRepository;
-    @Mock LessonStudentsApi lessonStudentsApi;
-    @Mock CheckInSessionMapper mapper;
-    @Mock AttendanceApi attendanceApi;
+    @Mock
+    CheckInSessionRepository sessionRepository;
+
+    @Mock
+    CheckInRecordRepository recordRepository;
+
+    @Mock
+    LessonRepository lessonRepository;
+
+    @Mock
+    LessonResolver lessonResolver;
+
+    @Mock
+    LessonScopeRepository lessonScopeRepository;
+
+    @Mock
+    TeacherSubjectPermissionRepository permissionRepository;
+
+    @Mock
+    LessonStudentsApi lessonStudentsApi;
+
+    @Mock
+    CheckInSessionMapper mapper;
+
+    @Mock
+    AttendanceApi attendanceApi;
 
     @InjectMocks
     CheckInSessionService service;
@@ -55,8 +72,8 @@ class CheckInSessionServiceConfirmCancelTest {
         when(session.getConfirmedAt()).thenReturn(Instant.now());
 
         assertThatThrownBy(() -> service.confirm(sessionId, null))
-            .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("already confirmed");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already confirmed");
         verify(sessionRepository, never()).save(any());
     }
 
@@ -67,8 +84,8 @@ class CheckInSessionServiceConfirmCancelTest {
         when(session.getCancelledAt()).thenReturn(Instant.now());
 
         assertThatThrownBy(() -> service.confirm(sessionId, null))
-            .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("cancelled");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("cancelled");
         verify(sessionRepository, never()).save(any());
     }
 
@@ -78,8 +95,8 @@ class CheckInSessionServiceConfirmCancelTest {
         when(session.getConfirmedAt()).thenReturn(Instant.now());
 
         assertThatThrownBy(() -> service.cancel(sessionId))
-            .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("Cannot cancel a confirmed session");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Cannot cancel a confirmed session");
         verify(sessionRepository, never()).save(any());
     }
 

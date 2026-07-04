@@ -11,8 +11,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
     @EntityGraph("Attendance.withDetails")
-    List<Attendance> findByLessonScopeIdInAndStudentIdIn(
-        Collection<UUID> lessonScopeIds,
-        Collection<UUID> studentIds
-    );
+    List<Attendance> findByLessonScopeIdInAndStudentIdIn(Collection<UUID> lessonScopeIds, Collection<UUID> studentIds);
 }

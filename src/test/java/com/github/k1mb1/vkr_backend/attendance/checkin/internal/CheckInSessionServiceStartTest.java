@@ -69,19 +69,11 @@ class CheckInSessionServiceStartTest {
         var lesson = mock(Lesson.class);
         lenient().when(scope.getLesson()).thenReturn(lesson);
         lenient().when(lesson.getSubject()).thenReturn(subject);
+        lenient().when(lessonScopeRepository.findWithDetailsById(scopeId)).thenReturn(Optional.of(scope));
         lenient()
-            .when(lessonScopeRepository.findWithDetailsById(scopeId))
-            .thenReturn(Optional.of(scope));
-        lenient()
-            .when(
-                sessionRepository.findByLessonScopeIdAndConfirmedAtIsNullAndCancelledAtIsNull(
-                    any()
-                )
-            )
-            .thenReturn(Optional.empty());
-        lenient()
-            .when(sessionRepository.save(any()))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .when(sessionRepository.findByLessonScopeIdAndConfirmedAtIsNullAndCancelledAtIsNull(any()))
+                .thenReturn(Optional.empty());
+        lenient().when(sessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private CheckInSession savedSession() {
@@ -92,21 +84,18 @@ class CheckInSessionServiceStartTest {
 
     @Test
     void usesPolicyWindowsIgnoringRequestWhenPolicyEnabled() {
-        when(subject.getCheckInPolicy()).thenReturn(
-            CheckInPolicy.builder()
-                .enabled(true)
-                .onTimeSeconds(300)
-                .lateSeconds(120)
-                .build()
-        );
+        when(subject.getCheckInPolicy())
+                .thenReturn(CheckInPolicy.builder()
+                        .enabled(true)
+                        .onTimeSeconds(300)
+                        .lateSeconds(120)
+                        .build());
 
-        service.start(
-            StartCheckInRequest.builder()
+        service.start(StartCheckInRequest.builder()
                 .lessonScopeId(scopeId)
                 .onTimeSeconds(999)
                 .lateSeconds(999)
-                .build()
-        );
+                .build());
 
         var saved = savedSession();
         assertThat(saved.getOnTimeSeconds()).isEqualTo(300);
@@ -116,17 +105,14 @@ class CheckInSessionServiceStartTest {
 
     @Test
     void usesRequestWindowsWhenNoPolicy() {
-        when(subject.getCheckInPolicy()).thenReturn(
-            CheckInPolicy.builder().enabled(false).build()
-        );
+        when(subject.getCheckInPolicy())
+                .thenReturn(CheckInPolicy.builder().enabled(false).build());
 
-        service.start(
-            StartCheckInRequest.builder()
+        service.start(StartCheckInRequest.builder()
                 .lessonScopeId(scopeId)
                 .onTimeSeconds(600)
                 .lateSeconds(300)
-                .build()
-        );
+                .build());
 
         var saved = savedSession();
         assertThat(saved.getOnTimeSeconds()).isEqualTo(600);
@@ -135,19 +121,15 @@ class CheckInSessionServiceStartTest {
 
     @Test
     void rejectsMissingWindowsWhenNoPolicy() {
-        when(subject.getCheckInPolicy()).thenReturn(
-            CheckInPolicy.builder().enabled(false).build()
-        );
+        when(subject.getCheckInPolicy())
+                .thenReturn(CheckInPolicy.builder().enabled(false).build());
 
-        assertThatThrownBy(() ->
-            service.start(
-                StartCheckInRequest.builder()
-                    .lessonScopeId(scopeId)
-                    .onTimeSeconds(null)
-                    .lateSeconds(null)
-                    .build()
-            )
-        ).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.start(StartCheckInRequest.builder()
+                        .lessonScopeId(scopeId)
+                        .onTimeSeconds(null)
+                        .lateSeconds(null)
+                        .build()))
+                .isInstanceOf(IllegalArgumentException.class);
 
         verify(sessionRepository, never()).save(any());
     }

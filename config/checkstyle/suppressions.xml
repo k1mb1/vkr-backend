@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- Literal numbers (years, ids, sizes) are normal in test fixtures. -->
+    <suppress checks="MagicNumber" files="[\\/]src[\\/]test[\\/]"/>
+    <!-- ArchUnit @ArchTest rule fields are conventionally lower_snake_case so the
+         rule reads as a sentence; they are rule declarations, not true constants.
+         Covers both the runnable *Test suites and the *Rules rule libraries. -->
+    <suppress checks="ConstantName" files="[\\/]architecture[\\/].*(Test|Rules)\.java"/>
+
+    <!-- Grandfathered complexity hotspots: these existing domain services carry
+         inherently branchy logic (grade offsets, lesson-scope resolution, policy
+         validation). The Cyclomatic/NPath checks stay active for all other code so
+         new complexity is still caught; refactoring these is tracked separately. -->
+    <suppress checks="(CyclomaticComplexity|NPathComplexity)"
+              files="(GradingService|LessonSpecifications|CheckInSessionService|SubjectPenaltyPolicyService|SubjectFinalAssessmentPolicyService)\.java"/>
+</suppressions>

@@ -36,7 +36,8 @@ class SubgroupServiceTest {
     void getSubgroupsMapsOrderedResult() {
         var groupId = UUID.randomUUID();
         var group = Group.builder().id(groupId).name("G").build();
-        var subgroup = Subgroup.builder().id(UUID.randomUUID()).index(1).group(group).build();
+        var subgroup =
+                Subgroup.builder().id(UUID.randomUUID()).index(1).group(group).build();
         when(groupRepository.existsById(groupId)).thenReturn(true);
         when(subgroupRepository.findByGroupIdOrderByIndex(groupId)).thenReturn(List.of(subgroup));
         var response = SubgroupResponse.builder().id(subgroup.getId()).index(1).build();
@@ -50,9 +51,8 @@ class SubgroupServiceTest {
         var groupId = UUID.randomUUID();
         when(groupRepository.existsById(groupId)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.getSubgroups(groupId))
-            .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.getSubgroups(groupId)).isInstanceOf(ResourceNotFoundException.class);
         org.mockito.Mockito.verify(subgroupRepository, org.mockito.Mockito.never())
-            .findByGroupIdOrderByIndex(any());
+                .findByGroupIdOrderByIndex(any());
     }
 }

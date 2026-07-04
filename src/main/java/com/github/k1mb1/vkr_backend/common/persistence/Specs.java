@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.common.persistence;
 
+import java.util.Locale;
 import org.springframework.data.jpa.domain.Specification;
 
 /**
@@ -7,8 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
  */
 public final class Specs {
 
-    private Specs() {
-    }
+    private Specs() {}
 
     /**
      * Регистронезависимый поиск подстроки в текстовой колонке.
@@ -19,7 +19,7 @@ public final class Specs {
             if (value == null || value.isBlank()) {
                 return null;
             }
-            var pattern = "%" + value.toLowerCase() + "%";
+            var pattern = "%" + value.toLowerCase(Locale.ROOT) + "%";
             return cb.like(cb.lower(root.get(field)), pattern);
         };
     }

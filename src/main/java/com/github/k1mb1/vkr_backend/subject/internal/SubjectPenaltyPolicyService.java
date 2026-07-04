@@ -24,31 +24,21 @@ class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
     @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public PenaltyPolicyResponse getPenaltyPolicy(UUID subjectId) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
-        return subjectMapper.toPenaltyPolicyResponse(
-            subject.getPenaltyPolicy()
-        );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
+        return subjectMapper.toPenaltyPolicyResponse(subject.getPenaltyPolicy());
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canManageSubject(#subjectId)")
-    public PenaltyPolicyResponse updatePenaltyPolicy(
-        UUID subjectId,
-        PenaltyPolicyRequest request
-    ) {
+    public PenaltyPolicyResponse updatePenaltyPolicy(UUID subjectId, PenaltyPolicyRequest request) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
         subject.setPenaltyPolicy(toPenaltyPolicy(request));
         return subjectMapper.toPenaltyPolicyResponse(
-            subjectRepository.save(subject).getPenaltyPolicy()
-        );
+                subjectRepository.save(subject).getPenaltyPolicy());
     }
 
     /**
@@ -60,47 +50,38 @@ class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
         var builder = PenaltyPolicy.builder();
 
         if (Boolean.TRUE.equals(request.enabled())) {
-            if (
-                request.operation() == null ||
-                request.step() == null ||
-                request.gracePeriodLessons() == null ||
-                request.intervalLessons() == null ||
-                request.maxReductions() == null
-            ) {
-                throw new IllegalArgumentException(
-                    "При включённом понижении (enabled=true) обязательны поля: " +
-                        "operation, step, gracePeriodLessons, intervalLessons, maxReductions"
-                );
+            if (request.operation() == null
+                    || request.step() == null
+                    || request.gracePeriodLessons() == null
+                    || request.intervalLessons() == null
+                    || request.maxReductions() == null) {
+                throw new IllegalArgumentException("При включённом понижении (enabled=true) обязательны поля: "
+                        + "operation, step, gracePeriodLessons, intervalLessons, maxReductions");
             }
-            builder
-                .enabled(true)
-                .operation(request.operation())
-                .step(request.step())
-                .gracePeriodLessons(request.gracePeriodLessons())
-                .intervalLessons(request.intervalLessons())
-                .maxReductions(request.maxReductions());
+            builder.enabled(true)
+                    .operation(request.operation())
+                    .step(request.step())
+                    .gracePeriodLessons(request.gracePeriodLessons())
+                    .intervalLessons(request.intervalLessons())
+                    .maxReductions(request.maxReductions());
         }
 
         if (Boolean.TRUE.equals(request.bonusEnabled())) {
-            if (
-                request.bonusOperation() == null ||
-                request.bonusStep() == null ||
-                request.bonusGracePeriodLessons() == null ||
-                request.bonusIntervalLessons() == null ||
-                request.bonusMaxIncreases() == null
-            ) {
+            if (request.bonusOperation() == null
+                    || request.bonusStep() == null
+                    || request.bonusGracePeriodLessons() == null
+                    || request.bonusIntervalLessons() == null
+                    || request.bonusMaxIncreases() == null) {
                 throw new IllegalArgumentException(
-                    "При включённом бонусе (bonusEnabled=true) обязательны поля: " +
-                        "bonusOperation, bonusStep, bonusGracePeriodLessons, bonusIntervalLessons, bonusMaxIncreases"
-                );
+                        "При включённом бонусе (bonusEnabled=true) обязательны поля: "
+                                + "bonusOperation, bonusStep, bonusGracePeriodLessons, bonusIntervalLessons, bonusMaxIncreases");
             }
-            builder
-                .bonusEnabled(true)
-                .bonusOperation(request.bonusOperation())
-                .bonusStep(request.bonusStep())
-                .bonusGracePeriodLessons(request.bonusGracePeriodLessons())
-                .bonusIntervalLessons(request.bonusIntervalLessons())
-                .bonusMaxIncreases(request.bonusMaxIncreases());
+            builder.bonusEnabled(true)
+                    .bonusOperation(request.bonusOperation())
+                    .bonusStep(request.bonusStep())
+                    .bonusGracePeriodLessons(request.bonusGracePeriodLessons())
+                    .bonusIntervalLessons(request.bonusIntervalLessons())
+                    .bonusMaxIncreases(request.bonusMaxIncreases());
         }
 
         return builder.build();

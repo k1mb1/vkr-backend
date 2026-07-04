@@ -50,7 +50,10 @@ class StudentServiceTest {
         when(studentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.createStudent(CreateStudentRequest.builder()
-            .username("Иванов").groupId(groupId).subgroupId(subgroupId).build());
+                .username("Иванов")
+                .groupId(groupId)
+                .subgroupId(subgroupId)
+                .build());
 
         var captor = ArgumentCaptor.forClass(Student.class);
         verify(studentRepository).save(captor.capture());
@@ -68,7 +71,10 @@ class StudentServiceTest {
         when(studentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.createStudent(CreateStudentRequest.builder()
-            .username("Петров").groupId(groupId).subgroupId(null).build());
+                .username("Петров")
+                .groupId(groupId)
+                .subgroupId(null)
+                .build());
 
         var captor = ArgumentCaptor.forClass(Student.class);
         verify(studentRepository).save(captor.capture());
@@ -91,8 +97,7 @@ class StudentServiceTest {
         var id = UUID.randomUUID();
         when(studentRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.archiveStudent(id))
-            .isInstanceOf(EntityNotFoundException.class);
+        assertThatThrownBy(() -> service.archiveStudent(id)).isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
@@ -111,10 +116,12 @@ class StudentServiceTest {
     void findActiveStudentsByGroupMapsResults() {
         var groupId = UUID.randomUUID();
         var student = Student.builder().id(UUID.randomUUID()).username("S").build();
-        when(studentRepository.findByGroupIdAndArchivedAtIsNull(groupId))
-            .thenReturn(List.of(student));
+        when(studentRepository.findByGroupIdAndArchivedAtIsNull(groupId)).thenReturn(List.of(student));
         var response = StudentResponse.builder()
-            .id(student.getId()).username("S").groupId(groupId).build();
+                .id(student.getId())
+                .username("S")
+                .groupId(groupId)
+                .build();
         when(studentMapper.toResponse(student)).thenReturn(response);
 
         assertThat(service.findActiveStudentsByGroup(groupId)).containsExactly(response);

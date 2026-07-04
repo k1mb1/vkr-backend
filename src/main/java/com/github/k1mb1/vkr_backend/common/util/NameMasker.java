@@ -27,17 +27,14 @@ public final class NameMasker {
             return fullName;
         }
 
-        var parts = fullName.trim().split("\\s+");
+        var parts = fullName.trim().split("\\s+", -1);
         var masked = new StringBuilder(parts[0]);
         for (var i = 1; i < parts.length; i++) {
             var part = parts[i];
             if (part.isEmpty()) {
                 continue;
             }
-            masked
-                .append(' ')
-                .append(Character.toUpperCase(part.charAt(0)))
-                .append('.');
+            masked.append(' ').append(Character.toUpperCase(part.charAt(0))).append('.');
         }
         return masked.toString();
     }

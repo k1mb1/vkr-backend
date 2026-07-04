@@ -1,15 +1,17 @@
 # syntax=docker/dockerfile:1
-FROM maven:3-eclipse-temurin-25 AS builder
+FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /workspace
 
-COPY pom.xml .
-RUN mvn -B dependency:go-offline
+# Resolve dependencies first so this layer is cached across source-only changes.
+COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties lombok.config ./
+COPY gradle ./gradle
+RUN ./gradlew --no-daemon dependencies || true
 
 COPY src ./src
-RUN mvn -B -DskipTests package
+RUN ./gradlew --no-daemon -x test clean bootJar
 
 FROM eclipse-temurin:25-jre
-COPY --from=builder /workspace/target/*.jar /app/app.jar
+COPY --from=builder /workspace/build/libs/*.jar /app/app.jar
 
 WORKDIR /app
 EXPOSE 8080

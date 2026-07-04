@@ -11,8 +11,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 interface GradeRepository extends JpaRepository<Grade, UUID> {
     @EntityGraph("Grade.withDetails")
-    List<Grade> findByLessonIdInAndStudentIdIn(
-        Collection<UUID> lessonIds,
-        Collection<UUID> studentIds
-    );
+    List<Grade> findByLessonIdInAndStudentIdIn(Collection<UUID> lessonIds, Collection<UUID> studentIds);
 }

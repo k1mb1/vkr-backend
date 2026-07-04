@@ -3,10 +3,21 @@ package com.github.k1mb1.vkr_backend.subject.domain;
 import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
 import com.github.k1mb1.vkr_backend.teacher.domain.Teacher;
 import io.swagger.v3.oas.annotations.Hidden;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -35,11 +46,7 @@ public class TeacherSubjectPermission extends ArchivableEntity {
     @Column(name = "all_permissions", nullable = false)
     boolean allPermissions;
 
-    @OneToMany(
-        mappedBy = "permission",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "permission", cascade = CascadeType.ALL, orphanRemoval = true)
     @org.hibernate.annotations.BatchSize(size = 50)
     @Builder.Default
     Set<PermissionScope> scopes = new HashSet<>();

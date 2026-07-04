@@ -13,4 +13,6 @@ public class VkrBackendApplication {
         SpringApplication.run(VkrBackendApplication.class, args);
     }
 }
-//TODO 2026-03-24T23:37:04.728+03:00  WARN 153472 --- [vkr-backend] [nio-4550-exec-9] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.HttpRequestMethodNotSupportedException: Request method 'PATCH' is not supported]
+// TODO 2026-03-24T23:37:04.728+03:00  WARN 153472 --- [vkr-backend] [nio-4550-exec-9]
+// .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.HttpRequestMethodNotSupportedException:
+// Request method 'PATCH' is not supported]

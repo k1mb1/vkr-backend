@@ -10,68 +10,41 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(
-    description = "Массовое создание заданий для урока. Допустимо только если у урока ещё нет заданий; " +
-        "иначе используйте PUT /api/assignments/{id} для обновления конкретного задания."
-)
+        description = "Массовое создание заданий для урока. Допустимо только если у урока ещё нет заданий; "
+                + "иначе используйте PUT /api/assignments/{id} для обновления конкретного задания.")
 public record CreateAssignmentsRequest(
-    @NotNull
-    @Schema(
-        description = "ID занятия",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    UUID lessonId,
+        @NotNull @Schema(description = "ID занятия", requiredMode = Schema.RequiredMode.REQUIRED)
+        UUID lessonId,
 
-    @NotEmpty
-    @Valid
-    @Schema(
-        description = "Список заданий. Порядковый номер (order) присваивается автоматически 1..N " +
-            "в соответствии с позицией в массиве.",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    List<Item> items
-) {
+        @NotEmpty @Valid @Schema(
+                description = "Список заданий. Порядковый номер (order) присваивается автоматически 1..N "
+                        + "в соответствии с позицией в массиве.",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        List<Item> items) {
     @Schema(name = "CreateAssignmentItem", description = "Описание одного задания в bulk-запросе")
     public record Item(
-        @Positive
-        @Schema(
-            description = "Максимальное количество баллов (>0)",
-            requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        int maxPoints,
+            @Positive @Schema(description = "Максимальное количество баллов (>0)", requiredMode = Schema.RequiredMode.REQUIRED)
+            int maxPoints,
 
-        @Schema(
-            description = "Обязательное ли задание",
-            requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        boolean required,
+            @Schema(description = "Обязательное ли задание", requiredMode = Schema.RequiredMode.REQUIRED)
+            boolean required,
 
-        @Schema(
-            description = "Режим допуска: используется ли задание как условие для итоговой оценки"
-        )
-        AssignmentAdmissionMode admissionMode,
+            @Schema(description = "Режим допуска: используется ли задание как условие для итоговой оценки")
+            AssignmentAdmissionMode admissionMode,
 
-        @Schema(
-            description = "MIN_SCORE: минимальный балл для прохождения допуска"
-        )
-        Integer admissionMinScore,
+            @Schema(description = "MIN_SCORE: минимальный балл для прохождения допуска")
+            Integer admissionMinScore,
 
-        @Valid
+            @Valid @Schema(description = "TIERED: уровни допуска по убыванию старшинства (ссылки на банды)")
+            List<AdmissionTier> admissionTiers) {
         @Schema(
-            description = "TIERED: уровни допуска по убыванию старшинства (ссылки на банды)"
-        )
-        List<AdmissionTier> admissionTiers
-    ) {
-        @Schema(
-            name = "CreateAssignmentAdmissionTier",
-            description = "Уровень допуска задания: ссылка на банду и минимальный балл"
-        )
+                name = "CreateAssignmentAdmissionTier",
+                description = "Уровень допуска задания: ссылка на банду и минимальный балл")
         public record AdmissionTier(
-            @Schema(description = "ID банды итоговой аттестации") UUID bandId,
+                @Schema(description = "ID банды итоговой аттестации")
+                UUID bandId,
 
-            @Schema(
-                description = "Минимальный балл за задание для этой банды (включительно)"
-            )
-            Integer minScore
-        ) {}
+                @Schema(description = "Минимальный балл за задание для этой банды (включительно)")
+                Integer minScore) {}
     }
 }

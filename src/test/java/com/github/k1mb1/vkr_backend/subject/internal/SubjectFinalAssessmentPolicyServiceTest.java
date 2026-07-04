@@ -37,17 +37,16 @@ class SubjectFinalAssessmentPolicyServiceTest {
         lenient().when(subjectRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
-    private FinalAssessmentPolicyRequest request(Boolean enabled,
-        java.util.List<FinalAssessmentPolicyRequest.Band> bands) {
-        return new FinalAssessmentPolicyRequest(
-            enabled, bands, null, null, null, null, null, null, null, null);
+    private FinalAssessmentPolicyRequest request(
+            Boolean enabled, java.util.List<FinalAssessmentPolicyRequest.Band> bands) {
+        return new FinalAssessmentPolicyRequest(enabled, bands, null, null, null, null, null, null, null, null);
     }
 
     @Test
     void getThrowsWhenSubjectMissing() {
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.getFinalAssessmentPolicy(subjectId))
-            .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
@@ -56,7 +55,7 @@ class SubjectFinalAssessmentPolicyServiceTest {
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
 
         assertThatCode(() -> service.updateFinalAssessmentPolicy(subjectId, request(false, null)))
-            .doesNotThrowAnyException();
+                .doesNotThrowAnyException();
         assertThat(subject.getFinalAssessmentPolicy().isEnabled()).isFalse();
         assertThat(subject.getFinalAssessmentPolicy().getBands()).isEmpty();
     }
@@ -67,7 +66,7 @@ class SubjectFinalAssessmentPolicyServiceTest {
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
 
         assertThatThrownBy(() -> service.updateFinalAssessmentPolicy(subjectId, request(true, null)))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("непустой bands");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("непустой bands");
     }
 }

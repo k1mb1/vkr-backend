@@ -19,18 +19,11 @@ public interface GradingApi {
 
     List<AssignmentResponse> getAssignmentsByLesson(UUID lessonId);
 
-    Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(
-        Collection<UUID> lessonIds
-    );
+    Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(Collection<UUID> lessonIds);
 
-    List<AssignmentResponse> createAssignments(
-        CreateAssignmentsRequest request
-    );
+    List<AssignmentResponse> createAssignments(CreateAssignmentsRequest request);
 
-    List<AssignmentResponse> updateAssignmentsOfLesson(
-        UUID lessonId,
-        BulkUpdateAssignmentsRequest request
-    );
+    List<AssignmentResponse> updateAssignmentsOfLesson(UUID lessonId, BulkUpdateAssignmentsRequest request);
 
     void deleteAssignment(UUID id);
 

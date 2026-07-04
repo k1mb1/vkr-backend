@@ -12,11 +12,7 @@ import java.util.UUID;
  * (группы/подгруппы) для фильтрации данных остаются в доменных сервисах — это не дело
  * авторизации.
  */
-public record UserPermissions(
-    Set<UUID> permissionIds,
-    Set<UUID> subjectIds,
-    Set<UUID> fullAccessSubjectIds
-) {
+public record UserPermissions(Set<UUID> permissionIds, Set<UUID> subjectIds, Set<UUID> fullAccessSubjectIds) {
 
     /** Совместимый конструктор для случаев без явного набора «полных» предметов. */
     public UserPermissions(Set<UUID> permissionIds, Set<UUID> subjectIds) {

@@ -6,7 +6,7 @@ public class TestVkrBackend {
 
     public static void main(String[] args) {
         SpringApplication.from(VkrBackendApplication::main)
-            .with(TestcontainersConfiguration.class)
-            .run(args);
+                .with(TestcontainersConfiguration.class)
+                .run(args);
     }
 }

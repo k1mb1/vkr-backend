@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Параметры промежуточной аттестации (итогов семестра), привязанные к предмету. Отвечает на
@@ -73,12 +74,7 @@ public class FinalAssessmentPolicy extends BaseEntity {
     boolean enabled = false;
 
     /** Банды итоговой аттестации по убыванию старшинства. Пусто при enabled = false. */
-    @OneToMany(
-        mappedBy = "policy",
-        fetch = FetchType.LAZY,
-        cascade = CascadeType.ALL,
-        orphanRemoval = true
-    )
+    @OneToMany(mappedBy = "policy", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("position ASC")
     @Builder.Default
     List<AssessmentBand> bands = new ArrayList<>();
@@ -92,15 +88,15 @@ public class FinalAssessmentPolicy extends BaseEntity {
     /** SEPARATE: чем меряется гейт — PERCENT или COUNT. Заполняется при attendanceMode = SEPARATE. */
     @Enumerated(EnumType.STRING)
     @Column(length = 16)
-    AttendanceRequirementMode attendanceRequirementMode;
+    @Nullable AttendanceRequirementMode attendanceRequirementMode;
 
     /** SEPARATE + PERCENT: минимальный процент посещённых занятий (0..100). */
     @Column
-    Integer attendanceMinPercent;
+    @Nullable Integer attendanceMinPercent;
 
     /** SEPARATE + COUNT: минимальное количество посещённых занятий. */
     @Column
-    Integer attendanceMinCount;
+    @Nullable Integer attendanceMinCount;
 
     /** SEPARATE: засчитывать ли PRESENT как посещение. */
     @Builder.Default

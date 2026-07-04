@@ -6,8 +6,7 @@ import jakarta.persistence.EntityNotFoundException;
  * Бросать, когда запрошенная по id сущность не найдена.
  * Сообщение формируется единообразно: "<Resource> not found: <id>".
  */
-public class ResourceNotFoundException
-    extends EntityNotFoundException {
+public class ResourceNotFoundException extends EntityNotFoundException {
 
     private final String resource;
 

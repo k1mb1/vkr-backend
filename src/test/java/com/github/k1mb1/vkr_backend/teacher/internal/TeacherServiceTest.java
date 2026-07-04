@@ -36,8 +36,12 @@ class TeacherServiceTest {
         when(teacherRepository.findById(id)).thenReturn(Optional.of(existing));
         when(teacherRepository.save(existing)).thenReturn(existing);
 
-        service.createOrUpdateTeacher(id, CreateOrUpdateTeacherRequest.builder()
-            .username("t").email("t@e.com").build());
+        service.createOrUpdateTeacher(
+                id,
+                CreateOrUpdateTeacherRequest.builder()
+                        .username("t")
+                        .email("t@e.com")
+                        .build());
 
         verify(teacherMapper).updateEntity(any(), any());
         verify(teacherRepository).save(existing);
@@ -48,10 +52,15 @@ class TeacherServiceTest {
         var id = UUID.randomUUID();
         when(teacherRepository.findById(id)).thenReturn(Optional.empty());
         when(teacherRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(teacherMapper.toResponse(any())).thenReturn(TeacherResponse.builder().id(id).build());
+        when(teacherMapper.toResponse(any()))
+                .thenReturn(TeacherResponse.builder().id(id).build());
 
-        service.createOrUpdateTeacher(id, CreateOrUpdateTeacherRequest.builder()
-            .username("t").email("t@e.com").build());
+        service.createOrUpdateTeacher(
+                id,
+                CreateOrUpdateTeacherRequest.builder()
+                        .username("t")
+                        .email("t@e.com")
+                        .build());
 
         var captor = ArgumentCaptor.forClass(Teacher.class);
         verify(teacherRepository).save(captor.capture());

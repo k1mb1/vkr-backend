@@ -4,12 +4,11 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.internal.CheckInSessionRe
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.internal.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.subject.internal.TeacherSubjectPermissionRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Точка принятия решений авторизации, вызывается из SpEL в {@code @PreAuthorize}
@@ -41,18 +40,13 @@ public class AuthorizationService {
 
     /** Доступ к конкретному выданному permission'у (его таблицам/данным). */
     public boolean ownsPermission(UUID permissionId) {
-        if (security.isAdmin()) {
-            return true;
-        }
-        return current().map(p -> p.ownsPermission(permissionId)).orElse(false);
+        return security.isAdmin()
+                || current().map(p -> p.ownsPermission(permissionId)).orElse(false);
     }
 
     /** Доступ к предмету (есть хоть одно право на него). */
     public boolean canAccessSubject(UUID subjectId) {
-        if (security.isAdmin()) {
-            return true;
-        }
-        return current().map(p -> p.hasSubject(subjectId)).orElse(false);
+        return security.isAdmin() || current().map(p -> p.hasSubject(subjectId)).orElse(false);
     }
 
     /**
@@ -61,24 +55,18 @@ public class AuthorizationService {
      * преподавателю со scope-ограниченным правом управление недоступно.
      */
     public boolean canManageSubject(UUID subjectId) {
-        if (security.isAdmin()) {
-            return true;
-        }
-        return current().map(p -> p.hasFullAccessToSubject(subjectId)).orElse(false);
+        return security.isAdmin()
+                || current().map(p -> p.hasFullAccessToSubject(subjectId)).orElse(false);
     }
 
     /** Право управлять предметом, к которому относится выданное право (по его id). */
     public boolean canManagePermission(UUID permissionId) {
-        if (security.isAdmin()) {
-            return true;
-        }
-        if (permissionId == null) {
-            return false;
-        }
-        return permissionRepository
-            .findSubjectIdById(permissionId)
-            .map(this::canManageSubject)
-            .orElse(false);
+        return security.isAdmin()
+                || permissionId != null
+                        && permissionRepository
+                                .findSubjectIdById(permissionId)
+                                .map(this::canManageSubject)
+                                .orElse(false);
     }
 
     /** Все указанные scope'ы (проведения занятий) принадлежат предметам, доступным пользователю. */
@@ -119,16 +107,12 @@ public class AuthorizationService {
 
     /** Доступ к check-in сессии по её id (через предмет занятия сессии). */
     public boolean canAccessCheckInSession(UUID sessionId) {
-        if (security.isAdmin()) {
-            return true;
-        }
-        if (sessionId == null) {
-            return false;
-        }
-        return checkInSessionRepository
-            .findSubjectIdById(sessionId)
-            .map(this::canAccessSubject)
-            .orElse(false);
+        return security.isAdmin()
+                || sessionId != null
+                        && checkInSessionRepository
+                                .findSubjectIdById(sessionId)
+                                .map(this::canAccessSubject)
+                                .orElse(false);
     }
 
     private Optional<UserPermissions> current() {

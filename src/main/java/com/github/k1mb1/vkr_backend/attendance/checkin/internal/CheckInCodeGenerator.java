@@ -11,8 +11,7 @@ import java.security.SecureRandom;
  */
 final class CheckInCodeGenerator {
 
-    private static final char[] ALPHABET =
-        "ABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
+    private static final char[] ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
 
     private static final int CODE_LENGTH = 6;
 

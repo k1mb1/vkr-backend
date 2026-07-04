@@ -20,9 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-class SubjectFinalAssessmentPolicyService
-    implements SubjectFinalAssessmentPolicyApi
-{
+class SubjectFinalAssessmentPolicyService implements SubjectFinalAssessmentPolicyApi {
 
     final SubjectRepository subjectRepository;
 
@@ -33,35 +31,24 @@ class SubjectFinalAssessmentPolicyService
 
     @Override
     @PreAuthorize("@authz.canAccessSubject(#subjectId)")
-    public FinalAssessmentPolicyResponse getFinalAssessmentPolicy(
-        UUID subjectId
-    ) {
+    public FinalAssessmentPolicyResponse getFinalAssessmentPolicy(UUID subjectId) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
-        return subjectMapper.toFinalAssessmentPolicyResponse(
-            subject.getFinalAssessmentPolicy()
-        );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
+        return subjectMapper.toFinalAssessmentPolicyResponse(subject.getFinalAssessmentPolicy());
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public FinalAssessmentPolicyResponse updateFinalAssessmentPolicy(
-        UUID subjectId,
-        FinalAssessmentPolicyRequest request
-    ) {
+            UUID subjectId, FinalAssessmentPolicyRequest request) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
         applyRequestToPolicy(subject.getFinalAssessmentPolicy(), request);
         return subjectMapper.toFinalAssessmentPolicyResponse(
-            subjectRepository.save(subject).getFinalAssessmentPolicy()
-        );
+                subjectRepository.save(subject).getFinalAssessmentPolicy());
     }
 
     /**
@@ -69,10 +56,7 @@ class SubjectFinalAssessmentPolicyService
      * Банды синхронизируются по id: существующие обновляются, новые создаются,
      * отсутствующие в запросе удаляются (orphanRemoval).
      */
-    private void applyRequestToPolicy(
-        FinalAssessmentPolicy policy,
-        FinalAssessmentPolicyRequest request
-    ) {
+    private void applyRequestToPolicy(FinalAssessmentPolicy policy, FinalAssessmentPolicyRequest request) {
         if (!Boolean.TRUE.equals(request.enabled())) {
             policy.setEnabled(false);
             policy.getBands().clear();
@@ -80,9 +64,7 @@ class SubjectFinalAssessmentPolicyService
             return;
         }
         if (request.bands() == null || request.bands().isEmpty()) {
-            throw new IllegalArgumentException(
-                "При включённых итогах (enabled=true) обязателен непустой bands"
-            );
+            throw new IllegalArgumentException("При включённых итогах (enabled=true) обязателен непустой bands");
         }
         policy.setEnabled(true);
         syncBands(policy, request.bands());
@@ -90,20 +72,14 @@ class SubjectFinalAssessmentPolicyService
     }
 
     private void syncBands(
-        FinalAssessmentPolicy policy,
-        java.util.List<FinalAssessmentPolicyRequest.Band> requestBands
-    ) {
-        var existingById = policy
-            .getBands()
-            .stream()
-            .collect(Collectors.toMap(AssessmentBand::getId, b -> b));
+            FinalAssessmentPolicy policy, java.util.List<FinalAssessmentPolicyRequest.Band> requestBands) {
+        var existingById = policy.getBands().stream().collect(Collectors.toMap(AssessmentBand::getId, b -> b));
 
         // Какие id есть в запросе
-        var requestedIds = requestBands
-            .stream()
-            .map(FinalAssessmentPolicyRequest.Band::id)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+        var requestedIds = requestBands.stream()
+                .map(FinalAssessmentPolicyRequest.Band::id)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
         // Удаляем те, которых нет в запросе
         policy.getBands().removeIf(b -> !requestedIds.contains(b.getId()));
@@ -126,12 +102,12 @@ class SubjectFinalAssessmentPolicyService
         for (var req : requestBands) {
             if (req.id() == null || !existingById.containsKey(req.id())) {
                 var band = AssessmentBand.builder()
-                    .policy(policy)
-                    .label(req.label())
-                    .minPoints(req.minPoints())
-                    .minPercent(req.minPercent())
-                    .requiredTasks(req.requiredTasks())
-                    .build();
+                        .policy(policy)
+                        .label(req.label())
+                        .minPoints(req.minPoints())
+                        .minPercent(req.minPercent())
+                        .requiredTasks(req.requiredTasks())
+                        .build();
                 policy.getBands().add(band);
             }
         }
@@ -159,14 +135,8 @@ class SubjectFinalAssessmentPolicyService
      * attendanceRequirementMode, соответствующий порог (percent/count) и хотя бы один включённый
      * статус посещения.
      */
-    private void applyAttendanceMode(
-        FinalAssessmentPolicy policy,
-        FinalAssessmentPolicyRequest request
-    ) {
-        var mode =
-            request.attendanceMode() == null
-                ? AttendanceMode.COMBINED
-                : request.attendanceMode();
+    private void applyAttendanceMode(FinalAssessmentPolicy policy, FinalAssessmentPolicyRequest request) {
+        var mode = request.attendanceMode() == null ? AttendanceMode.COMBINED : request.attendanceMode();
         policy.setAttendanceMode(mode);
         if (mode != AttendanceMode.SEPARATE) {
             policy.setAttendanceRequirementMode(null);
@@ -179,56 +149,37 @@ class SubjectFinalAssessmentPolicyService
             return;
         }
         if (request.attendanceRequirementMode() == null) {
-            throw new IllegalArgumentException(
-                "Для отдельного учёта посещаемости (SEPARATE) обязателен " +
-                    "attendanceRequirementMode (PERCENT или COUNT)"
-            );
+            throw new IllegalArgumentException("Для отдельного учёта посещаемости (SEPARATE) обязателен "
+                    + "attendanceRequirementMode (PERCENT или COUNT)");
         }
-        var anyStatus =
-            Boolean.TRUE.equals(request.attendanceCountPresent()) ||
-            Boolean.TRUE.equals(request.attendanceCountLate()) ||
-            Boolean.TRUE.equals(request.attendanceCountAbsent()) ||
-            Boolean.TRUE.equals(request.attendanceCountExcused());
+        var anyStatus = Boolean.TRUE.equals(request.attendanceCountPresent())
+                || Boolean.TRUE.equals(request.attendanceCountLate())
+                || Boolean.TRUE.equals(request.attendanceCountAbsent())
+                || Boolean.TRUE.equals(request.attendanceCountExcused());
         if (!anyStatus) {
-            throw new IllegalArgumentException(
-                "Для SEPARATE включите хотя бы один статус, считающийся посещением " +
-                    "(attendanceCountPresent/Late/Absent/Excused)"
-            );
+            throw new IllegalArgumentException("Для SEPARATE включите хотя бы один статус, считающийся посещением "
+                    + "(attendanceCountPresent/Late/Absent/Excused)");
         }
         switch (request.attendanceRequirementMode()) {
             case PERCENT -> {
                 if (request.attendanceMinPercent() == null) {
-                    throw new IllegalArgumentException(
-                        "Для PERCENT обязателен attendanceMinPercent (0..100)"
-                    );
+                    throw new IllegalArgumentException("Для PERCENT обязателен attendanceMinPercent (0..100)");
                 }
                 policy.setAttendanceMinPercent(request.attendanceMinPercent());
                 policy.setAttendanceMinCount(null);
             }
             case COUNT -> {
                 if (request.attendanceMinCount() == null) {
-                    throw new IllegalArgumentException(
-                        "Для COUNT обязателен attendanceMinCount"
-                    );
+                    throw new IllegalArgumentException("Для COUNT обязателен attendanceMinCount");
                 }
                 policy.setAttendanceMinCount(request.attendanceMinCount());
                 policy.setAttendanceMinPercent(null);
             }
         }
-        policy.setAttendanceRequirementMode(
-            request.attendanceRequirementMode()
-        );
-        policy.setAttendanceCountPresent(
-            Boolean.TRUE.equals(request.attendanceCountPresent())
-        );
-        policy.setAttendanceCountLate(
-            Boolean.TRUE.equals(request.attendanceCountLate())
-        );
-        policy.setAttendanceCountAbsent(
-            Boolean.TRUE.equals(request.attendanceCountAbsent())
-        );
-        policy.setAttendanceCountExcused(
-            Boolean.TRUE.equals(request.attendanceCountExcused())
-        );
+        policy.setAttendanceRequirementMode(request.attendanceRequirementMode());
+        policy.setAttendanceCountPresent(Boolean.TRUE.equals(request.attendanceCountPresent()));
+        policy.setAttendanceCountLate(Boolean.TRUE.equals(request.attendanceCountLate()));
+        policy.setAttendanceCountAbsent(Boolean.TRUE.equals(request.attendanceCountAbsent()));
+        policy.setAttendanceCountExcused(Boolean.TRUE.equals(request.attendanceCountExcused()));
     }
 }

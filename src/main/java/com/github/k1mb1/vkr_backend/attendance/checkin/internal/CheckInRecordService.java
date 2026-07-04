@@ -30,25 +30,15 @@ class CheckInRecordService implements CheckInRecordsApi {
 
     @Transactional
     @Override
-    public PublicCheckInRecordResponse checkIn(
-        UUID sessionId,
-        StudentCheckInRequest request
-    ) {
+    public PublicCheckInRecordResponse checkIn(UUID sessionId, StudentCheckInRequest request) {
         var session = sessionRepository
-            .findWithDetailsById(sessionId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("CheckInSession", sessionId)
-            );
+                .findWithDetailsById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("CheckInSession", sessionId));
 
         var now = Instant.now();
         var state = session.stateAt(now);
-        if (
-            state != CheckInSessionState.OPEN &&
-            state != CheckInSessionState.LATE_WINDOW
-        ) {
-            throw new ConflictException(
-                "Check-in is closed for session: " + sessionId
-            );
+        if (state != CheckInSessionState.OPEN && state != CheckInSessionState.LATE_WINDOW) {
+            throw new ConflictException("Check-in is closed for session: " + sessionId);
         }
 
         // Код аудитории проверяем раньше, чем принадлежность студента,
@@ -59,13 +49,9 @@ class CheckInRecordService implements CheckInRecordsApi {
 
         var studentId = request.studentId();
         var students = lessonStudentsApi.studentsOf(session.getLessonScope());
-        var inScope = students
-            .stream()
-            .anyMatch(s -> s.getId().equals(studentId));
+        var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
         if (!inScope) {
-            throw new IllegalArgumentException(
-                "Student is not part of this lesson audience: " + studentId
-            );
+            throw new IllegalArgumentException("Student is not part of this lesson audience: " + studentId);
         }
 
         var status = session.statusForCheckInAt(now);
@@ -74,14 +60,12 @@ class CheckInRecordService implements CheckInRecordsApi {
         }
 
         var record = recordRepository
-            .findBySessionIdAndStudentId(sessionId, studentId)
-            .orElseGet(() ->
-                CheckInRecord.builder()
-                    .session(session)
-                    .student(studentRepository.getReferenceById(studentId))
-                    .checkedInAt(now)
-                    .build()
-            );
+                .findBySessionIdAndStudentId(sessionId, studentId)
+                .orElseGet(() -> CheckInRecord.builder()
+                        .session(session)
+                        .student(studentRepository.getReferenceById(studentId))
+                        .checkedInAt(now)
+                        .build());
 
         // first check-in wins; do not downgrade PRESENT to LATE on repeated submission
         if (record.getId() == null) {
@@ -92,8 +76,8 @@ class CheckInRecordService implements CheckInRecordsApi {
         var saved = recordRepository.save(record);
         // Отдаём только собственный результат студента — без ID записи и данных других.
         return PublicCheckInRecordResponse.builder()
-            .status(saved.getStatus())
-            .checkedInAt(saved.getCheckedInAt())
-            .build();
+                .status(saved.getStatus())
+                .checkedInAt(saved.getCheckedInAt())
+                .build();
     }
 }

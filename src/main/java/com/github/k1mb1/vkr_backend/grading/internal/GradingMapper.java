@@ -25,9 +25,7 @@ interface GradingMapper {
 
     @Mapping(target = "bandId", source = "bandId")
     @Mapping(target = "minScore", source = "minScore")
-    AssignmentResponse.AdmissionTier toAdmissionTier(
-        AssignmentAdmissionTier tier
-    );
+    AssignmentResponse.AdmissionTier toAdmissionTier(AssignmentAdmissionTier tier);
 
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")

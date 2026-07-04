@@ -15,77 +15,50 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LessonRepository
-    extends
-        JpaRepository<Lesson, UUID>,
-        JpaSpecificationExecutor<Lesson>,
-        LessonRepositoryCustom
-{
+        extends JpaRepository<Lesson, UUID>, JpaSpecificationExecutor<Lesson>, LessonRepositoryCustom {
     @EntityGraph(
-        attributePaths = {
-            "subject",
-            "scopes",
-            "scopes.group",
-            "scopes.allowedSubgroup",
-        }
-    )
+            attributePaths = {
+                "subject",
+                "scopes",
+                "scopes.group",
+                "scopes.allowedSubgroup",
+            })
     Optional<Lesson> findWithDetailsById(UUID id);
 
-    @Query(
-        """
+    @Query("""
         SELECT MAX(l.orderIndex) FROM Lesson l
         WHERE l.subject.id = :subjectId AND l.type = :type
-        """
-    )
-    Integer findMaxOrderIndex(
-        @Param("subjectId") UUID subjectId,
-        @Param("type") LessonType type
-    );
+        """)
+    Integer findMaxOrderIndex(@Param("subjectId") UUID subjectId, @Param("type") LessonType type);
 
     @Modifying
-    @Query(
-        """
+    @Query("""
         UPDATE Lesson l SET l.orderIndex = l.orderIndex - 1
         WHERE l.subject.id = :subjectId
           AND l.type = :type
           AND l.orderIndex > :afterIndex
-        """
-    )
+        """)
     int shiftOrderIndexDown(
-        @Param("subjectId") UUID subjectId,
-        @Param("type") LessonType type,
-        @Param("afterIndex") int afterIndex
-    );
+            @Param("subjectId") UUID subjectId, @Param("type") LessonType type, @Param("afterIndex") int afterIndex);
 
     @Modifying
-    @Query(
-        """
+    @Query("""
         UPDATE Lesson l SET l.active = false
         WHERE l.subject.id = :subjectId AND l.type = :type AND l.active = true
-        """
-    )
-    int clearActiveForSubjectAndType(
-        @Param("subjectId") UUID subjectId,
-        @Param("type") LessonType type
-    );
+        """)
+    int clearActiveForSubjectAndType(@Param("subjectId") UUID subjectId, @Param("type") LessonType type);
 
-    Optional<Lesson> findBySubjectIdAndTypeAndActiveTrue(
-        UUID subjectId,
-        LessonType type
-    );
+    Optional<Lesson> findBySubjectIdAndTypeAndActiveTrue(UUID subjectId, LessonType type);
 
-    @Query(
-        """
+    @Query("""
         SELECT l FROM Lesson l
         JOIN FETCH l.subject
         WHERE l.subject.id = :subjectId AND l.type = :type
           AND EXISTS (SELECT 1 FROM Assignment a WHERE a.lesson.id = l.id)
         ORDER BY l.orderIndex
-        """
-    )
+        """)
     List<Lesson> findWithAssignmentsBySubjectIdAndType(
-        @Param("subjectId") UUID subjectId,
-        @Param("type") LessonType type
-    );
+            @Param("subjectId") UUID subjectId, @Param("type") LessonType type);
 
     /** id предметов указанных занятий — для проверки доступа на запись. */
     @Query("SELECT DISTINCT l.subject.id FROM Lesson l WHERE l.id IN :ids")

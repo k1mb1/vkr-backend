@@ -5,10 +5,5 @@ import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "Подтверждение кода аудитории перед доступом к поиску студентов")
 public record VerifyCheckInCodeRequest(
-    @NotBlank
-    @Schema(
-        description = "Код аудитории, показанный преподавателем",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    String code
-) {}
+        @NotBlank @Schema(description = "Код аудитории, показанный преподавателем", requiredMode = Schema.RequiredMode.REQUIRED)
+        String code) {}

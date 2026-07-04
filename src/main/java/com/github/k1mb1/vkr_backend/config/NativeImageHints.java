@@ -4,13 +4,13 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
+import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-
-import java.util.UUID;
 
 /**
  * Reflection hints required when running as a GraalVM native image.
@@ -20,7 +20,7 @@ import java.util.UUID;
  */
 public class NativeImageHints implements RuntimeHintsRegistrar {
     @Override
-    public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+    public void registerHints(RuntimeHints hints, @Nullable ClassLoader classLoader) {
         // Hibernate/Spring Data reflectively instantiates java.util.UUID[]
         hints.reflection().registerType(UUID.class, MemberCategory.values());
         hints.reflection().registerType(UUID[].class, MemberCategory.values());

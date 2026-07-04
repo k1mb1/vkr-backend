@@ -19,7 +19,6 @@ import com.github.k1mb1.vkr_backend.lesson.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScope;
 import com.github.k1mb1.vkr_backend.student.domain.Student;
 import com.github.k1mb1.vkr_backend.student.internal.StudentRepository;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,49 +54,28 @@ class CheckInRecordServiceTest {
 
     @BeforeEach
     void setUp() {
-        var student = Student.builder()
-            .id(studentId)
-            .username("Иванов Иван")
-            .build();
+        var student = Student.builder().id(studentId).username("Иванов Иван").build();
         lenient().when(session.getLessonScope()).thenReturn(scope);
         lenient().when(session.getCode()).thenReturn("ABC123");
+        lenient().when(session.stateAt(any())).thenReturn(CheckInSessionState.OPEN);
+        lenient().when(session.statusForCheckInAt(any())).thenReturn(CheckInRecordStatus.PRESENT);
+        lenient().when(sessionRepository.findWithDetailsById(sessionId)).thenReturn(Optional.of(session));
+        lenient().when(lessonStudentsApi.studentsOf(scope)).thenReturn(List.of(student));
         lenient()
-            .when(session.stateAt(any()))
-            .thenReturn(CheckInSessionState.OPEN);
-        lenient()
-            .when(session.statusForCheckInAt(any()))
-            .thenReturn(CheckInRecordStatus.PRESENT);
-        lenient()
-            .when(sessionRepository.findWithDetailsById(sessionId))
-            .thenReturn(Optional.of(session));
-        lenient()
-            .when(lessonStudentsApi.studentsOf(scope))
-            .thenReturn(List.of(student));
-        lenient()
-            .when(
-                recordRepository.findBySessionIdAndStudentId(
-                    sessionId,
-                    studentId
-                )
-            )
-            .thenReturn(Optional.empty());
-        lenient()
-            .when(studentRepository.getReferenceById(studentId))
-            .thenReturn(student);
-        lenient()
-            .when(recordRepository.save(any()))
-            .thenAnswer(inv -> inv.getArgument(0));
+                .when(recordRepository.findBySessionIdAndStudentId(sessionId, studentId))
+                .thenReturn(Optional.empty());
+        lenient().when(studentRepository.getReferenceById(studentId)).thenReturn(student);
+        lenient().when(recordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
     void checksInWithValidCodeAndReturnsOwnStatusOnly() {
         var response = service.checkIn(
-            sessionId,
-            StudentCheckInRequest.builder()
-                .studentId(studentId)
-                .code("abc123")
-                .build()
-        );
+                sessionId,
+                StudentCheckInRequest.builder()
+                        .studentId(studentId)
+                        .code("abc123")
+                        .build());
 
         assertThat(response.status()).isEqualTo(CheckInRecordStatus.PRESENT);
         assertThat(response.checkedInAt()).isNotNull();
@@ -106,17 +84,14 @@ class CheckInRecordServiceTest {
 
     @Test
     void rejectsWrongCodeWithoutCheckingStudentScope() {
-        assertThatThrownBy(() ->
-            service.checkIn(
-                sessionId,
-                StudentCheckInRequest.builder()
-                    .studentId(studentId)
-                    .code("WRONG")
-                    .build()
-            )
-        )
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("код");
+        assertThatThrownBy(() -> service.checkIn(
+                        sessionId,
+                        StudentCheckInRequest.builder()
+                                .studentId(studentId)
+                                .code("WRONG")
+                                .build()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("код");
 
         // Код проверяется раньше принадлежности студента и записи — нет утечки/записи.
         verify(lessonStudentsApi, never()).studentsOf(any(LessonScope.class));
@@ -127,15 +102,13 @@ class CheckInRecordServiceTest {
     void rejectsCheckInWhenSessionClosed() {
         when(session.stateAt(any())).thenReturn(CheckInSessionState.CONFIRMED);
 
-        assertThatThrownBy(() ->
-            service.checkIn(
-                sessionId,
-                StudentCheckInRequest.builder()
-                    .studentId(studentId)
-                    .code("ABC123")
-                    .build()
-            )
-        ).isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> service.checkIn(
+                        sessionId,
+                        StudentCheckInRequest.builder()
+                                .studentId(studentId)
+                                .code("ABC123")
+                                .build()))
+                .isInstanceOf(ConflictException.class);
 
         verify(recordRepository, never()).save(any());
     }

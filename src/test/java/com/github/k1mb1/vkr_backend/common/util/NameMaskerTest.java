@@ -23,15 +23,13 @@ class NameMaskerTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = { "   " })
+    @ValueSource(strings = {"   "})
     void returnsBlankInputUnchanged(String input) {
         assertThat(NameMasker.maskFullName(input)).isEqualTo(input);
     }
 
     @Test
     void collapsesExtraWhitespaceBetweenParts() {
-        assertThat(
-            NameMasker.maskFullName("  Иванов   Иван   Иванович  ")
-        ).isEqualTo("Иванов И. И.");
+        assertThat(NameMasker.maskFullName("  Иванов   Иван   Иванович  ")).isEqualTo("Иванов И. И.");
     }
 }

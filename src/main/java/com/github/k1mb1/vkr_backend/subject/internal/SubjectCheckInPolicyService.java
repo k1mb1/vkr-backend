@@ -24,31 +24,21 @@ class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
     @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public CheckInPolicyResponse getCheckInPolicy(UUID subjectId) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
-        return subjectMapper.toCheckInPolicyResponse(
-            subject.getCheckInPolicy()
-        );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
+        return subjectMapper.toCheckInPolicyResponse(subject.getCheckInPolicy());
     }
 
     @Transactional
     @Override
     @PreAuthorize("@authz.canManageSubject(#subjectId)")
-    public CheckInPolicyResponse updateCheckInPolicy(
-        UUID subjectId,
-        CheckInPolicyRequest request
-    ) {
+    public CheckInPolicyResponse updateCheckInPolicy(UUID subjectId, CheckInPolicyRequest request) {
         var subject = subjectRepository
-            .findById(subjectId)
-            .orElseThrow(() ->
-                new ResourceNotFoundException("Subject", subjectId)
-            );
+                .findById(subjectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subject", subjectId));
         subject.setCheckInPolicy(toCheckInPolicy(request));
         return subjectMapper.toCheckInPolicyResponse(
-            subjectRepository.save(subject).getCheckInPolicy()
-        );
+                subjectRepository.save(subject).getCheckInPolicy());
     }
 
     /**
@@ -61,14 +51,12 @@ class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
         }
         if (request.onTimeSeconds() == null || request.lateSeconds() == null) {
             throw new IllegalArgumentException(
-                "При включённой политике check-in (enabled=true) обязательны: " +
-                    "onTimeSeconds, lateSeconds"
-            );
+                    "При включённой политике check-in (enabled=true) обязательны: " + "onTimeSeconds, lateSeconds");
         }
         return CheckInPolicy.builder()
-            .enabled(true)
-            .onTimeSeconds(request.onTimeSeconds())
-            .lateSeconds(request.lateSeconds())
-            .build();
+                .enabled(true)
+                .onTimeSeconds(request.onTimeSeconds())
+                .lateSeconds(request.lateSeconds())
+                .build();
     }
 }

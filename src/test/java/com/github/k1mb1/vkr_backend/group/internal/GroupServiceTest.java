@@ -68,7 +68,11 @@ class GroupServiceTest {
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var group = group(groupId);
-        var subject = Subject.builder().id(subjectId).name("S").groups(new HashSet<>()).build();
+        var subject = Subject.builder()
+                .id(subjectId)
+                .name("S")
+                .groups(new HashSet<>())
+                .build();
         when(groupRepository.findById(groupId)).thenReturn(Optional.of(group));
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
         lenient().when(groupMapper.toResponse(any(), any(), any())).thenReturn(mock(GroupResponse.class));
@@ -84,14 +88,17 @@ class GroupServiceTest {
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var group = group(groupId);
-        var subject = Subject.builder().id(subjectId).name("S")
-            .groups(new HashSet<>(Set.of(group))).build();
+        var subject = Subject.builder()
+                .id(subjectId)
+                .name("S")
+                .groups(new HashSet<>(Set.of(group)))
+                .build();
         when(groupRepository.findById(groupId)).thenReturn(Optional.of(group));
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
 
         assertThatThrownBy(() -> service.attachToSubject(groupId, subjectId))
-            .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("already attached");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already attached");
     }
 
     @Test
@@ -100,7 +107,7 @@ class GroupServiceTest {
         when(groupRepository.findById(groupId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.attachToSubject(groupId, UUID.randomUUID()))
-            .isInstanceOf(EntityNotFoundException.class);
+                .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
@@ -108,13 +115,17 @@ class GroupServiceTest {
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var group = group(groupId);
-        var subject = Subject.builder().id(subjectId).name("S").groups(new HashSet<>()).build();
+        var subject = Subject.builder()
+                .id(subjectId)
+                .name("S")
+                .groups(new HashSet<>())
+                .build();
         when(groupRepository.findById(groupId)).thenReturn(Optional.of(group));
         when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
 
         assertThatThrownBy(() -> service.detachFromSubject(groupId, subjectId))
-            .isInstanceOf(EntityNotFoundException.class)
-            .hasMessageContaining("not attached");
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("not attached");
     }
 
     // ---- delete ----
@@ -139,15 +150,29 @@ class GroupServiceTest {
         when(groupRepository.save(any())).thenReturn(group(groupId));
         when(subgroupRepository.save(any())).thenAnswer(inv -> {
             Subgroup s = inv.getArgument(0);
-            return Subgroup.builder().id(UUID.randomUUID()).index(s.getIndex()).group(s.getGroup()).build();
+            return Subgroup.builder()
+                    .id(UUID.randomUUID())
+                    .index(s.getIndex())
+                    .group(s.getGroup())
+                    .build();
         });
         lenient().when(groupMapper.toResponse(any(), any(), any())).thenReturn(mock(GroupResponse.class));
 
-        var request = new CreateGroupRequest("G", List.of(
-            StudentGroupMemberRequest.builder().username("A").subgroupIndex(1).build(),
-            StudentGroupMemberRequest.builder().username("B").subgroupIndex(1).build(),
-            StudentGroupMemberRequest.builder().username("C").subgroupIndex(null).build()
-        ));
+        var request = new CreateGroupRequest(
+                "G",
+                List.of(
+                        StudentGroupMemberRequest.builder()
+                                .username("A")
+                                .subgroupIndex(1)
+                                .build(),
+                        StudentGroupMemberRequest.builder()
+                                .username("B")
+                                .subgroupIndex(1)
+                                .build(),
+                        StudentGroupMemberRequest.builder()
+                                .username("C")
+                                .subgroupIndex(null)
+                                .build()));
 
         service.createGroup(request);
 

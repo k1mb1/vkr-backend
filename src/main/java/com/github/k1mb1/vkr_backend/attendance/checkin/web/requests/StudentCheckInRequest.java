@@ -9,19 +9,14 @@ import lombok.Builder;
 @Builder
 @Schema(description = "Отметка студента в check-in сессии")
 public record StudentCheckInRequest(
-    @NotNull
-    @Schema(
-        description = "ID студента (берётся из результата поиска по фамилии)",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    UUID studentId,
+        @NotNull @Schema(
+                description = "ID студента (берётся из результата поиска по фамилии)",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        UUID studentId,
 
-    @NotBlank
-    @Schema(
-        description = "Код аудитории, который преподаватель показал в аудитории. " +
-            "Без верного кода отметка отклоняется — это не даёт отметить кого-либо, " +
-            "просто зная его ID.",
-        requiredMode = Schema.RequiredMode.REQUIRED
-    )
-    String code
-) {}
+        @NotBlank @Schema(
+                description = "Код аудитории, который преподаватель показал в аудитории. "
+                        + "Без верного кода отметка отклоняется — это не даёт отметить кого-либо, "
+                        + "просто зная его ID.",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        String code) {}

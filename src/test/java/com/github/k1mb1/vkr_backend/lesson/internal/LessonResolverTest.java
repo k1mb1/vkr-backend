@@ -47,9 +47,9 @@ class LessonResolverTest {
 
     private TeacherSubjectPermission permission(Subject subject) {
         return TeacherSubjectPermission.builder()
-            .id(UUID.randomUUID())
-            .subject(subject)
-            .build();
+                .id(UUID.randomUUID())
+                .subject(subject)
+                .build();
     }
 
     // ---- resolveLessons ----
@@ -72,9 +72,8 @@ class LessonResolverTest {
         var scopeId = UUID.randomUUID();
         when(lessonScopeRepository.findById(scopeId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() ->
-            resolver.resolveLessons(permission(subject(subjectId)), scopeId, null)
-        ).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> resolver.resolveLessons(permission(subject(subjectId)), scopeId, null))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
@@ -84,11 +83,9 @@ class LessonResolverTest {
         var scope = LessonScope.builder().id(scopeId).lesson(lesson).build();
         when(lessonScopeRepository.findById(scopeId)).thenReturn(Optional.of(scope));
 
-        assertThatThrownBy(() ->
-            resolver.resolveLessons(permission(subject(subjectId)), scopeId, null)
-        )
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("does not belong to subject");
+        assertThatThrownBy(() -> resolver.resolveLessons(permission(subject(subjectId)), scopeId, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("does not belong to subject");
     }
 
     @Test
@@ -99,11 +96,9 @@ class LessonResolverTest {
         var scope = LessonScope.builder().id(scopeId).lesson(lesson).build();
         when(lessonScopeRepository.findById(scopeId)).thenReturn(Optional.of(scope));
 
-        assertThatThrownBy(() ->
-            resolver.resolveLessons(permission(subject), scopeId, UUID.randomUUID())
-        )
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("belongs to lesson");
+        assertThatThrownBy(() -> resolver.resolveLessons(permission(subject), scopeId, UUID.randomUUID()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("belongs to lesson");
     }
 
     @Test
@@ -123,9 +118,8 @@ class LessonResolverTest {
         var lessonId = UUID.randomUUID();
         when(lessonRepository.findById(lessonId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() ->
-            resolver.resolveLessons(permission(subject(subjectId)), null, lessonId)
-        ).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> resolver.resolveLessons(permission(subject(subjectId)), null, lessonId))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
@@ -144,10 +138,10 @@ class LessonResolverTest {
     @Test
     void audienceScopesEmptyWhenAllPermissions() {
         var permission = TeacherSubjectPermission.builder()
-            .id(UUID.randomUUID())
-            .subject(subject(subjectId))
-            .allPermissions(true)
-            .build();
+                .id(UUID.randomUUID())
+                .subject(subject(subjectId))
+                .allPermissions(true)
+                .build();
 
         assertThat(resolver.audienceScopes(permission)).isEmpty();
     }
@@ -156,8 +150,7 @@ class LessonResolverTest {
     void audienceScopesEmptyWhenAnyScopeHasNoGroup() {
         var permission = permission(subject(subjectId));
         permission.setScopes(Set.of(
-            PermissionScope.builder().id(UUID.randomUUID()).group(null).build()
-        ));
+                PermissionScope.builder().id(UUID.randomUUID()).group(null).build()));
 
         assertThat(resolver.audienceScopes(permission)).isEmpty();
     }
@@ -167,12 +160,23 @@ class LessonResolverTest {
         var permission = permission(subject(subjectId));
         var groupB = Group.builder().id(UUID.randomUUID()).name("B").build();
         var groupA = Group.builder().id(UUID.randomUUID()).name("A").build();
-        var sub2 = Subgroup.builder().id(UUID.randomUUID()).index(2).group(groupA).build();
-        var sub1 = Subgroup.builder().id(UUID.randomUUID()).index(1).group(groupA).build();
+        var sub2 =
+                Subgroup.builder().id(UUID.randomUUID()).index(2).group(groupA).build();
+        var sub1 =
+                Subgroup.builder().id(UUID.randomUUID()).index(1).group(groupA).build();
 
-        var scopeB = PermissionScope.builder().id(UUID.randomUUID()).group(groupB).build();
-        var scopeA2 = PermissionScope.builder().id(UUID.randomUUID()).group(groupA).allowedSubgroup(sub2).build();
-        var scopeA1 = PermissionScope.builder().id(UUID.randomUUID()).group(groupA).allowedSubgroup(sub1).build();
+        var scopeB =
+                PermissionScope.builder().id(UUID.randomUUID()).group(groupB).build();
+        var scopeA2 = PermissionScope.builder()
+                .id(UUID.randomUUID())
+                .group(groupA)
+                .allowedSubgroup(sub2)
+                .build();
+        var scopeA1 = PermissionScope.builder()
+                .id(UUID.randomUUID())
+                .group(groupA)
+                .allowedSubgroup(sub1)
+                .build();
         permission.setScopes(Set.of(scopeB, scopeA2, scopeA1));
 
         var result = resolver.audienceScopes(permission);

@@ -7,13 +7,11 @@ import lombok.Builder;
 
 @Builder
 @Schema(
-    description = "Единый ответ страницы итогов: таблица оценок и таблица посещаемости в одном " +
-        "запросе. Политику итогов (банды) фронт берёт из grading.finalAssessmentPolicy."
-)
+        description = "Единый ответ страницы итогов: таблица оценок и таблица посещаемости в одном "
+                + "запросе. Политику итогов (банды) фронт берёт из grading.finalAssessmentPolicy.")
 public record ResultsResponse(
-    @Schema(description = "Таблица оценок (с политиками штрафа/посещаемости/подсветки/итогов)")
-    GradingTableResponse grading,
+        @Schema(description = "Таблица оценок (с политиками штрафа/посещаемости/подсветки/итогов)")
+        GradingTableResponse grading,
 
-    @Schema(description = "Таблица посещаемости (поячеечная, с политикой подсветки)")
-    AttendanceTableResponse attendance
-) {}
+        @Schema(description = "Таблица посещаемости (поячеечная, с политикой подсветки)")
+        AttendanceTableResponse attendance) {}

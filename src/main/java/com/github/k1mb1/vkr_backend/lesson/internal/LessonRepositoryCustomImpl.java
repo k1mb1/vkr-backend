@@ -30,10 +30,7 @@ public class LessonRepositoryCustomImpl implements LessonRepositoryCustom {
         }
 
         TypedQuery<Lesson> typedQuery = entityManager.createQuery(query);
-        typedQuery.setHint(
-            "jakarta.persistence.loadgraph",
-            entityManager.getEntityGraph("Lesson.withDetails")
-        );
+        typedQuery.setHint("jakarta.persistence.loadgraph", entityManager.getEntityGraph("Lesson.withDetails"));
 
         return typedQuery.getResultList();
     }

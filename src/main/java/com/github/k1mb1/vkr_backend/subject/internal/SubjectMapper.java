@@ -20,7 +20,11 @@ import com.github.k1mb1.vkr_backend.subject.web.responses.GradingHighlightPolicy
 import com.github.k1mb1.vkr_backend.subject.web.responses.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.web.responses.SubjectResponse;
-import org.mapstruct.*;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = SPRING)
 public interface SubjectMapper {
@@ -30,23 +34,15 @@ public interface SubjectMapper {
 
     PenaltyPolicyResponse toPenaltyPolicyResponse(PenaltyPolicy policy);
 
-    AttendancePolicyResponse toAttendancePolicyResponse(
-        AttendancePolicy policy
-    );
+    AttendancePolicyResponse toAttendancePolicyResponse(AttendancePolicy policy);
 
     CheckInPolicyResponse toCheckInPolicyResponse(CheckInPolicy policy);
 
-    GradingHighlightPolicyResponse toGradingHighlightPolicyResponse(
-        GradingHighlightPolicy policy
-    );
+    GradingHighlightPolicyResponse toGradingHighlightPolicyResponse(GradingHighlightPolicy policy);
 
-    AttendanceHighlightPolicyResponse toAttendanceHighlightPolicyResponse(
-        AttendanceHighlightPolicy policy
-    );
+    AttendanceHighlightPolicyResponse toAttendanceHighlightPolicyResponse(AttendanceHighlightPolicy policy);
 
-    FinalAssessmentPolicyResponse toFinalAssessmentPolicyResponse(
-        FinalAssessmentPolicy policy
-    );
+    FinalAssessmentPolicyResponse toFinalAssessmentPolicyResponse(FinalAssessmentPolicy policy);
 
     @Mapping(target = "id", source = "id")
     FinalAssessmentPolicyResponse.Band toBand(AssessmentBand band);
@@ -63,16 +59,10 @@ public interface SubjectMapper {
     @Mapping(target = "attendanceHighlightPolicy", ignore = true)
     @Mapping(target = "finalAssessmentPolicy", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
-    void updateEntity(
-        UpdateSubjectRequest request,
-        @MappingTarget Subject subject
-    );
+    void updateEntity(UpdateSubjectRequest request, @MappingTarget Subject subject);
 
     @AfterMapping
-    default void afterUpdate(
-        UpdateSubjectRequest request,
-        @MappingTarget Subject subject
-    ) {
+    default void afterUpdate(UpdateSubjectRequest request, @MappingTarget Subject subject) {
         if (request.archived() == null) {
             return;
         }
