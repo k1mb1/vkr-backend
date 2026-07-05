@@ -107,7 +107,7 @@ class GradingService implements GradingApi {
     }
 
     @Override
-    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
+    @PreAuthorize("@authz.ownsPermission(#a0.permissionId())")
     public GradingTableResponse getGradingTable(GradingFilter filter) {
         var permission = permissionRepository
                 .findWithDetailsById(filter.permissionId())
@@ -226,7 +226,7 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLessons(#request.items().![lessonId()])")
+    @PreAuthorize("@authz.canAccessLessons(#a0.items().![lessonId()])")
     public List<GradeCellResponse> upsertGrades(BulkUpsertGradesRequest request) {
         var items = request.items();
 
@@ -341,7 +341,7 @@ class GradingService implements GradingApi {
     }
 
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
+    @PreAuthorize("@authz.canAccessLesson(#a0)")
     public List<AssignmentResponse> getAssignmentsByLesson(UUID lessonId) {
         return assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId)).stream()
                 .map(gradingMapper::toAssignmentResponse)
@@ -366,7 +366,7 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#request.lessonId())")
+    @PreAuthorize("@authz.canAccessLesson(#a0.lessonId())")
     public List<AssignmentResponse> createAssignments(CreateAssignmentsRequest request) {
         if (assignmentRepository.existsByLessonId(request.lessonId())) {
             throw new ConflictException("Lesson " + request.lessonId()
@@ -408,7 +408,7 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
+    @PreAuthorize("@authz.canAccessLesson(#a0)")
     public List<AssignmentResponse> updateAssignmentsOfLesson(UUID lessonId, BulkUpdateAssignmentsRequest request) {
         var items = request.items();
         for (var item : items) {
@@ -507,7 +507,7 @@ class GradingService implements GradingApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
+    @PreAuthorize("@authz.canAccessLesson(#a0)")
     public void deleteAssignmentsOfLesson(UUID lessonId) {
         assignmentRepository.deleteByLessonId(lessonId);
     }

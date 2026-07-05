@@ -41,7 +41,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
     final TeacherSubjectPermissionMapper permissionMapper;
 
     @Override
-    @PreAuthorize("@authz.canManageSubject(#subjectId)")
+    @PreAuthorize("@authz.canManageSubject(#a0)")
     public List<TeacherSubjectPermissionResponse> getPermissionsBySubject(UUID subjectId) {
         return permissionRepository.findAllBySubjectId(subjectId).stream()
                 .map(permissionMapper::toFullResponse)
@@ -49,7 +49,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
     }
 
     @Override
-    @PreAuthorize("@authz.isSelfOrAdmin(#teacherId) or @authz.canManageSubject(#subjectId)")
+    @PreAuthorize("@authz.isSelfOrAdmin(#a1) or @authz.canManageSubject(#a0)")
     public TeacherSubjectPermissionResponse getPermission(UUID subjectId, UUID teacherId) {
         return permissionRepository
                 .findBySubjectIdAndTeacherId(subjectId, teacherId)
@@ -60,7 +60,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#request.subjectId())")
+    @PreAuthorize("@authz.canManageSubject(#a0.subjectId())")
     @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public TeacherSubjectPermissionResponse create(CreateTeacherSubjectPermissionRequest request) {
         if (permissionRepository.existsByTeacherIdAndSubjectId(request.teacherId(), request.subjectId())) {
@@ -88,7 +88,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManagePermission(#id)")
+    @PreAuthorize("@authz.canManagePermission(#a0)")
     @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public TeacherSubjectPermissionResponse update(UUID id, UpdateTeacherSubjectPermissionRequest request) {
         var permission = permissionRepository
@@ -128,7 +128,7 @@ class TeacherSubjectPermissionService implements TeacherSubjectPermissionsApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManagePermission(#id)")
+    @PreAuthorize("@authz.canManagePermission(#a0)")
     @CacheEvict(cacheNames = "userPermissions", allEntries = true)
     public void delete(UUID id) {
         var permission = permissionRepository

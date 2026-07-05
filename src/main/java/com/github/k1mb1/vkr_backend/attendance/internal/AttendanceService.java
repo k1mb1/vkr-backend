@@ -59,7 +59,7 @@ class AttendanceService implements AttendanceApi {
     final SubjectMapper subjectMapper;
 
     @Override
-    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
+    @PreAuthorize("@authz.ownsPermission(#a0.permissionId())")
     public AttendanceTableResponse getAttendanceTable(AttendanceFilter filter) {
         var permission = permissionRepository
                 .findWithDetailsById(filter.permissionId())
@@ -116,7 +116,7 @@ class AttendanceService implements AttendanceApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLessonScopes(#request.items().![lessonScopeId()])")
+    @PreAuthorize("@authz.canAccessLessonScopes(#a0.items().![lessonScopeId()])")
     public List<AttendanceCellResponse> upsertAll(BulkUpsertAttendanceRequest request) {
         var items = request.items();
         var seen = new HashSet<String>();

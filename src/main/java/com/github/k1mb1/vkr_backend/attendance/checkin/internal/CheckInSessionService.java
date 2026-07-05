@@ -78,7 +78,7 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLessonScopes({#request.lessonScopeId()})")
+    @PreAuthorize("@authz.canAccessLessonScopes({#a0.lessonScopeId()})")
     public CheckInSessionResponse start(StartCheckInRequest request) {
         var scope = lessonScopeRepository
                 .findWithDetailsById(request.lessonScopeId())
@@ -120,14 +120,14 @@ class CheckInSessionService implements CheckInSessionApi {
     }
 
     @Override
-    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
+    @PreAuthorize("@authz.canAccessCheckInSession(#a0)")
     public CheckInSessionResponse get(UUID sessionId) {
         var session = loadSession(sessionId);
         return mapper.toResponse(session, Instant.now());
     }
 
     @Override
-    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
+    @PreAuthorize("@authz.ownsPermission(#a0.permissionId())")
     public List<CheckInSessionResponse> list(CheckInSessionFilter filter) {
         var permission = permissionRepository
                 .findWithDetailsById(filter.permissionId())
@@ -167,7 +167,7 @@ class CheckInSessionService implements CheckInSessionApi {
     }
 
     @Override
-    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
+    @PreAuthorize("@authz.canAccessCheckInSession(#a0)")
     public CheckInPreviewResponse preview(UUID sessionId) {
         var session = loadSession(sessionId);
         var students = lessonStudentsApi.studentsOf(session.getLessonScope());
@@ -197,7 +197,7 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
+    @PreAuthorize("@authz.canAccessCheckInSession(#a0)")
     public CheckInSessionResponse confirm(UUID sessionId, ConfirmCheckInRequest request) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {
@@ -253,7 +253,7 @@ class CheckInSessionService implements CheckInSessionApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
+    @PreAuthorize("@authz.canAccessCheckInSession(#a0)")
     public CheckInSessionResponse cancel(UUID sessionId) {
         var session = loadSession(sessionId);
         if (session.getConfirmedAt() != null) {

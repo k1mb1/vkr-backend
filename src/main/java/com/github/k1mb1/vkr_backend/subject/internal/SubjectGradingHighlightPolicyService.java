@@ -21,7 +21,7 @@ class SubjectGradingHighlightPolicyService implements SubjectGradingHighlightPol
     final SubjectMapper subjectMapper;
 
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
+    @PreAuthorize("@authz.canAccessSubject(#a0)")
     public GradingHighlightPolicyResponse getGradingHighlightPolicy(UUID subjectId) {
         var subject = subjectRepository
                 .findById(subjectId)
@@ -31,7 +31,7 @@ class SubjectGradingHighlightPolicyService implements SubjectGradingHighlightPol
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#subjectId)")
+    @PreAuthorize("@authz.canManageSubject(#a0)")
     public GradingHighlightPolicyResponse updateGradingHighlightPolicy(
             UUID subjectId, GradingHighlightPolicyRequest request) {
         var subject = subjectRepository
