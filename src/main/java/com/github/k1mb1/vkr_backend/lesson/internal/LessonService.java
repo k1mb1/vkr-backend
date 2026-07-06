@@ -61,7 +61,7 @@ class LessonService implements LessonApi {
     }
 
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#a0)")
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse getLessonById(UUID id) {
         var lesson =
                 lessonRepository.findWithDetailsById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
@@ -71,7 +71,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#a0)")
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse updateLesson(UUID id, UpdateLessonRequest request) {
         var lesson =
                 lessonRepository.findWithDetailsById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
@@ -97,7 +97,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#a0)")
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public LessonResponse setActive(UUID id, boolean active) {
         var lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
 
@@ -114,7 +114,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#a0)")
+    @PreAuthorize("@authz.canAccessLesson(#id)")
     public void deleteLesson(UUID id) {
         var lesson = lessonRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
         var subjectId = lesson.getSubject().getId();
@@ -129,7 +129,7 @@ class LessonService implements LessonApi {
     }
 
     @Override
-    @PreAuthorize("@authz.ownsPermission(#a0.permissionId())")
+    @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public List<LessonResponse> getLessons(LessonFilter filter) {
         var permission = permissionRepository
                 .findWithDetailsById(filter.permissionId())
@@ -152,7 +152,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0.subjectId())")
+    @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkCreate(BulkCreateLessonsRequest request) {
         var subject = subjectRepository
                 .findById(request.subjectId())
@@ -178,7 +178,7 @@ class LessonService implements LessonApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0.subjectId())")
+    @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
         var subject = subjectRepository
                 .findById(request.subjectId())

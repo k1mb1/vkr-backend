@@ -171,6 +171,11 @@ tasks.withType<Pmd>().configureEach {
 }
 
 tasks.withType<JavaCompile>().configureEach {
+    // Сохраняем имена параметров в class-файлах — их читает Spring Security при
+    // резолве `#filter`/`#request`/... внутри @PreAuthorize. Spring Boot 3.2+
+    // включает этот флаг сам, но фиксируем явно: в native-image без него SpEL
+    // падает с «Failed to evaluate expression» ещё до входа в метод.
+    options.compilerArgs.add("-parameters")
     options.errorprone {
         disableWarningsInGeneratedCode = true
         excludedPaths = ".*/build/generated/.*"

@@ -40,7 +40,7 @@ class SubjectService implements SubjectsApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#a0)")
+    @PreAuthorize("@authz.canManageSubject(#id)")
     public SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request) {
         var subject = subjectRepository
                 .findById(id)

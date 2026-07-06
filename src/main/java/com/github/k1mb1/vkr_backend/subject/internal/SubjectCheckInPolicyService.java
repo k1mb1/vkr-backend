@@ -21,7 +21,7 @@ class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
     final SubjectMapper subjectMapper;
 
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0)")
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public CheckInPolicyResponse getCheckInPolicy(UUID subjectId) {
         var subject = subjectRepository
                 .findById(subjectId)
@@ -31,7 +31,7 @@ class SubjectCheckInPolicyService implements SubjectCheckInPolicyApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#a0)")
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public CheckInPolicyResponse updateCheckInPolicy(UUID subjectId, CheckInPolicyRequest request) {
         var subject = subjectRepository
                 .findById(subjectId)

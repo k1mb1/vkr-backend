@@ -36,7 +36,7 @@ class LessonScopeService implements LessonScopesApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#a0)")
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<LessonScopeResponse> addScopes(UUID lessonId, BulkAddLessonScopesRequest request) {
         var lesson = lessonRepository
                 .findWithDetailsById(lessonId)
@@ -61,7 +61,7 @@ class LessonScopeService implements LessonScopesApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLesson(#a0)")
+    @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<LessonScopeResponse> replaceScopesOfLesson(UUID lessonId, BulkReplaceLessonScopesRequest request) {
         var ids = request.items().stream()
                 .map(BulkReplaceLessonScopesRequest.Item::id)
@@ -113,7 +113,7 @@ class LessonScopeService implements LessonScopesApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canAccessLessonScopes({#a0})")
+    @PreAuthorize("@authz.canAccessLessonScopes({#scopeId})")
     public void deleteScope(UUID scopeId) {
         var scope = lessonScopeRepository
                 .findById(scopeId)

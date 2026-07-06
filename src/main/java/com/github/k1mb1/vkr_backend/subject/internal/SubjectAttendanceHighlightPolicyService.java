@@ -21,7 +21,7 @@ class SubjectAttendanceHighlightPolicyService implements SubjectAttendanceHighli
     final SubjectMapper subjectMapper;
 
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0)")
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public AttendanceHighlightPolicyResponse getAttendanceHighlightPolicy(UUID subjectId) {
         var subject = subjectRepository
                 .findById(subjectId)
@@ -31,7 +31,7 @@ class SubjectAttendanceHighlightPolicyService implements SubjectAttendanceHighli
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#a0)")
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public AttendanceHighlightPolicyResponse updateAttendanceHighlightPolicy(
             UUID subjectId, AttendanceHighlightPolicyRequest request) {
         var subject = subjectRepository

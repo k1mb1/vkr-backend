@@ -30,7 +30,7 @@ class SubjectFinalAssessmentPolicyService implements SubjectFinalAssessmentPolic
     EntityManager entityManager;
 
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0)")
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public FinalAssessmentPolicyResponse getFinalAssessmentPolicy(UUID subjectId) {
         var subject = subjectRepository
                 .findById(subjectId)
@@ -40,7 +40,7 @@ class SubjectFinalAssessmentPolicyService implements SubjectFinalAssessmentPolic
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#a0)")
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public FinalAssessmentPolicyResponse updateFinalAssessmentPolicy(
             UUID subjectId, FinalAssessmentPolicyRequest request) {
         var subject = subjectRepository

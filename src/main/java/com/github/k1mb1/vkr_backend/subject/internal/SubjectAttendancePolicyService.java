@@ -21,7 +21,7 @@ class SubjectAttendancePolicyService implements SubjectAttendancePolicyApi {
     final SubjectMapper subjectMapper;
 
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0)")
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public AttendancePolicyResponse getAttendancePolicy(UUID subjectId) {
         var subject = subjectRepository
                 .findById(subjectId)
@@ -31,7 +31,7 @@ class SubjectAttendancePolicyService implements SubjectAttendancePolicyApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#a0)")
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public AttendancePolicyResponse updateAttendancePolicy(UUID subjectId, AttendancePolicyRequest request) {
         var subject = subjectRepository
                 .findById(subjectId)

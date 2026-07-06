@@ -21,7 +21,7 @@ class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
     final SubjectMapper subjectMapper;
 
     @Override
-    @PreAuthorize("@authz.canAccessSubject(#a0)")
+    @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public PenaltyPolicyResponse getPenaltyPolicy(UUID subjectId) {
         var subject = subjectRepository
                 .findById(subjectId)
@@ -31,7 +31,7 @@ class SubjectPenaltyPolicyService implements SubjectPenaltyPolicyApi {
 
     @Transactional
     @Override
-    @PreAuthorize("@authz.canManageSubject(#a0)")
+    @PreAuthorize("@authz.canManageSubject(#subjectId)")
     public PenaltyPolicyResponse updatePenaltyPolicy(UUID subjectId, PenaltyPolicyRequest request) {
         var subject = subjectRepository
                 .findById(subjectId)
