@@ -8,7 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
+import com.github.k1mb1.vkr_backend.group.api.GroupSubjectsPort;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
 import com.github.k1mb1.vkr_backend.group.mapper.GroupMapper;
@@ -19,13 +19,9 @@ import com.github.k1mb1.vkr_backend.group.repository.SubgroupRepository;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.CreateGroupRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.StudentGroupMemberRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.GroupResponse;
-import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +39,7 @@ class GroupServiceTest {
     SubgroupRepository subgroupRepository;
 
     @Mock
-    SubjectRepository subjectRepository;
+    GroupSubjectsPort groupSubjectsPort;
 
     @Mock
     StudentService studentService;
@@ -67,41 +63,16 @@ class GroupServiceTest {
     // ---- attach / detach ----
 
     @Test
-    void attachToSubjectAddsGroup() {
+    void attachToSubjectDelegatesToPortAndReturnsGroup() {
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
         var group = group(groupId);
-        var subject = SubjectEntity.builder()
-                .id(subjectId)
-                .name("S")
-                .groups(new HashSet<>())
-                .build();
         when(groupRepository.findById(groupId)).thenReturn(Optional.of(group));
-        when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
         lenient().when(groupMapper.toResponse(any(), any(), any())).thenReturn(mock(GroupResponse.class));
 
         service.attachToSubject(groupId, subjectId);
 
-        org.assertj.core.api.Assertions.assertThat(subject.getGroups()).contains(group);
-        verify(subjectRepository).save(subject);
-    }
-
-    @Test
-    void attachToSubjectThrowsConflictWhenAlreadyAttached() {
-        var groupId = UUID.randomUUID();
-        var subjectId = UUID.randomUUID();
-        var group = group(groupId);
-        var subject = SubjectEntity.builder()
-                .id(subjectId)
-                .name("S")
-                .groups(new HashSet<>(Set.of(group)))
-                .build();
-        when(groupRepository.findById(groupId)).thenReturn(Optional.of(group));
-        when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
-
-        assertThatThrownBy(() -> service.attachToSubject(groupId, subjectId))
-                .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("already attached");
+        verify(groupSubjectsPort).attachGroup(groupId, subjectId);
     }
 
     @Test
@@ -111,24 +82,18 @@ class GroupServiceTest {
 
         assertThatThrownBy(() -> service.attachToSubject(groupId, UUID.randomUUID()))
                 .isInstanceOf(EntityNotFoundException.class);
+        verify(groupSubjectsPort, org.mockito.Mockito.never()).attachGroup(any(), any());
     }
 
     @Test
-    void detachFromSubjectThrowsWhenNotAttached() {
+    void detachFromSubjectDelegatesToPort() {
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
-        var group = group(groupId);
-        var subject = SubjectEntity.builder()
-                .id(subjectId)
-                .name("S")
-                .groups(new HashSet<>())
-                .build();
-        when(groupRepository.findById(groupId)).thenReturn(Optional.of(group));
-        when(subjectRepository.findById(subjectId)).thenReturn(Optional.of(subject));
+        when(groupRepository.existsById(groupId)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.detachFromSubject(groupId, subjectId))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("not attached");
+        service.detachFromSubject(groupId, subjectId);
+
+        verify(groupSubjectsPort).detachGroup(groupId, subjectId);
     }
 
     // ---- delete ----

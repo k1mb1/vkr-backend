@@ -2,20 +2,21 @@ package com.github.k1mb1.vkr_backend.subject.service;
 
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.PermissionScopeEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.TeacherSubjectPermissionMapper;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectSubgroupRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PermissionScopeRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.TeacherSubjectPermissionResponse;
-import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,9 +35,11 @@ public class TeacherSubjectPermissionService {
 
     final TeacherSubjectPermissionRepository permissionRepository;
 
-    final TeacherReferenceService teacherReferenceService;
+    final SubjectTeacherRefRepository teacherRefRepository;
 
-    final GroupReferenceService groupReferenceService;
+    final SubjectGroupRefRepository groupRefRepository;
+
+    final SubjectSubgroupRefRepository subgroupRefRepository;
 
     final SubjectRepository subjectRepository;
 
@@ -71,7 +74,7 @@ public class TeacherSubjectPermissionService {
 
         var subject = subjectRepository.getReferenceById(request.subjectId());
         var permission = TeacherSubjectPermissionEntity.builder()
-                .teacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()))
+                .teacher(teacherRefRepository.getReferenceById(request.teacherId()))
                 .subject(subject)
                 .allPermissions(request.allPermissions())
                 .build();
@@ -101,7 +104,7 @@ public class TeacherSubjectPermissionService {
                         + ", subjectId="
                         + permission.getSubject().getId());
             }
-            permission.setTeacher(teacherReferenceService.getTeacherReferenceById(request.teacherId()));
+            permission.setTeacher(teacherRefRepository.getReferenceById(request.teacherId()));
         }
         if (request.allPermissions() != null) {
             permission.setAllPermissions(request.allPermissions());
@@ -161,9 +164,8 @@ public class TeacherSubjectPermissionService {
                     throw new IllegalArgumentException(
                             "Group " + groupId + " is not attached to subject " + subject.getId());
                 }
-                var ref = groupReferenceService.resolveAudience(groupId, subgroupId);
-                group = ref.group();
-                allowedSubgroup = ref.allowedSubgroup();
+                group = groupRefRepository.getReferenceById(groupId);
+                allowedSubgroup = subgroupRefRepository.resolveAllowedSubgroup(subgroupId, groupId);
             }
 
             var key = groupId + "|" + subgroupId + "|" + req.allowedLessonType();

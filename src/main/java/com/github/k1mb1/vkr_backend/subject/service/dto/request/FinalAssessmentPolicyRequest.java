@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.subject.service.dto.request;
 
-import com.github.k1mb1.vkr_backend.subject.domain.AttendanceMode;
-import com.github.k1mb1.vkr_backend.subject.domain.AttendanceRequirementMode;
+import com.github.k1mb1.vkr_backend.subject.AttendanceMode;
+import com.github.k1mb1.vkr_backend.subject.AttendanceRequirementMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;

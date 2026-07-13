@@ -11,22 +11,21 @@ import static org.mockito.Mockito.when;
 import com.github.k1mb1.vkr_backend.auth.AuthorizationService;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionMode;
+import com.github.k1mb1.vkr_backend.grading.AssignmentAdmissionMode;
+import com.github.k1mb1.vkr_backend.grading.api.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.grading.domain.AssignmentEntity;
 import com.github.k1mb1.vkr_backend.grading.mapper.GradingMapper;
 import com.github.k1mb1.vkr_backend.grading.repository.AssignmentRepository;
 import com.github.k1mb1.vkr_backend.grading.repository.GradeRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingLessonRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingPermissionRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingStudentRefRepository;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpdateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpsertGradesRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.CreateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.UpsertGradeRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.AssignmentResponse;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.service.LessonResolver;
-import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,19 +49,16 @@ class GradingServiceTest {
     GradingMapper gradingMapper;
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    GradingPermissionRepository permissionRepository;
 
     @Mock
-    SubjectMapper subjectMapper;
+    GradingLessonRepository lessonRepository;
 
     @Mock
-    LessonRepository lessonRepository;
+    GradingLessonScopeRepository lessonScopeRepository;
 
     @Mock
-    LessonResolver lessonResolver;
-
-    @Mock
-    StudentRepository studentRepository;
+    GradingStudentRefRepository studentRefRepository;
 
     @Mock
     com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi attendanceApi;

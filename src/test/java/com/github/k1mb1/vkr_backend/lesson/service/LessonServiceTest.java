@@ -10,18 +10,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.grading.api.GradingApi;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonAssignmentsPort;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.mapper.LessonMapper;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonGroupRefRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonPermissionRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonSubgroupRefRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonSubjectRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkCreateLessonsRequest;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.response.LessonResponse;
 import com.github.k1mb1.vkr_backend.subject.LessonType;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -47,19 +48,22 @@ class LessonServiceTest {
     LessonMapper lessonMapper;
 
     @Mock
-    SubjectRepository subjectRepository;
+    LessonSubjectRefRepository subjectRefRepository;
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    LessonPermissionRefRepository permissionRefRepository;
 
     @Mock
     LessonScopeService lessonScopeService;
 
     @Mock
-    GradingApi gradingApi;
+    LessonAssignmentsPort lessonAssignmentsPort;
 
     @Mock
-    GroupReferenceService groupReferenceService;
+    LessonGroupRefRepository groupRefRepository;
+
+    @Mock
+    LessonSubgroupRefRepository subgroupRefRepository;
 
     @InjectMocks
     LessonService service;
@@ -143,10 +147,10 @@ class LessonServiceTest {
     @Test
     void bulkCreateContinuesOrderIndexAndAssignsDefaultTopics() {
         var subjectId = UUID.randomUUID();
-        when(subjectRepository.findById(subjectId))
+        when(subjectRefRepository.findById(subjectId))
                 .thenReturn(Optional.of(
                         SubjectEntity.builder().id(subjectId).name("Math").build()));
-        when(subjectRepository.getReferenceById(subjectId))
+        when(subjectRefRepository.getReferenceById(subjectId))
                 .thenReturn(SubjectEntity.builder().id(subjectId).name("Math").build());
         when(lessonRepository.findMaxOrderIndex(subjectId, LessonType.LECTURE)).thenReturn(null);
         when(lessonRepository.findMaxOrderIndex(subjectId, LessonType.PRACTICE)).thenReturn(2);
@@ -172,7 +176,7 @@ class LessonServiceTest {
     @Test
     void bulkCreateThrowsWhenSubjectMissing() {
         var subjectId = UUID.randomUUID();
-        when(subjectRepository.findById(subjectId)).thenReturn(Optional.empty());
+        when(subjectRefRepository.findById(subjectId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.bulkCreate(new BulkCreateLessonsRequest(subjectId, 1, 0)))
                 .isInstanceOf(ResourceNotFoundException.class);

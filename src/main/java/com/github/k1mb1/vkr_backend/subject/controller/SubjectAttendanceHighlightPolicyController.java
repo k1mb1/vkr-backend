@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.controller;
 
+import com.github.k1mb1.vkr_backend.subject.api.AttendanceHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.service.SubjectAttendanceHighlightPolicyService;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.AttendanceHighlightPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.AttendanceHighlightPolicyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

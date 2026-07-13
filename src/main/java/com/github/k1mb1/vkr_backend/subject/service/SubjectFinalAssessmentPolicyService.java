@@ -1,13 +1,13 @@
 package com.github.k1mb1.vkr_backend.subject.service;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
+import com.github.k1mb1.vkr_backend.subject.AttendanceMode;
+import com.github.k1mb1.vkr_backend.subject.api.FinalAssessmentPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.AssessmentBandEntity;
-import com.github.k1mb1.vkr_backend.subject.domain.AttendanceMode;
 import com.github.k1mb1.vkr_backend.subject.domain.FinalAssessmentPolicyEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.FinalAssessmentPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.FinalAssessmentPolicyResponse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.Objects;

@@ -8,18 +8,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionEntity;
 import com.github.k1mb1.vkr_backend.attendance.checkin.mapper.CheckInSessionMapper;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInRecordRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.CheckInSessionResponse;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendancePermissionRepository;
+import com.github.k1mb1.vkr_backend.attendance.service.AttendanceService;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.lesson.service.LessonResolver;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,16 +38,13 @@ class CheckInSessionServiceConfirmCancelTest {
     CheckInRecordRepository recordRepository;
 
     @Mock
-    LessonRepository lessonRepository;
+    AttendanceLessonRepository lessonRepository;
 
     @Mock
-    LessonResolver lessonResolver;
+    AttendanceLessonScopeRepository lessonScopeRepository;
 
     @Mock
-    LessonScopeRepository lessonScopeRepository;
-
-    @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    AttendancePermissionRepository permissionRepository;
 
     @Mock
     LessonStudentsApi lessonStudentsApi;
@@ -57,7 +53,7 @@ class CheckInSessionServiceConfirmCancelTest {
     CheckInSessionMapper mapper;
 
     @Mock
-    AttendanceApi attendanceApi;
+    AttendanceService attendanceService;
 
     @InjectMocks
     CheckInSessionService service;

@@ -1,6 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import com.github.k1mb1.vkr_backend.subject.AttendanceMode;
+import com.github.k1mb1.vkr_backend.subject.AttendanceRequirementMode;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

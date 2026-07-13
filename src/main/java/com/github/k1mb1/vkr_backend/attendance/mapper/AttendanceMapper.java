@@ -2,12 +2,14 @@ package com.github.k1mb1.vkr_backend.attendance.mapper;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceCellResponse;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceTableLesson;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceTableStudent;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceEntity;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceCellResponse;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceTableLesson;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceTableStudent;
-import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
+import com.github.k1mb1.vkr_backend.subject.api.AttendanceHighlightPolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.domain.AttendanceHighlightPolicyEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -17,11 +19,10 @@ public interface AttendanceMapper {
     @Mapping(target = "lessonScopeId", source = "lessonScope.id")
     AttendanceCellResponse toCell(AttendanceEntity attendance);
 
-    @Mapping(target = "groupId", source = "group.id")
-    @Mapping(target = "groupName", source = "group.name")
-    @Mapping(target = "subgroupId", source = "subgroup.id")
-    @Mapping(target = "subgroupIndex", source = "subgroup.index")
-    AttendanceTableStudent toTableStudent(StudentEntity student);
+    AttendanceTableStudent toTableStudent(LessonStudentResponse student);
+
+    /** Политика подсветки предмета (subject::domain -> subject::api) для шапки таблицы. */
+    AttendanceHighlightPolicyResponse toHighlightPolicyResponse(AttendanceHighlightPolicyEntity policy);
 
     @Mapping(target = "id", source = "id")
     @Mapping(target = "lessonId", source = "lesson.id")

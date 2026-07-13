@@ -9,16 +9,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordStatus;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordStatus;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInRecordRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.request.StudentCheckInRequest;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceStudentRefRepository;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import java.util.List;
@@ -41,7 +42,7 @@ class CheckInRecordServiceTest {
     CheckInRecordRepository recordRepository;
 
     @Mock
-    StudentRepository studentRepository;
+    AttendanceStudentRefRepository studentRefRepository;
 
     @Mock
     LessonStudentsApi lessonStudentsApi;
@@ -58,16 +59,18 @@ class CheckInRecordServiceTest {
     void setUp() {
         var student =
                 StudentEntity.builder().id(studentId).username("Иванов Иван").build();
+        var rosterStudent = new LessonStudentResponse(studentId, "Иванов Иван", UUID.randomUUID(), "Гр-1", null, null);
         lenient().when(session.getLessonScope()).thenReturn(scope);
         lenient().when(session.getCode()).thenReturn("ABC123");
         lenient().when(session.stateAt(any())).thenReturn(CheckInSessionState.OPEN);
         lenient().when(session.statusForCheckInAt(any())).thenReturn(CheckInRecordStatus.PRESENT);
         lenient().when(sessionRepository.findWithDetailsById(sessionId)).thenReturn(Optional.of(session));
-        lenient().when(lessonStudentsApi.studentsOf(scope)).thenReturn(List.of(student));
+        lenient().when(scope.getId()).thenReturn(UUID.randomUUID());
+        lenient().when(lessonStudentsApi.studentsOfScope(scope.getId())).thenReturn(List.of(rosterStudent));
         lenient()
                 .when(recordRepository.findBySessionIdAndStudentId(sessionId, studentId))
                 .thenReturn(Optional.empty());
-        lenient().when(studentRepository.getReferenceById(studentId)).thenReturn(student);
+        lenient().when(studentRefRepository.getReferenceById(studentId)).thenReturn(student);
         lenient().when(recordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -97,7 +100,7 @@ class CheckInRecordServiceTest {
                 .hasMessageContaining("код");
 
         // Код проверяется раньше принадлежности студента и записи — нет утечки/записи.
-        verify(lessonStudentsApi, never()).studentsOf(any(LessonScopeEntity.class));
+        verify(lessonStudentsApi, never()).studentsOfScope(any(UUID.class));
         verify(recordRepository, never()).save(any());
     }
 

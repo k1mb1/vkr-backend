@@ -1,43 +1,42 @@
 package com.github.k1mb1.vkr_backend.grading.service;
 
 import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
-import com.github.k1mb1.vkr_backend.attendance.api.AttendanceSummary;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceSummaryResponse;
 import com.github.k1mb1.vkr_backend.auth.AuthorizationService;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
+import com.github.k1mb1.vkr_backend.grading.AssignmentAdmissionMode;
+import com.github.k1mb1.vkr_backend.grading.api.AssignmentResponse;
+import com.github.k1mb1.vkr_backend.grading.api.GradeCellResponse;
 import com.github.k1mb1.vkr_backend.grading.api.GradingApi;
-import com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionMode;
+import com.github.k1mb1.vkr_backend.grading.api.GradingAudienceScope;
+import com.github.k1mb1.vkr_backend.grading.api.GradingTableLesson;
+import com.github.k1mb1.vkr_backend.grading.api.GradingTableResponse;
+import com.github.k1mb1.vkr_backend.grading.api.StudentAttendanceResponse;
 import com.github.k1mb1.vkr_backend.grading.domain.AssignmentEntity;
 import com.github.k1mb1.vkr_backend.grading.domain.GradeEntity;
 import com.github.k1mb1.vkr_backend.grading.mapper.GradingMapper;
 import com.github.k1mb1.vkr_backend.grading.repository.AssignmentRepository;
 import com.github.k1mb1.vkr_backend.grading.repository.GradeRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingLessonRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingPermissionRepository;
+import com.github.k1mb1.vkr_backend.grading.repository.GradingStudentRefRepository;
 import com.github.k1mb1.vkr_backend.grading.service.dto.filter.GradingFilter;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpdateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpsertGradesRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.CreateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.UpsertGradeRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.AssignmentResponse;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradingAudienceScope;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradingTableLesson;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradingTableResponse;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.StudentAttendanceResponse;
-import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.service.LessonResolver;
 import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
+import com.github.k1mb1.vkr_backend.subject.api.AttendancePolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.api.FinalAssessmentPolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.api.GradingHighlightPolicyResponse;
+import com.github.k1mb1.vkr_backend.subject.api.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
-import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.AttendancePolicyResponse;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.FinalAssessmentPolicyResponse;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.GradingHighlightPolicyResponse;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.PenaltyPolicyResponse;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,15 +70,13 @@ public class GradingService implements GradingApi {
 
     final GradingMapper gradingMapper;
 
-    final TeacherSubjectPermissionRepository permissionRepository;
+    final GradingPermissionRepository permissionRepository;
 
-    final SubjectMapper subjectMapper;
+    final GradingLessonRepository lessonRepository;
 
-    final LessonRepository lessonRepository;
+    final GradingLessonScopeRepository lessonScopeRepository;
 
-    final LessonResolver lessonResolver;
-
-    final StudentRepository studentRepository;
+    final GradingStudentRefRepository studentRefRepository;
 
     final AttendanceApi attendanceApi;
 
@@ -110,13 +107,23 @@ public class GradingService implements GradingApi {
     }
 
     @Override
+    @PreAuthorize("@authz.ownsPermission(#permissionId)")
+    public GradingTableResponse getGradingTable(
+            UUID permissionId, @Nullable UUID lessonScopeId, @Nullable UUID lessonId) {
+        return getGradingTable(GradingFilter.builder()
+                .permissionId(permissionId)
+                .lessonScopeId(lessonScopeId)
+                .lessonId(lessonId)
+                .build());
+    }
+
     @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public GradingTableResponse getGradingTable(GradingFilter filter) {
         var permission = permissionRepository
                 .findWithDetailsById(filter.permissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", filter.permissionId()));
 
-        var lessons = lessonResolver.resolveLessons(permission, filter.lessonScopeId(), filter.lessonId()).stream()
+        var lessons = resolveLessons(permission, filter.lessonScopeId(), filter.lessonId()).stream()
                 .sorted(Comparator.comparing(
                                 GradingService::earliestStartedAt, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparingInt(LessonEntity::getOrderIndex))
@@ -127,16 +134,18 @@ public class GradingService implements GradingApi {
             visibleScopesByLesson.put(lesson, LessonSpecifications.visibleScopes(lesson, permission));
         }
 
-        var students = lessonStudentsApi.studentsOf(
-                visibleScopesByLesson.values().stream().flatMap(List::stream).toList());
+        var students = lessonStudentsApi.studentsOfScopes(visibleScopesByLesson.values().stream()
+                .flatMap(List::stream)
+                .map(LessonScopeEntity::getId)
+                .toList());
         var audience = audienceOf(permission);
         var penaltyPolicy =
-                subjectMapper.toPenaltyPolicyResponse(permission.getSubject().getPenaltyPolicy());
+                gradingMapper.toPenaltyPolicyResponse(permission.getSubject().getPenaltyPolicy());
         var attendancePolicy =
-                subjectMapper.toAttendancePolicyResponse(permission.getSubject().getAttendancePolicy());
-        var highlightPolicy = subjectMapper.toGradingHighlightPolicyResponse(
+                gradingMapper.toAttendancePolicyResponse(permission.getSubject().getAttendancePolicy());
+        var highlightPolicy = gradingMapper.toGradingHighlightPolicyResponse(
                 permission.getSubject().getGradingHighlightPolicy());
-        var finalAssessmentPolicy = subjectMapper.toFinalAssessmentPolicyResponse(
+        var finalAssessmentPolicy = gradingMapper.toFinalAssessmentPolicyResponse(
                 permission.getSubject().getFinalAssessmentPolicy());
 
         return buildTable(
@@ -149,15 +158,36 @@ public class GradingService implements GradingApi {
                 visibleScopesByLesson);
     }
 
+    /** Разрешение занятий по фильтру (scope/lesson/все видимые) — см. одноимённую логику модуля lesson. */
+    private List<LessonEntity> resolveLessons(
+            TeacherSubjectPermissionEntity permission, @Nullable UUID lessonScopeId, @Nullable UUID lessonId) {
+        if (lessonScopeId != null) {
+            var scope = lessonScopeRepository
+                    .findWithDetailsById(lessonScopeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("LessonScope", lessonScopeId));
+            LessonSpecifications.assertSameSubject(scope.getLesson(), permission);
+            LessonSpecifications.assertLessonMatch(scope.getLesson(), lessonId);
+            return List.of(scope.getLesson());
+        }
+        if (lessonId != null) {
+            var lesson = lessonRepository
+                    .findById(lessonId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+            LessonSpecifications.assertSameSubject(lesson, permission);
+            return List.of(lesson);
+        }
+        return lessonRepository.findAll(LessonSpecifications.forPermission(permission));
+    }
+
     private GradingTableResponse buildTable(
             PenaltyPolicyResponse penaltyPolicy,
             AttendancePolicyResponse attendancePolicy,
             GradingHighlightPolicyResponse highlightPolicy,
             FinalAssessmentPolicyResponse finalAssessmentPolicy,
             List<GradingAudienceScope> audience,
-            List<StudentEntity> students,
+            List<LessonStudentResponse> students,
             java.util.Map<LessonEntity, List<LessonScopeEntity>> visibleScopesByLesson) {
-        var studentIds = students.stream().map(StudentEntity::getId).toList();
+        var studentIds = students.stream().map(LessonStudentResponse::id).toList();
         var lessonIds =
                 visibleScopesByLesson.keySet().stream().map(LessonEntity::getId).toList();
         var scopeIds = visibleScopesByLesson.values().stream()
@@ -177,15 +207,15 @@ public class GradingService implements GradingApi {
         var attendance = students.stream()
                 .map(s -> {
                     var sum = attendanceByStudent.getOrDefault(
-                            s.getId(),
-                            AttendanceSummary.builder()
+                            s.id(),
+                            AttendanceSummaryResponse.builder()
                                     .present(0)
                                     .late(0)
                                     .absent(0)
                                     .excused(0)
                                     .build());
                     return StudentAttendanceResponse.builder()
-                            .studentId(s.getId())
+                            .studentId(s.id())
                             .present(sum.present())
                             .late(sum.late())
                             .absent(sum.absent())
@@ -228,7 +258,6 @@ public class GradingService implements GradingApi {
     }
 
     @Transactional
-    @Override
     @PreAuthorize("@authz.canAccessLessons(#request.items().![lessonId()])")
     public List<GradeCellResponse> upsertGrades(BulkUpsertGradesRequest request) {
         var items = request.items();
@@ -328,7 +357,7 @@ public class GradingService implements GradingApi {
             var grade = existingByKey.computeIfAbsent(
                     key,
                     k -> GradeEntity.builder()
-                            .student(studentRepository.getReferenceById(item.studentId()))
+                            .student(studentRefRepository.getReferenceById(item.studentId()))
                             .lesson(lessonRepository.getReferenceById(item.lessonId()))
                             .assignment(assignmentRef)
                             .awardedLesson(awardedLesson)
@@ -343,7 +372,6 @@ public class GradingService implements GradingApi {
         return persisted.stream().map(gradingMapper::toCell).toList();
     }
 
-    @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<AssignmentResponse> getAssignmentsByLesson(UUID lessonId) {
         return assignmentRepository.findByLessonIdInOrderByLessonIdAscOrderAsc(List.of(lessonId)).stream()
@@ -351,7 +379,6 @@ public class GradingService implements GradingApi {
                 .toList();
     }
 
-    @Override
     public Map<UUID, List<AssignmentResponse>> getAssignmentsByLessons(java.util.Collection<UUID> lessonIds) {
         if (lessonIds.isEmpty()) {
             return Map.of();
@@ -368,7 +395,6 @@ public class GradingService implements GradingApi {
     }
 
     @Transactional
-    @Override
     @PreAuthorize("@authz.canAccessLesson(#request.lessonId())")
     public List<AssignmentResponse> createAssignments(CreateAssignmentsRequest request) {
         if (assignmentRepository.existsByLessonId(request.lessonId())) {
@@ -410,7 +436,6 @@ public class GradingService implements GradingApi {
     }
 
     @Transactional
-    @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public List<AssignmentResponse> updateAssignmentsOfLesson(UUID lessonId, BulkUpdateAssignmentsRequest request) {
         var items = request.items();
@@ -495,7 +520,6 @@ public class GradingService implements GradingApi {
     }
 
     @Transactional
-    @Override
     public void deleteAssignment(UUID id) {
         // Доступ по id задания: резолвим предмет задания и проверяем доступ к нему.
         // (через @PreAuthorize нельзя — решение зависит от сущности, которую ещё надо загрузить).
@@ -509,14 +533,13 @@ public class GradingService implements GradingApi {
     }
 
     @Transactional
-    @Override
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public void deleteAssignmentsOfLesson(UUID lessonId) {
         assignmentRepository.deleteByLessonId(lessonId);
     }
 
     private List<GradingAudienceScope> audienceOf(TeacherSubjectPermissionEntity permission) {
-        return lessonResolver.audienceScopes(permission).stream()
+        return LessonSpecifications.audienceScopes(permission).stream()
                 .map(s -> {
                     // audienceScopes() excludes all-groups scopes, so the group is always present.
                     var group = Objects.requireNonNull(s.getGroup());

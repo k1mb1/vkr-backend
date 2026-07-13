@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.attendance.domain;
 
+import com.github.k1mb1.vkr_backend.attendance.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;

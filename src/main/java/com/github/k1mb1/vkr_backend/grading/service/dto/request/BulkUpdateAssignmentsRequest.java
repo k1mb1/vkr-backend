@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.grading.service.dto.request;
 
-import com.github.k1mb1.vkr_backend.grading.domain.AssignmentAdmissionMode;
+import com.github.k1mb1.vkr_backend.grading.AssignmentAdmissionMode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;

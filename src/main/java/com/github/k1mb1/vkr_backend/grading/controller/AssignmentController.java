@@ -1,9 +1,9 @@
 package com.github.k1mb1.vkr_backend.grading.controller;
 
+import com.github.k1mb1.vkr_backend.grading.api.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.grading.service.GradingService;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpdateAssignmentsRequest;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.CreateAssignmentsRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.AssignmentResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

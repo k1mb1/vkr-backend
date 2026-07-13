@@ -9,20 +9,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionEntity;
 import com.github.k1mb1.vkr_backend.attendance.checkin.mapper.CheckInSessionMapper;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInRecordRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.request.StartCheckInRequest;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendancePermissionRepository;
+import com.github.k1mb1.vkr_backend.attendance.service.AttendanceService;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
 import com.github.k1mb1.vkr_backend.subject.domain.CheckInPolicyEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,13 +43,13 @@ class CheckInSessionServiceStartTest {
     CheckInRecordRepository recordRepository;
 
     @Mock
-    LessonRepository lessonRepository;
+    AttendanceLessonRepository lessonRepository;
 
     @Mock
-    LessonScopeRepository lessonScopeRepository;
+    AttendanceLessonScopeRepository lessonScopeRepository;
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    AttendancePermissionRepository permissionRepository;
 
     @Mock
     LessonStudentsApi lessonStudentsApi;
@@ -58,7 +58,7 @@ class CheckInSessionServiceStartTest {
     CheckInSessionMapper mapper;
 
     @Mock
-    AttendanceApi attendanceApi;
+    AttendanceService attendanceService;
 
     @InjectMocks
     CheckInSessionService service;

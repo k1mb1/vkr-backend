@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.lesson.mapper;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.AssignmentResponse;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonAssignmentResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.UpdateLessonHeaderRequest;
@@ -30,7 +30,7 @@ public interface LessonMapper {
     LessonResponse toResponse(
             LessonEntity lesson,
             java.util.List<LessonScopeEntity> scopes,
-            java.util.List<AssignmentResponse> assignments);
+            java.util.List<LessonAssignmentResponse> assignments);
 
     @Mapping(target = "groupId", source = "group.id")
     @Mapping(target = "groupName", source = "group.name")

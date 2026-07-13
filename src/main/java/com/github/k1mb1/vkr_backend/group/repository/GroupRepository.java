@@ -7,8 +7,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,6 +15,5 @@ public interface GroupRepository extends JpaRepository<GroupEntity, UUID>, JpaSp
     Optional<GroupEntity> findWithDetailsById(UUID id);
 
     @EntityGraph(attributePaths = {"subgroups"})
-    @Query("SELECT g FROM SubjectEntity s JOIN s.groups g WHERE s.id = :subjectId")
-    List<GroupEntity> findBySubjectId(@Param("subjectId") UUID subjectId);
+    List<GroupEntity> findWithSubgroupsByIdIn(List<UUID> ids);
 }

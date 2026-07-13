@@ -1,6 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import com.github.k1mb1.vkr_backend.subject.BonusOperation;
+import com.github.k1mb1.vkr_backend.subject.PenaltyOperation;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

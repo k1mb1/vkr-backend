@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.results.service.dto.response;
 
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceTableResponse;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradingTableResponse;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.grading.api.GradingTableResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 

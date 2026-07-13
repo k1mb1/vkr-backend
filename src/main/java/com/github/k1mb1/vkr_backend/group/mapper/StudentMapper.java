@@ -2,9 +2,9 @@ package com.github.k1mb1.vkr_backend.group.mapper;
 
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
+import com.github.k1mb1.vkr_backend.group.repository.SubgroupRepository;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.StudentResponse;
 import java.util.UUID;
@@ -20,8 +20,8 @@ import org.mapstruct.Named;
 public interface StudentMapper {
     @Named("subgroupRef")
     static @Nullable SubgroupEntity toSubgroupRef(
-            @Nullable UUID subgroupId, @Context GroupReferenceService groupReferenceService) {
-        return subgroupId != null ? groupReferenceService.getSubgroupReferenceById(subgroupId) : null;
+            @Nullable UUID subgroupId, @Context SubgroupRepository subgroupRepository) {
+        return subgroupId != null ? subgroupRepository.getReferenceById(subgroupId) : null;
     }
 
     @Mapping(target = "groupId", source = "group.id")
@@ -38,7 +38,7 @@ public interface StudentMapper {
     void updateEntity(
             UpdateStudentRequest request,
             @MappingTarget StudentEntity student,
-            @Context GroupReferenceService groupReferenceService);
+            @Context SubgroupRepository subgroupRepository);
 
     @org.mapstruct.AfterMapping
     default void afterUpdate(UpdateStudentRequest request, @MappingTarget StudentEntity student) {

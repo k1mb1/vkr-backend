@@ -1,7 +1,7 @@
 package com.github.k1mb1.vkr_backend.subject.service.dto.request;
 
-import com.github.k1mb1.vkr_backend.subject.domain.BonusOperation;
-import com.github.k1mb1.vkr_backend.subject.domain.PenaltyOperation;
+import com.github.k1mb1.vkr_backend.subject.BonusOperation;
+import com.github.k1mb1.vkr_backend.subject.PenaltyOperation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;

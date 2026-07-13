@@ -14,8 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface LessonRepository
-        extends JpaRepository<LessonEntity, UUID>, JpaSpecificationExecutor<LessonEntity>, LessonRepositoryCustom {
+public interface LessonRepository extends JpaRepository<LessonEntity, UUID>, JpaSpecificationExecutor<LessonEntity> {
     @EntityGraph(
             attributePaths = {
                 "subject",
@@ -50,15 +49,10 @@ public interface LessonRepository
 
     Optional<LessonEntity> findBySubjectIdAndTypeAndActiveTrue(UUID subjectId, LessonType type);
 
-    @Query("""
-        SELECT l FROM LessonEntity l
-        JOIN FETCH l.subject
-        WHERE l.subject.id = :subjectId AND l.type = :type
-          AND EXISTS (SELECT 1 FROM AssignmentEntity a WHERE a.lesson.id = l.id)
-        ORDER BY l.orderIndex
-        """)
-    List<LessonEntity> findWithAssignmentsBySubjectIdAndType(
-            @Param("subjectId") UUID subjectId, @Param("type") LessonType type);
+    /** findAll по спецификации с графом Lesson.withDetails (замена бывшего кастомного findAllWithDetails). */
+    @Override
+    @EntityGraph("Lesson.withDetails")
+    List<LessonEntity> findAll(org.springframework.data.jpa.domain.Specification<LessonEntity> spec);
 
     /** id предметов указанных занятий — для проверки доступа на запись. */
     @Query("SELECT DISTINCT l.subject.id FROM LessonEntity l WHERE l.id IN :ids")

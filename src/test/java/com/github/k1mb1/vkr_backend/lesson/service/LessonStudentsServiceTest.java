@@ -10,9 +10,9 @@ import static org.mockito.Mockito.when;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonStudentRepository;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class LessonStudentsServiceTest {
 
     @Mock
-    StudentRepository studentRepository;
+    LessonStudentRepository lessonStudentRepository;
 
     @InjectMocks
     LessonStudentsService service;
@@ -48,7 +48,7 @@ class LessonStudentsServiceTest {
     @Test
     void emptyScopesReturnEmptyWithoutQuery() {
         assertThat(service.studentsOf(List.of())).isEmpty();
-        verify(studentRepository, never()).findByGroupIdInAndArchivedAtIsNull(any());
+        verify(lessonStudentRepository, never()).findByGroupIdInAndArchivedAtIsNull(any());
     }
 
     @Test
@@ -63,7 +63,7 @@ class LessonStudentsServiceTest {
                 .build();
         var sveta = student("Света", group, null);
         var anna = student("Анна", group, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(sveta, anna));
+        when(lessonStudentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(sveta, anna));
 
         var result = service.studentsOf(List.of(scope));
 
@@ -94,7 +94,8 @@ class LessonStudentsServiceTest {
         var inSub1 = student("Анна", group, sub1);
         var inSub2 = student("Борис", group, sub2);
         var noSub = student("Виктор", group, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(inSub1, inSub2, noSub));
+        when(lessonStudentRepository.findByGroupIdInAndArchivedAtIsNull(any()))
+                .thenReturn(List.of(inSub1, inSub2, noSub));
 
         var result = service.studentsOf(List.of(scope));
 
@@ -119,7 +120,7 @@ class LessonStudentsServiceTest {
                 .build();
         var a = student("Анна", g1, null);
         var b = student("Борис", g2, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(a, b));
+        when(lessonStudentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(a, b));
 
         var result = service.studentsOf(List.of(scope));
 
@@ -143,13 +144,13 @@ class LessonStudentsServiceTest {
                 .allGroups(false)
                 .build();
         var anna = student("Анна", group, null);
-        when(studentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(anna));
+        when(lessonStudentRepository.findByGroupIdInAndArchivedAtIsNull(any())).thenReturn(List.of(anna));
 
         var result = service.studentsOf(List.of(scope1, scope2));
 
         assertThat(result).containsExactly(anna);
         // батч: один запрос на все scope'ы, без N+1
-        verify(studentRepository, times(1)).findByGroupIdInAndArchivedAtIsNull(any());
+        verify(lessonStudentRepository, times(1)).findByGroupIdInAndArchivedAtIsNull(any());
     }
 
     @Test
@@ -165,6 +166,6 @@ class LessonStudentsServiceTest {
         var result = service.studentsOf(List.of(scope));
 
         assertThat(result).isEmpty();
-        verify(studentRepository, never()).findByGroupIdInAndArchivedAtIsNull(any());
+        verify(lessonStudentRepository, never()).findByGroupIdInAndArchivedAtIsNull(any());
     }
 }

@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.group.service;
 
-import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
+import com.github.k1mb1.vkr_backend.group.api.GroupSubjectsPort;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
 import com.github.k1mb1.vkr_backend.group.mapper.GroupMapper;
@@ -19,7 +19,6 @@ import com.github.k1mb1.vkr_backend.group.service.dto.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.GroupWithSubgroupsResponse;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.StudentResponse;
 import com.github.k1mb1.vkr_backend.group.specification.GroupSpecifications;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +39,7 @@ public class GroupService {
 
     final SubgroupRepository subgroupRepository;
 
-    final SubjectRepository subjectRepository;
+    final GroupSubjectsPort groupSubjectsPort;
 
     final StudentService studentService;
 
@@ -170,7 +169,8 @@ public class GroupService {
     }
 
     public List<GroupWithSubgroupsResponse> getGroupsBySubjectId(UUID subjectId) {
-        return groupRepository.findBySubjectId(subjectId).stream()
+        var groupIds = groupSubjectsPort.groupIdsOfSubject(subjectId);
+        return groupRepository.findWithSubgroupsByIdIn(groupIds).stream()
                 .map(group -> groupMapper.toWithSubgroupsResponse(
                         group,
                         group.getSubgroups().stream()
@@ -184,28 +184,15 @@ public class GroupService {
         var group = groupRepository
                 .findById(groupId)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + groupId));
-        var subject = subjectRepository
-                .findById(subjectId)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + subjectId));
-        if (!subject.getGroups().add(group)) {
-            throw new ConflictException("Group " + groupId + " is already attached to subject " + subjectId);
-        }
-        subjectRepository.save(subject);
+        groupSubjectsPort.attachGroup(groupId, subjectId);
         return toResponse(group);
     }
 
     @Transactional
     public void detachFromSubject(UUID groupId, UUID subjectId) {
-        var group = groupRepository
-                .findById(groupId)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Group not found: " + groupId));
-        var subject = subjectRepository
-                .findById(subjectId)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + subjectId));
-        if (!subject.getGroups().remove(group)) {
-            throw new jakarta.persistence.EntityNotFoundException(
-                    "Group " + groupId + " is not attached to subject " + subjectId);
+        if (!groupRepository.existsById(groupId)) {
+            throw new jakarta.persistence.EntityNotFoundException("Group not found: " + groupId);
         }
-        subjectRepository.save(subject);
+        groupSubjectsPort.detachGroup(groupId, subjectId);
     }
 }

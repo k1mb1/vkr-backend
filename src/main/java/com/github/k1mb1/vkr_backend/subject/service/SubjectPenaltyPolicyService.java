@@ -1,11 +1,11 @@
 package com.github.k1mb1.vkr_backend.subject.service;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
+import com.github.k1mb1.vkr_backend.subject.api.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.PenaltyPolicyEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PenaltyPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.PenaltyPolicyResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

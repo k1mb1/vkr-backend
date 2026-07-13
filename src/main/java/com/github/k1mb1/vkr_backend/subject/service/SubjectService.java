@@ -1,11 +1,12 @@
 package com.github.k1mb1.vkr_backend.subject.service;
 
 import com.github.k1mb1.vkr_backend.auth.SecurityService;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.filter.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
@@ -13,7 +14,6 @@ import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateSubjectReq
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectPageResponse;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectResponse;
 import com.github.k1mb1.vkr_backend.subject.specification.SubjectSpecifications;
-import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import java.util.HashSet;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +35,9 @@ public class SubjectService {
 
     final SubjectMapper subjectMapper;
 
-    final TeacherReferenceService teacherReferenceService;
+    final SubjectTeacherRefRepository teacherRefRepository;
 
-    final GroupReferenceService groupReferenceService;
+    final SubjectGroupRefRepository groupRefRepository;
 
     final SecurityService securityService;
 
@@ -61,12 +61,12 @@ public class SubjectService {
                 .build();
 
         for (var groupId : new HashSet<>(request.groupIds())) {
-            subject.getGroups().add(groupReferenceService.getGroupReferenceById(groupId));
+            subject.getGroups().add(groupRefRepository.getReferenceById(groupId));
         }
 
         subject = subjectRepository.save(subject);
 
-        var teacher = teacherReferenceService.getTeacherReferenceById(request.teacherId());
+        var teacher = teacherRefRepository.getReferenceById(request.teacherId());
         var permission = TeacherSubjectPermissionEntity.builder()
                 .teacher(teacher)
                 .subject(subject)

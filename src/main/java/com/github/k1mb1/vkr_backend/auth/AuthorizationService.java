@@ -1,9 +1,8 @@
 package com.github.k1mb1.vkr_backend.auth;
 
-import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
+import com.github.k1mb1.vkr_backend.auth.api.CheckInAuthPort;
+import com.github.k1mb1.vkr_backend.auth.api.LessonAuthPort;
+import com.github.k1mb1.vkr_backend.auth.api.PermissionAuthPort;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,10 +23,9 @@ public class AuthorizationService {
 
     private final SecurityService security;
     private final PermissionResolver permissionResolver;
-    private final LessonScopeRepository lessonScopeRepository;
-    private final LessonRepository lessonRepository;
-    private final CheckInSessionRepository checkInSessionRepository;
-    private final TeacherSubjectPermissionRepository permissionRepository;
+    private final LessonAuthPort lessonAuthPort;
+    private final CheckInAuthPort checkInAuthPort;
+    private final PermissionAuthPort permissionAuthPort;
 
     public boolean isAdmin() {
         return security.isAdmin();
@@ -63,8 +61,8 @@ public class AuthorizationService {
     public boolean canManagePermission(UUID permissionId) {
         return security.isAdmin()
                 || permissionId != null
-                        && permissionRepository
-                                .findSubjectIdById(permissionId)
+                        && permissionAuthPort
+                                .subjectIdOfPermission(permissionId)
                                 .map(this::canManageSubject)
                                 .orElse(false);
     }
@@ -81,7 +79,7 @@ public class AuthorizationService {
         if (perms == null) {
             return false;
         }
-        var subjectIds = lessonScopeRepository.findSubjectIdsByScopeIds(lessonScopeIds);
+        var subjectIds = lessonAuthPort.subjectIdsOfLessonScopes(lessonScopeIds);
         return !subjectIds.isEmpty() && perms.subjectIds().containsAll(subjectIds);
     }
 
@@ -97,7 +95,7 @@ public class AuthorizationService {
         if (perms == null) {
             return false;
         }
-        var subjectIds = lessonRepository.findSubjectIdsByLessonIds(lessonIds);
+        var subjectIds = lessonAuthPort.subjectIdsOfLessons(lessonIds);
         return !subjectIds.isEmpty() && perms.subjectIds().containsAll(subjectIds);
     }
 
@@ -109,8 +107,8 @@ public class AuthorizationService {
     public boolean canAccessCheckInSession(UUID sessionId) {
         return security.isAdmin()
                 || sessionId != null
-                        && checkInSessionRepository
-                                .findSubjectIdById(sessionId)
+                        && checkInAuthPort
+                                .subjectIdOfCheckInSession(sessionId)
                                 .map(this::canAccessSubject)
                                 .orElse(false);
     }

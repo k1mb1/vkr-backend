@@ -1,9 +1,10 @@
 package com.github.k1mb1.vkr_backend.group.service;
 
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
 import com.github.k1mb1.vkr_backend.group.mapper.StudentMapper;
+import com.github.k1mb1.vkr_backend.group.repository.GroupRepository;
 import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
+import com.github.k1mb1.vkr_backend.group.repository.SubgroupRepository;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.StudentResponse;
@@ -20,7 +21,9 @@ public class StudentService {
 
     final StudentRepository studentRepository;
 
-    final GroupReferenceService groupReferenceService;
+    final GroupRepository groupRepository;
+
+    final SubgroupRepository subgroupRepository;
 
     final StudentMapper studentMapper;
 
@@ -49,16 +52,14 @@ public class StudentService {
         var student = studentRepository
                 .findById(studentId)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Student not found: " + studentId));
-        studentMapper.updateEntity(request, student, groupReferenceService);
+        studentMapper.updateEntity(request, student, subgroupRepository);
         studentRepository.save(student);
     }
 
     @Transactional
     public StudentResponse createStudent(CreateStudentRequest request) {
-        var group = groupReferenceService.getGroupReferenceById(request.groupId());
-        var subgroup = request.subgroupId() != null
-                ? groupReferenceService.getSubgroupReferenceById(request.subgroupId())
-                : null;
+        var group = groupRepository.getReferenceById(request.groupId());
+        var subgroup = request.subgroupId() != null ? subgroupRepository.getReferenceById(request.subgroupId()) : null;
         var student = StudentEntity.builder()
                 .username(request.username())
                 .group(group)

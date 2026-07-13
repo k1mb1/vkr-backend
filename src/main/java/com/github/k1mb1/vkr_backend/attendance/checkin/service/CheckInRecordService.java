@@ -1,14 +1,14 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.service;
 
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInRecordRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.request.StudentCheckInRequest;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.PublicCheckInRecordResponse;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceStudentRefRepository;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import java.time.Instant;
 import java.util.UUID;
@@ -25,7 +25,7 @@ public class CheckInRecordService {
 
     final CheckInRecordRepository recordRepository;
 
-    final StudentRepository studentRepository;
+    final AttendanceStudentRefRepository studentRefRepository;
 
     final LessonStudentsApi lessonStudentsApi;
 
@@ -48,8 +48,9 @@ public class CheckInRecordService {
         }
 
         var studentId = request.studentId();
-        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
-        var inScope = students.stream().anyMatch(s -> s.getId().equals(studentId));
+        var students =
+                lessonStudentsApi.studentsOfScope(session.getLessonScope().getId());
+        var inScope = students.stream().anyMatch(s -> s.id().equals(studentId));
         if (!inScope) {
             throw new IllegalArgumentException("Student is not part of this lesson audience: " + studentId);
         }
@@ -63,7 +64,7 @@ public class CheckInRecordService {
                 .findBySessionIdAndStudentId(sessionId, studentId)
                 .orElseGet(() -> CheckInRecordEntity.builder()
                         .session(session)
-                        .student(studentRepository.getReferenceById(studentId))
+                        .student(studentRefRepository.getReferenceById(studentId))
                         .checkedInAt(now)
                         .build());
 

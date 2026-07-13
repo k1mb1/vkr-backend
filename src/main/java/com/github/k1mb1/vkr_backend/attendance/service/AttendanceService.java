@@ -1,30 +1,29 @@
 package com.github.k1mb1.vkr_backend.attendance.service;
 
+import com.github.k1mb1.vkr_backend.attendance.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
-import com.github.k1mb1.vkr_backend.attendance.api.AttendanceSummary;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceAudienceScope;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceCellResponse;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceSummaryResponse;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceTableResponse;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceEntity;
-import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.mapper.AttendanceMapper;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendancePermissionRepository;
 import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceStudentRefRepository;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.filter.AttendanceFilter;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.UpsertAttendanceRequest;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceAudienceScope;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceCellResponse;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceTableResponse;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.lesson.service.LessonResolver;
 import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
+import com.github.k1mb1.vkr_backend.subject.api.AttendanceHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
-import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.AttendanceHighlightPolicyResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -35,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,31 +48,40 @@ public class AttendanceService implements AttendanceApi {
 
     final AttendanceMapper attendanceMapper;
 
-    final TeacherSubjectPermissionRepository permissionRepository;
+    final AttendancePermissionRepository permissionRepository;
 
-    final LessonResolver lessonResolver;
+    final AttendanceLessonRepository lessonRepository;
 
-    final LessonScopeRepository lessonScopeRepository;
+    final AttendanceLessonScopeRepository lessonScopeRepository;
 
-    final StudentRepository studentRepository;
+    final AttendanceStudentRefRepository studentRefRepository;
 
     final LessonStudentsApi lessonStudentsApi;
 
-    final SubjectMapper subjectMapper;
-
     @Override
+    @PreAuthorize("@authz.ownsPermission(#permissionId)")
+    public AttendanceTableResponse getAttendanceTable(
+            UUID permissionId, @Nullable UUID lessonScopeId, @Nullable UUID lessonId) {
+        return getAttendanceTable(AttendanceFilter.builder()
+                .permissionId(permissionId)
+                .lessonScopeId(lessonScopeId)
+                .lessonId(lessonId)
+                .build());
+    }
+
     @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public AttendanceTableResponse getAttendanceTable(AttendanceFilter filter) {
         var permission = permissionRepository
                 .findWithDetailsById(filter.permissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", filter.permissionId()));
 
-        var lessons = lessonResolver.resolveLessons(permission, filter.lessonScopeId(), filter.lessonId());
+        var lessons = resolveLessons(permission, filter.lessonScopeId(), filter.lessonId());
         var scopes = resolveScopes(lessons, permission, filter);
 
-        var students = lessonStudentsApi.studentsOf(scopes);
+        var students = lessonStudentsApi.studentsOfScopes(
+                scopes.stream().map(LessonScopeEntity::getId).toList());
         var audience = audienceOf(permission);
-        var highlightPolicy = subjectMapper.toAttendanceHighlightPolicyResponse(
+        var highlightPolicy = attendanceMapper.toHighlightPolicyResponse(
                 permission.getSubject().getAttendanceHighlightPolicy());
 
         return buildTable(highlightPolicy, audience, students, scopes);
@@ -97,9 +106,9 @@ public class AttendanceService implements AttendanceApi {
     private AttendanceTableResponse buildTable(
             AttendanceHighlightPolicyResponse highlightPolicy,
             List<AttendanceAudienceScope> audience,
-            List<StudentEntity> students,
+            List<LessonStudentResponse> students,
             List<LessonScopeEntity> scopes) {
-        var studentIds = students.stream().map(StudentEntity::getId).toList();
+        var studentIds = students.stream().map(LessonStudentResponse::id).toList();
         var scopeIds = scopes.stream().map(LessonScopeEntity::getId).toList();
 
         var attendances = studentIds.isEmpty() || scopeIds.isEmpty()
@@ -117,7 +126,6 @@ public class AttendanceService implements AttendanceApi {
     }
 
     @Transactional
-    @Override
     @PreAuthorize("@authz.canAccessLessonScopes(#request.items().![lessonScopeId()])")
     public List<AttendanceCellResponse> upsertAll(BulkUpsertAttendanceRequest request) {
         var items = request.items();
@@ -152,7 +160,7 @@ public class AttendanceService implements AttendanceApi {
             var attendance = existingByKey.computeIfAbsent(
                     key,
                     k -> AttendanceEntity.builder()
-                            .student(studentRepository.getReferenceById(item.studentId()))
+                            .student(studentRefRepository.getReferenceById(item.studentId()))
                             .lessonScope(lessonScopeRepository.getReferenceById(item.lessonScopeId()))
                             .build());
             attendance.setStatus(item.status());
@@ -165,7 +173,8 @@ public class AttendanceService implements AttendanceApi {
     }
 
     @Override
-    public Map<UUID, AttendanceSummary> summarize(Collection<UUID> lessonScopeIds, Collection<UUID> studentIds) {
+    public Map<UUID, AttendanceSummaryResponse> summarize(
+            Collection<UUID> lessonScopeIds, Collection<UUID> studentIds) {
         if (lessonScopeIds.isEmpty() || studentIds.isEmpty()) {
             return Map.of();
         }
@@ -176,16 +185,37 @@ public class AttendanceService implements AttendanceApi {
             var c = counts.computeIfAbsent(a.getStudent().getId(), k -> new int[AttendanceStatus.values().length]);
             c[a.getStatus().ordinal()]++;
         }
-        var result = new HashMap<UUID, AttendanceSummary>();
+        var result = new HashMap<UUID, AttendanceSummaryResponse>();
         counts.forEach((id, c) -> result.put(
                 id,
-                AttendanceSummary.builder()
+                AttendanceSummaryResponse.builder()
                         .present(c[AttendanceStatus.PRESENT.ordinal()])
                         .late(c[AttendanceStatus.LATE.ordinal()])
                         .absent(c[AttendanceStatus.ABSENT.ordinal()])
                         .excused(c[AttendanceStatus.EXCUSED.ordinal()])
                         .build()));
         return result;
+    }
+
+    /** Разрешение занятий по фильтру (scope/lesson/все видимые) — см. одноимённую логику модуля lesson. */
+    private List<LessonEntity> resolveLessons(
+            TeacherSubjectPermissionEntity permission, @Nullable UUID lessonScopeId, @Nullable UUID lessonId) {
+        if (lessonScopeId != null) {
+            var scope = lessonScopeRepository
+                    .findWithDetailsById(lessonScopeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("LessonScope", lessonScopeId));
+            LessonSpecifications.assertSameSubject(scope.getLesson(), permission);
+            LessonSpecifications.assertLessonMatch(scope.getLesson(), lessonId);
+            return List.of(scope.getLesson());
+        }
+        if (lessonId != null) {
+            var lesson = lessonRepository
+                    .findById(lessonId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+            LessonSpecifications.assertSameSubject(lesson, permission);
+            return List.of(lesson);
+        }
+        return lessonRepository.findAll(LessonSpecifications.forPermission(permission));
     }
 
     private List<LessonScopeEntity> visibleScopesIn(
@@ -201,7 +231,7 @@ public class AttendanceService implements AttendanceApi {
     }
 
     private List<AttendanceAudienceScope> audienceOf(TeacherSubjectPermissionEntity permission) {
-        return lessonResolver.audienceScopes(permission).stream()
+        return LessonSpecifications.audienceScopes(permission).stream()
                 .map(s -> {
                     // audienceScopes() excludes all-groups scopes, so the group is always present.
                     var group = Objects.requireNonNull(s.getGroup());

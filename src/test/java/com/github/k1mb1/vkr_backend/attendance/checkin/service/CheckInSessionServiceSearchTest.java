@@ -10,20 +10,20 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.mapper.CheckInSessionMapper;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInRecordRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.PublicStudentResponse;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendancePermissionRepository;
+import com.github.k1mb1.vkr_backend.attendance.service.AttendanceService;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
-import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,13 +45,13 @@ class CheckInSessionServiceSearchTest {
     CheckInRecordRepository recordRepository;
 
     @Mock
-    LessonRepository lessonRepository;
+    AttendanceLessonRepository lessonRepository;
 
     @Mock
-    LessonScopeRepository lessonScopeRepository;
+    AttendanceLessonScopeRepository lessonScopeRepository;
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    AttendancePermissionRepository permissionRepository;
 
     @Mock
     LessonStudentsApi lessonStudentsApi;
@@ -60,7 +60,7 @@ class CheckInSessionServiceSearchTest {
     CheckInSessionMapper mapper;
 
     @Mock
-    AttendanceApi attendanceApi;
+    AttendanceService attendanceService;
 
     @InjectMocks
     CheckInSessionService service;
@@ -68,17 +68,18 @@ class CheckInSessionServiceSearchTest {
     final UUID sessionId = UUID.randomUUID();
     final LessonScopeEntity scope = mock(LessonScopeEntity.class);
 
-    static StudentEntity student(String username) {
-        return StudentEntity.builder().id(UUID.randomUUID()).username(username).build();
+    static LessonStudentResponse student(String username) {
+        return new LessonStudentResponse(UUID.randomUUID(), username, UUID.randomUUID(), "Гр-1", null, null);
     }
 
-    CheckInSessionEntity givenSessionWithStudents(List<StudentEntity> students) {
+    CheckInSessionEntity givenSessionWithStudents(List<LessonStudentResponse> students) {
         var session = mock(CheckInSessionEntity.class);
         lenient().when(session.getCode()).thenReturn(CODE);
         lenient().when(session.getLessonScope()).thenReturn(scope);
         lenient().when(session.stateAt(any())).thenReturn(CheckInSessionState.OPEN);
         lenient().when(sessionRepository.findWithDetailsById(sessionId)).thenReturn(Optional.of(session));
-        lenient().when(lessonStudentsApi.studentsOf(scope)).thenReturn(students);
+        lenient().when(scope.getId()).thenReturn(UUID.randomUUID());
+        lenient().when(lessonStudentsApi.studentsOfScope(scope.getId())).thenReturn(students);
         return session;
     }
 
@@ -91,7 +92,7 @@ class CheckInSessionServiceSearchTest {
 
         assertThat(result)
                 .containsExactly(PublicStudentResponse.builder()
-                        .id(ivanov.getId())
+                        .id(ivanov.id())
                         .username("Иванов И. И.")
                         .build());
     }
@@ -103,7 +104,7 @@ class CheckInSessionServiceSearchTest {
 
         var result = service.searchStudents(sessionId, CODE, "  ПЕТРОВ  ");
 
-        assertThat(result).extracting(PublicStudentResponse::id).containsExactly(petrov.getId());
+        assertThat(result).extracting(PublicStudentResponse::id).containsExactly(petrov.id());
     }
 
     @Test
@@ -114,7 +115,7 @@ class CheckInSessionServiceSearchTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("код");
 
-        verify(lessonStudentsApi, never()).studentsOf(scope);
+        verify(lessonStudentsApi, never()).studentsOfScope(any(UUID.class));
     }
 
     @Test
@@ -124,7 +125,7 @@ class CheckInSessionServiceSearchTest {
         var result = service.searchStudents(sessionId, CODE, "и");
 
         assertThat(result).isEmpty();
-        verify(lessonStudentsApi, never()).studentsOf(scope);
+        verify(lessonStudentsApi, never()).studentsOfScope(any(UUID.class));
     }
 
     @Test

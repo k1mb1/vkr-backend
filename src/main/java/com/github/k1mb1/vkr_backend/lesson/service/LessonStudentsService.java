@@ -1,10 +1,11 @@
 package com.github.k1mb1.vkr_backend.lesson.service;
 
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
-import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonStudentRepository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -24,20 +25,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class LessonStudentsService implements LessonStudentsApi {
 
-    final StudentRepository studentRepository;
+    final LessonStudentRepository lessonStudentRepository;
+
+    final LessonScopeRepository lessonScopeRepository;
 
     @Override
-    public List<StudentEntity> studentsOf(LessonEntity lesson) {
-        return studentsOf(lesson.getScopes());
+    public List<LessonStudentResponse> studentsOfScope(UUID lessonScopeId) {
+        return studentsOfScopes(List.of(lessonScopeId));
     }
 
     @Override
-    public List<StudentEntity> studentsOf(LessonScopeEntity scope) {
-        return studentsOf(List.of(scope));
+    public List<LessonStudentResponse> studentsOfScopes(Collection<UUID> lessonScopeIds) {
+        if (lessonScopeIds.isEmpty()) {
+            return List.of();
+        }
+        return toResponses(studentsOf(lessonScopeRepository.findWithAudienceByIdIn(lessonScopeIds)));
     }
 
-    @Override
-    public List<StudentEntity> studentsOf(Collection<LessonScopeEntity> scopes) {
+    /** Внутримодульный вариант для сервисов lesson, у которых scope'ы уже загружены. */
+    List<StudentEntity> studentsOf(Collection<LessonScopeEntity> scopes) {
         if (scopes.isEmpty()) {
             return List.of();
         }
@@ -60,7 +66,7 @@ public class LessonStudentsService implements LessonStudentsApi {
         }
 
         var studentsByGroup = new HashMap<UUID, List<StudentEntity>>();
-        for (var s : studentRepository.findByGroupIdInAndArchivedAtIsNull(groupIds)) {
+        for (var s : lessonStudentRepository.findByGroupIdInAndArchivedAtIsNull(groupIds)) {
             studentsByGroup
                     .computeIfAbsent(s.getGroup().getId(), k -> new ArrayList<>())
                     .add(s);
@@ -73,6 +79,18 @@ public class LessonStudentsService implements LessonStudentsApi {
         var result = new ArrayList<>(seen.values());
         result.sort(Comparator.comparing(StudentEntity::getUsername));
         return result;
+    }
+
+    private static List<LessonStudentResponse> toResponses(List<StudentEntity> students) {
+        return students.stream()
+                .map(s -> new LessonStudentResponse(
+                        s.getId(),
+                        s.getUsername(),
+                        s.getGroup().getId(),
+                        s.getGroup().getName(),
+                        s.getSubgroup() != null ? s.getSubgroup().getId() : null,
+                        s.getSubgroup() != null ? s.getSubgroup().getIndex() : null))
+                .toList();
     }
 
     private void collectScopeStudents(

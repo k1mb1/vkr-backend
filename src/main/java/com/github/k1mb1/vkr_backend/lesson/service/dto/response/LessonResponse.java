@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.lesson.service.dto.response;
 
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.AssignmentResponse;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonAssignmentResponse;
 import com.github.k1mb1.vkr_backend.subject.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
@@ -31,7 +31,7 @@ public record LessonResponse(
         List<LessonScopeResponse> scopes,
 
         @Schema(description = "Задания занятия, отсортированы по order (пустой список — заданий нет)")
-        List<AssignmentResponse> assignments,
+        List<LessonAssignmentResponse> assignments,
 
         @Schema(description = "Дата создания") Instant createdAt,
 

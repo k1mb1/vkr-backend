@@ -1,12 +1,13 @@
 package com.github.k1mb1.vkr_backend.lesson.service;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.mapper.LessonMapper;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonGroupRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonSubgroupRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkAddLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkReplaceLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.LessonScopeAudienceRequest;
@@ -32,7 +33,9 @@ public class LessonScopeService {
 
     final LessonScopeRepository lessonScopeRepository;
 
-    final GroupReferenceService groupReferenceService;
+    final LessonGroupRefRepository groupRefRepository;
+
+    final LessonSubgroupRefRepository subgroupRefRepository;
 
     final LessonMapper lessonMapper;
 
@@ -128,10 +131,15 @@ public class LessonScopeService {
             scope.setAllowedSubgroup(null);
             return;
         }
-        var ref = groupReferenceService.resolveAudience(audience.groupId(), audience.allowedSubgroupId());
         scope.setAllGroups(false);
-        scope.setGroup(ref.group());
-        scope.setAllowedSubgroup(ref.allowedSubgroup());
+        if (audience.groupId() != null) {
+            scope.setGroup(groupRefRepository.getReferenceById(audience.groupId()));
+            scope.setAllowedSubgroup(
+                    subgroupRefRepository.resolveAllowedSubgroup(audience.allowedSubgroupId(), audience.groupId()));
+        } else {
+            scope.setGroup(null);
+            scope.setAllowedSubgroup(null);
+        }
     }
 
     private void validateNoInternalOverlap(LessonEntity lesson) {

@@ -9,17 +9,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.github.k1mb1.vkr_backend.auth.SecurityService;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectResponse;
-import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import com.github.k1mb1.vkr_backend.teacher.domain.TeacherEntity;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
@@ -47,10 +47,10 @@ class SubjectServiceTest {
     SubjectMapper subjectMapper;
 
     @Mock
-    TeacherReferenceService teacherReferenceService;
+    SubjectTeacherRefRepository teacherRefRepository;
 
     @Mock
-    GroupReferenceService groupReferenceService;
+    SubjectGroupRefRepository groupRefRepository;
 
     @Mock
     SecurityService securityService;
@@ -63,14 +63,14 @@ class SubjectServiceTest {
         var teacherId = UUID.randomUUID();
         var groupId = UUID.randomUUID();
         var subjectId = UUID.randomUUID();
-        when(groupReferenceService.getGroupReferenceById(groupId))
+        when(groupRefRepository.getReferenceById(groupId))
                 .thenReturn(GroupEntity.builder().id(groupId).name("G").build());
         when(subjectRepository.save(any())).thenAnswer(inv -> {
             SubjectEntity s = inv.getArgument(0);
             s.setId(subjectId);
             return s;
         });
-        when(teacherReferenceService.getTeacherReferenceById(teacherId))
+        when(teacherRefRepository.getReferenceById(teacherId))
                 .thenReturn(TeacherEntity.builder().id(teacherId).build());
         lenient().when(subjectMapper.toFullResponse(any())).thenReturn(mock(SubjectResponse.class));
 

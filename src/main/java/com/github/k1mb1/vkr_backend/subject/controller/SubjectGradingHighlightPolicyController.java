@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.controller;
 
+import com.github.k1mb1.vkr_backend.subject.api.GradingHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.service.SubjectGradingHighlightPolicyService;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.GradingHighlightPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.GradingHighlightPolicyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

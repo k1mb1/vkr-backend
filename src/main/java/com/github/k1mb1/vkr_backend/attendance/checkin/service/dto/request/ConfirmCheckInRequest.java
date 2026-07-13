@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.request;
 
-import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
+import com.github.k1mb1.vkr_backend.attendance.AttendanceStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

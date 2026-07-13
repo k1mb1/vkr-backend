@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.Builder;
+import org.jspecify.annotations.Nullable;
 
 @Builder
 @Schema(description = "Фильтр для получения таблицы оценок")
@@ -14,8 +15,6 @@ public record GradingFilter(
                 requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull UUID permissionId,
 
-        @Schema(description = "ID занятия. Если задан — таблица только по этому занятию")
-        UUID lessonId,
+        @Schema(description = "ID занятия. Если задан — таблица только по этому занятию") @Nullable UUID lessonId,
 
-        @Schema(description = "ID конкретного scope. Если задан — таблица только по уроку этого scope")
-        UUID lessonScopeId) {}
+        @Schema(description = "ID конкретного scope. Если задан — таблица только по уроку этого scope") @Nullable UUID lessonScopeId) {}

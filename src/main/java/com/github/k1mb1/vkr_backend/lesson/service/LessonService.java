@@ -1,13 +1,16 @@
 package com.github.k1mb1.vkr_backend.lesson.service;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.grading.api.GradingApi;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.AssignmentResponse;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonAssignmentResponse;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonAssignmentsPort;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.mapper.LessonMapper;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonGroupRefRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonPermissionRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonSubgroupRefRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonSubjectRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.filter.LessonFilter;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkCreateLessonsRequest;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkScheduleLessonsRequest;
@@ -16,8 +19,6 @@ import com.github.k1mb1.vkr_backend.lesson.service.dto.request.UpdateLessonReque
 import com.github.k1mb1.vkr_backend.lesson.service.dto.response.LessonResponse;
 import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.subject.LessonType;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -43,15 +44,17 @@ public class LessonService {
 
     final LessonMapper lessonMapper;
 
-    final SubjectRepository subjectRepository;
+    final LessonSubjectRefRepository subjectRefRepository;
 
-    final TeacherSubjectPermissionRepository permissionRepository;
+    final LessonPermissionRefRepository permissionRefRepository;
 
     final LessonScopeService lessonScopeService;
 
-    final GradingApi gradingApi;
+    final LessonAssignmentsPort lessonAssignmentsPort;
 
-    final GroupReferenceService groupReferenceService;
+    final LessonGroupRefRepository groupRefRepository;
+
+    final LessonSubgroupRefRepository subgroupRefRepository;
 
     static @Nullable LocalDate earliestStartedAt(LessonEntity lesson) {
         return lesson.getScopes().stream()
@@ -65,7 +68,7 @@ public class LessonService {
     public LessonResponse getLessonById(UUID id) {
         var lesson =
                 lessonRepository.findWithDetailsById(id).orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
-        var assignments = gradingApi.getAssignmentsByLesson(id);
+        var assignments = lessonAssignmentsPort.assignmentsOfLesson(id);
         return lessonMapper.toResponse(lesson, lesson.getScopes().stream().toList(), assignments);
     }
 
@@ -79,7 +82,7 @@ public class LessonService {
             var header = request.header();
             lessonMapper.updateEntity(header, lesson);
             if (header.subjectId() != null) {
-                lesson.setSubject(subjectRepository.getReferenceById(header.subjectId()));
+                lesson.setSubject(subjectRefRepository.getReferenceById(header.subjectId()));
             }
             if (header.orderIndex() != null) {
                 lesson.setOrderIndex(header.orderIndex());
@@ -127,16 +130,16 @@ public class LessonService {
 
     @PreAuthorize("@authz.ownsPermission(#filter.permissionId())")
     public List<LessonResponse> getLessons(LessonFilter filter) {
-        var permission = permissionRepository
+        var permission = permissionRefRepository
                 .findWithDetailsById(filter.permissionId())
                 .orElseThrow(() -> new ResourceNotFoundException("TeacherSubjectPermission", filter.permissionId()));
-        var lessons = lessonRepository.findAllWithDetails(LessonSpecifications.forPermission(permission));
+        var lessons = lessonRepository.findAll(LessonSpecifications.forPermission(permission));
         var sorted = lessons.stream()
                 .sorted(Comparator.comparing(
                                 LessonService::earliestStartedAt, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparingInt(LessonEntity::getOrderIndex))
                 .toList();
-        var assignmentsByLesson = gradingApi.getAssignmentsByLessons(
+        var assignmentsByLesson = lessonAssignmentsPort.assignmentsOfLessons(
                 sorted.stream().map(LessonEntity::getId).toList());
         return sorted.stream()
                 .map(lesson -> lessonMapper.toResponse(
@@ -149,7 +152,7 @@ public class LessonService {
     @Transactional
     @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkCreate(BulkCreateLessonsRequest request) {
-        var subject = subjectRepository
+        var subject = subjectRefRepository
                 .findById(request.subjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subject", request.subjectId()));
         var counters = nextOrderIndexByType(subject.getId());
@@ -167,15 +170,15 @@ public class LessonService {
         assignDefaultTopics(lessons);
 
         return lessonRepository.saveAll(lessons).stream()
-                .map(lesson ->
-                        lessonMapper.toResponse(lesson, List.<LessonScopeEntity>of(), List.<AssignmentResponse>of()))
+                .map(lesson -> lessonMapper.toResponse(
+                        lesson, List.<LessonScopeEntity>of(), List.<LessonAssignmentResponse>of()))
                 .toList();
     }
 
     @Transactional
     @PreAuthorize("@authz.canAccessSubject(#request.subjectId())")
     public List<LessonResponse> bulkSchedule(BulkScheduleLessonsRequest request) {
-        var subject = subjectRepository
+        var subject = subjectRefRepository
                 .findById(request.subjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subject", request.subjectId()));
 
@@ -202,7 +205,7 @@ public class LessonService {
 
         return lessonRepository.saveAll(lessons).stream()
                 .map(lesson -> lessonMapper.toResponse(
-                        lesson, lesson.getScopes().stream().toList(), List.<AssignmentResponse>of()))
+                        lesson, lesson.getScopes().stream().toList(), List.<LessonAssignmentResponse>of()))
                 .toList();
     }
 
@@ -234,16 +237,18 @@ public class LessonService {
             scope.setAllGroups(true);
             return scope;
         }
-        var ref = groupReferenceService.resolveAudience(audience.groupId(), audience.allowedSubgroupId());
         scope.setAllGroups(false);
-        scope.setGroup(ref.group());
-        scope.setAllowedSubgroup(ref.allowedSubgroup());
+        if (audience.groupId() != null) {
+            scope.setGroup(groupRefRepository.getReferenceById(audience.groupId()));
+            scope.setAllowedSubgroup(
+                    subgroupRefRepository.resolveAllowedSubgroup(audience.allowedSubgroupId(), audience.groupId()));
+        }
         return scope;
     }
 
     private LessonEntity lessonTemplate(UUID subjectId, LessonType type, int orderIndex) {
         return LessonEntity.builder()
-                .subject(subjectRepository.getReferenceById(subjectId))
+                .subject(subjectRefRepository.getReferenceById(subjectId))
                 .type(type)
                 .orderIndex(orderIndex)
                 .build();

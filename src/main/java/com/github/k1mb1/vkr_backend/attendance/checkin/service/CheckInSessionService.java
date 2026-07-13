@@ -1,10 +1,10 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.service;
 
-import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
+import com.github.k1mb1.vkr_backend.attendance.AttendanceStatus;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordStatus;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordStatus;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.mapper.CheckInSessionMapper;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInRecordRepository;
 import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
@@ -15,21 +15,20 @@ import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.Chec
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.CheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.PublicCheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.PublicStudentResponse;
-import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendancePermissionRepository;
+import com.github.k1mb1.vkr_backend.attendance.service.AttendanceService;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.UpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.common.util.NameMasker;
-import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
+import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.lesson.service.LessonResolver;
 import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -54,19 +53,17 @@ public class CheckInSessionService {
 
     final CheckInRecordRepository recordRepository;
 
-    final LessonRepository lessonRepository;
+    final AttendanceLessonRepository lessonRepository;
 
-    final LessonScopeRepository lessonScopeRepository;
+    final AttendanceLessonScopeRepository lessonScopeRepository;
 
-    final TeacherSubjectPermissionRepository permissionRepository;
-
-    final LessonResolver lessonResolver;
+    final AttendancePermissionRepository permissionRepository;
 
     final LessonStudentsApi lessonStudentsApi;
 
     final CheckInSessionMapper mapper;
 
-    final AttendanceApi attendanceApi;
+    final AttendanceService attendanceService;
 
     private static AttendanceStatus proposedAttendanceStatus(@Nullable CheckInRecordStatus status) {
         if (status == null) {
@@ -146,20 +143,20 @@ public class CheckInSessionService {
     private List<UUID> resolveScopeIds(TeacherSubjectPermissionEntity permission, CheckInSessionFilter filter) {
         if (filter.lessonScopeId() != null) {
             var scope = lessonScopeRepository
-                    .findById(filter.lessonScopeId())
+                    .findWithDetailsById(filter.lessonScopeId())
                     .orElseThrow(() -> new ResourceNotFoundException("LessonScope", filter.lessonScopeId()));
-            lessonResolver.assertSameSubject(scope.getLesson(), permission);
-            lessonResolver.assertLessonMatch(scope.getLesson(), filter.lessonId());
+            LessonSpecifications.assertSameSubject(scope.getLesson(), permission);
+            LessonSpecifications.assertLessonMatch(scope.getLesson(), filter.lessonId());
             return List.of(scope.getId());
         }
         if (filter.lessonId() != null) {
             var lesson = lessonRepository
                     .findById(filter.lessonId())
                     .orElseThrow(() -> new ResourceNotFoundException("Lesson", filter.lessonId()));
-            lessonResolver.assertSameSubject(lesson, permission);
+            LessonSpecifications.assertSameSubject(lesson, permission);
             return lesson.getScopes().stream().map(LessonScopeEntity::getId).toList();
         }
-        return lessonRepository.findAllWithDetails(LessonSpecifications.forPermission(permission)).stream()
+        return lessonRepository.findAll(LessonSpecifications.forPermission(permission)).stream()
                 .flatMap(l -> LessonSpecifications.visibleScopes(l, permission).stream())
                 .map(LessonScopeEntity::getId)
                 .toList();
@@ -168,18 +165,19 @@ public class CheckInSessionService {
     @PreAuthorize("@authz.canAccessCheckInSession(#sessionId)")
     public CheckInPreviewResponse preview(UUID sessionId) {
         var session = loadSession(sessionId);
-        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
+        var students =
+                lessonStudentsApi.studentsOfScope(session.getLessonScope().getId());
         var recordsByStudent = recordsByStudentId(sessionId);
 
         var rows = students.stream()
                 .map(student -> {
-                    var record = recordsByStudent.get(student.getId());
+                    var record = recordsByStudent.get(student.id());
                     var checkInStatus = record != null ? record.getStatus() : null;
                     var checkedInAt = record != null ? record.getCheckedInAt() : null;
                     var proposed = proposedAttendanceStatus(checkInStatus);
                     return CheckInPreviewResponse.Row.builder()
-                            .studentId(student.getId())
-                            .username(student.getUsername())
+                            .studentId(student.id())
+                            .username(student.username())
                             .checkInStatus(checkInStatus)
                             .checkedInAt(checkedInAt)
                             .proposedStatus(proposed)
@@ -204,8 +202,9 @@ public class CheckInSessionService {
             throw new ConflictException("Session is cancelled: " + sessionId);
         }
 
-        var students = lessonStudentsApi.studentsOf(session.getLessonScope());
-        var studentIds = students.stream().map(StudentEntity::getId).collect(java.util.stream.Collectors.toSet());
+        var students =
+                lessonStudentsApi.studentsOfScope(session.getLessonScope().getId());
+        var studentIds = students.stream().map(LessonStudentResponse::id).collect(java.util.stream.Collectors.toSet());
         var recordsByStudent = recordsByStudentId(sessionId);
 
         var overridesByStudent = new HashMap<UUID, ConfirmCheckInRequest.StudentOverride>();
@@ -222,26 +221,26 @@ public class CheckInSessionService {
         var scopeId = session.getLessonScope().getId();
         var items = new java.util.ArrayList<UpsertAttendanceRequest>(students.size());
         for (var student : students) {
-            var override = overridesByStudent.get(student.getId());
+            var override = overridesByStudent.get(student.id());
             AttendanceStatus status;
             String comment;
             if (override != null) {
                 status = override.status();
                 comment = override.comment();
             } else {
-                var record = recordsByStudent.get(student.getId());
+                var record = recordsByStudent.get(student.id());
                 status = proposedAttendanceStatus(record != null ? record.getStatus() : null);
                 comment = null;
             }
             items.add(UpsertAttendanceRequest.builder()
-                    .studentId(student.getId())
+                    .studentId(student.id())
                     .lessonScopeId(scopeId)
                     .status(status)
                     .comment(comment)
                     .build());
         }
         if (!items.isEmpty()) {
-            attendanceApi.upsertAll(new BulkUpsertAttendanceRequest(items));
+            attendanceService.upsertAll(new BulkUpsertAttendanceRequest(items));
         }
 
         session.setConfirmedAt(Instant.now());
@@ -311,9 +310,9 @@ public class CheckInSessionService {
         }
         var needle = normalized.toLowerCase(Locale.ROOT);
 
-        var matches = lessonStudentsApi.studentsOf(session.getLessonScope()).stream()
-                .filter(student -> student.getUsername() != null
-                        && student.getUsername().toLowerCase(Locale.ROOT).contains(needle))
+        var matches = lessonStudentsApi.studentsOfScope(session.getLessonScope().getId()).stream()
+                .filter(student -> student.username() != null
+                        && student.username().toLowerCase(Locale.ROOT).contains(needle))
                 .toList();
 
         // Отдаём результат только при однозначном совпадении —
@@ -324,8 +323,8 @@ public class CheckInSessionService {
 
         var student = matches.get(0);
         return List.of(PublicStudentResponse.builder()
-                .id(student.getId())
-                .username(NameMasker.maskFullName(student.getUsername()))
+                .id(student.id())
+                .username(NameMasker.maskFullName(student.username()))
                 .build());
     }
 

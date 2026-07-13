@@ -8,21 +8,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.github.k1mb1.vkr_backend.attendance.AttendanceStatus;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceEntity;
-import com.github.k1mb1.vkr_backend.attendance.domain.AttendanceStatus;
 import com.github.k1mb1.vkr_backend.attendance.mapper.AttendanceMapper;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceLessonScopeRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendancePermissionRepository;
 import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceRepository;
+import com.github.k1mb1.vkr_backend.attendance.repository.AttendanceStudentRefRepository;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.UpsertAttendanceRequest;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
-import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.lesson.service.LessonResolver;
-import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,22 +42,19 @@ class AttendanceServiceTest {
     AttendanceMapper attendanceMapper;
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    AttendancePermissionRepository permissionRepository;
 
     @Mock
-    LessonResolver lessonResolver;
+    AttendanceLessonRepository lessonRepository;
 
     @Mock
-    LessonScopeRepository lessonScopeRepository;
+    AttendanceLessonScopeRepository lessonScopeRepository;
 
     @Mock
-    StudentRepository studentRepository;
+    AttendanceStudentRefRepository studentRefRepository;
 
     @Mock
     com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi lessonStudentsApi;
-
-    @Mock
-    SubjectMapper subjectMapper;
 
     @InjectMocks
     AttendanceService service;
@@ -102,7 +98,7 @@ class AttendanceServiceTest {
                 .build();
         when(attendanceRepository.findByLessonScopeIdInAndStudentIdIn(any(), any()))
                 .thenReturn(List.of(existing));
-        when(studentRepository.getReferenceById(s1))
+        when(studentRefRepository.getReferenceById(s1))
                 .thenReturn(StudentEntity.builder().id(s1).username("A").build());
         when(lessonScopeRepository.getReferenceById(scopeId)).thenReturn(scope);
         when(attendanceRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));

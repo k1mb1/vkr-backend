@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.Builder;
+import org.jspecify.annotations.Nullable;
 
 @Builder
 @Schema(description = "Фильтр для получения таблицы посещаемости")
@@ -17,7 +18,6 @@ public record AttendanceFilter(
         @Schema(
                 description =
                         "ID занятия. Если задан — таблица только по scope'ам этого занятия (пересечённым с разрешением)")
-        UUID lessonId,
+        @Nullable UUID lessonId,
 
-        @Schema(description = "ID конкретного scope. Если задан — таблица только по одному столбцу")
-        UUID lessonScopeId) {}
+        @Schema(description = "ID конкретного scope. Если задан — таблица только по одному столбцу") @Nullable UUID lessonScopeId) {}

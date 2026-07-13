@@ -111,18 +111,83 @@ class LayerBoundaryRules {
                     + "no web/business/persisted-entity leaks");
 
     // --- Module graph is one-directional ------------------------------------
-    // Pins the documented graph loans -> catalog -> common as an explicit
-    // contract (Modulith verifies declared dependencies; these forbid the reverse
-    // edges outright, so a cycle can never be introduced by widening a declaration).
+    // Pins the documented graph as an explicit contract (Modulith verifies the
+    // declared dependencies; these rules forbid the reverse edges outright, so a
+    // cycle can never be introduced by widening a declaration):
+    //
+    //   results -> grading -> attendance -> lesson -> subject -> {group, teacher}
+    //   auth    -> (nothing but common); every business module may use auth
+    //   common  -> (leaf, OPEN)
+
+    private static final String[] BUSINESS_MODULES = {
+        Packages.ROOT + ".teacher..",
+        Packages.ROOT + ".group..",
+        Packages.ROOT + ".subject..",
+        Packages.ROOT + ".lesson..",
+        Packages.ROOT + ".attendance..",
+        Packages.ROOT + ".grading..",
+        Packages.ROOT + ".results..",
+    };
 
     @ArchTest
-    static final ArchRule catalog_does_not_depend_on_loans = noClasses()
+    static final ArchRule reference_modules_are_leaves = noClasses()
             .that()
-            .resideInAPackage(Packages.ROOT + ".catalog..")
+            .resideInAnyPackage(Packages.ROOT + ".teacher..", Packages.ROOT + ".group..")
             .should()
             .dependOnClassesThat()
-            .resideInAPackage(Packages.ROOT + ".loans..")
-            .because("the module graph is one-directional: loans -> catalog, never the reverse");
+            .resideInAnyPackage(
+                    Packages.ROOT + ".subject..",
+                    Packages.ROOT + ".lesson..",
+                    Packages.ROOT + ".attendance..",
+                    Packages.ROOT + ".grading..",
+                    Packages.ROOT + ".results..")
+            .because("teacher and group are reference data at the bottom of the graph; "
+                    + "the teaching-process modules depend on them, never the reverse");
+
+    @ArchTest
+    static final ArchRule subject_depends_only_downward = noClasses()
+            .that()
+            .resideInAPackage(Packages.ROOT + ".subject..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(
+                    Packages.ROOT + ".lesson..",
+                    Packages.ROOT + ".attendance..",
+                    Packages.ROOT + ".grading..",
+                    Packages.ROOT + ".results..")
+            .because("subject (policies, permissions) sits below the lesson/marks modules: "
+                    + "lesson -> subject, never the reverse");
+
+    @ArchTest
+    static final ArchRule lesson_depends_only_downward = noClasses()
+            .that()
+            .resideInAPackage(Packages.ROOT + ".lesson..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(
+                    Packages.ROOT + ".attendance..", Packages.ROOT + ".grading..", Packages.ROOT + ".results..")
+            .because("lesson is the schedule core; the marks modules (attendance, grading) build on it — "
+                    + "the reverse direction is inverted through lesson's own ports (lesson.api)");
+
+    @ArchTest
+    static final ArchRule attendance_does_not_depend_on_grading_or_results = noClasses()
+            .that()
+            .resideInAPackage(Packages.ROOT + ".attendance..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(Packages.ROOT + ".grading..", Packages.ROOT + ".results..")
+            .because("grading composes attendance summaries, never the reverse; "
+                    + "results is the top-level read-only aggregator");
+
+    @ArchTest
+    static final ArchRule auth_depends_on_no_business_module = noClasses()
+            .that()
+            .resideInAPackage(Packages.ROOT + ".auth..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(BUSINESS_MODULES)
+            .because("auth is infrastructure: business modules implement its SPI ports (auth.api), "
+                    + "so auth itself stays a leaf and can never join a module cycle");
 
     @ArchTest
     static final ArchRule common_depends_on_no_business_module = noClasses()
@@ -130,6 +195,6 @@ class LayerBoundaryRules {
             .resideInAPackage(Packages.COMMON)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(Packages.ROOT + ".catalog..", Packages.ROOT + ".loans..")
+            .resideInAnyPackage(BUSINESS_MODULES)
             .because("common is a leaf module; business modules depend on it, never the reverse");
 }

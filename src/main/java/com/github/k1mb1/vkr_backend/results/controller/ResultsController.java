@@ -1,9 +1,7 @@
 package com.github.k1mb1.vkr_backend.results.controller;
 
 import com.github.k1mb1.vkr_backend.attendance.api.AttendanceApi;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.filter.AttendanceFilter;
 import com.github.k1mb1.vkr_backend.grading.api.GradingApi;
-import com.github.k1mb1.vkr_backend.grading.service.dto.filter.GradingFilter;
 import com.github.k1mb1.vkr_backend.results.service.dto.filter.ResultsFilter;
 import com.github.k1mb1.vkr_backend.results.service.dto.response.ResultsResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,14 +29,8 @@ public class ResultsController {
     @Operation(summary = "Получить итоги по permissionId одним запросом (оценки + посещаемость)")
     @GetMapping
     public ResponseEntity<ResultsResponse> getResults(@ParameterObject @Valid @ModelAttribute ResultsFilter filter) {
-        var grading = gradingApi.getGradingTable(GradingFilter.builder()
-                .permissionId(filter.permissionId())
-                .lessonId(filter.lessonId())
-                .build());
-        var attendance = attendanceApi.getAttendanceTable(AttendanceFilter.builder()
-                .permissionId(filter.permissionId())
-                .lessonId(filter.lessonId())
-                .build());
+        var grading = gradingApi.getGradingTable(filter.permissionId(), null, filter.lessonId());
+        var attendance = attendanceApi.getAttendanceTable(filter.permissionId(), null, filter.lessonId());
         return ResponseEntity.ok(ResultsResponse.builder()
                 .grading(grading)
                 .attendance(attendance)

@@ -6,12 +6,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
 import com.github.k1mb1.vkr_backend.group.mapper.StudentMapper;
+import com.github.k1mb1.vkr_backend.group.repository.GroupRepository;
 import com.github.k1mb1.vkr_backend.group.repository.StudentRepository;
+import com.github.k1mb1.vkr_backend.group.repository.SubgroupRepository;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.StudentResponse;
@@ -33,7 +34,10 @@ class StudentServiceTest {
     StudentRepository studentRepository;
 
     @Mock
-    GroupReferenceService groupReferenceService;
+    GroupRepository groupRepository;
+
+    @Mock
+    SubgroupRepository subgroupRepository;
 
     @Mock
     StudentMapper studentMapper;
@@ -48,8 +52,8 @@ class StudentServiceTest {
         var group = GroupEntity.builder().id(groupId).name("G").build();
         var subgroup =
                 SubgroupEntity.builder().id(subgroupId).index(1).group(group).build();
-        when(groupReferenceService.getGroupReferenceById(groupId)).thenReturn(group);
-        when(groupReferenceService.getSubgroupReferenceById(subgroupId)).thenReturn(subgroup);
+        when(groupRepository.getReferenceById(groupId)).thenReturn(group);
+        when(subgroupRepository.getReferenceById(subgroupId)).thenReturn(subgroup);
         when(studentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.createStudent(CreateStudentRequest.builder()
@@ -70,7 +74,7 @@ class StudentServiceTest {
     void createStudentWithoutSubgroupDoesNotResolveSubgroup() {
         var groupId = UUID.randomUUID();
         var group = GroupEntity.builder().id(groupId).name("G").build();
-        when(groupReferenceService.getGroupReferenceById(groupId)).thenReturn(group);
+        when(groupRepository.getReferenceById(groupId)).thenReturn(group);
         when(studentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.createStudent(CreateStudentRequest.builder()

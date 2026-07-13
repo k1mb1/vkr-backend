@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.controller;
 
+import com.github.k1mb1.vkr_backend.subject.api.PenaltyPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.service.SubjectPenaltyPolicyService;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PenaltyPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.PenaltyPolicyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

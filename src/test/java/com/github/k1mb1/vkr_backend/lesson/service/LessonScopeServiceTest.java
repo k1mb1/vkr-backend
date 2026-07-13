@@ -8,14 +8,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.group.AudienceRef;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.mapper.LessonMapper;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonGroupRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
 import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
+import com.github.k1mb1.vkr_backend.lesson.repository.LessonSubgroupRefRepository;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkAddLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkReplaceLessonScopesRequest;
 import com.github.k1mb1.vkr_backend.lesson.service.dto.request.LessonScopeAudienceRequest;
@@ -41,7 +41,10 @@ class LessonScopeServiceTest {
     LessonScopeRepository lessonScopeRepository;
 
     @Mock
-    GroupReferenceService groupReferenceService;
+    LessonGroupRefRepository groupRefRepository;
+
+    @Mock
+    LessonSubgroupRefRepository subgroupRefRepository;
 
     @Mock
     LessonMapper lessonMapper;
@@ -64,7 +67,10 @@ class LessonScopeServiceTest {
         when(lessonRepository.findWithDetailsById(lessonId)).thenReturn(Optional.of(lessonWithNoScopes()));
         var groupId = UUID.randomUUID();
         var group = GroupEntity.builder().id(groupId).name("G").build();
-        lenient().when(groupReferenceService.resolveAudience(groupId, null)).thenReturn(new AudienceRef(group, null));
+        lenient().when(groupRefRepository.getReferenceById(groupId)).thenReturn(group);
+        lenient()
+                .when(subgroupRefRepository.resolveAllowedSubgroup(null, groupId))
+                .thenReturn(null);
 
         var request = new BulkAddLessonScopesRequest(List.of(
                 new BulkAddLessonScopesRequest.Item(null, LocalDate.now()), // allGroups
@@ -80,12 +86,10 @@ class LessonScopeServiceTest {
         when(lessonRepository.findWithDetailsById(lessonId)).thenReturn(Optional.of(lessonWithNoScopes()));
         var g1 = UUID.randomUUID();
         var g2 = UUID.randomUUID();
-        when(groupReferenceService.resolveAudience(g1, null))
-                .thenReturn(
-                        new AudienceRef(GroupEntity.builder().id(g1).name("G1").build(), null));
-        when(groupReferenceService.resolveAudience(g2, null))
-                .thenReturn(
-                        new AudienceRef(GroupEntity.builder().id(g2).name("G2").build(), null));
+        when(groupRefRepository.getReferenceById(g1))
+                .thenReturn(GroupEntity.builder().id(g1).name("G1").build());
+        when(groupRefRepository.getReferenceById(g2))
+                .thenReturn(GroupEntity.builder().id(g2).name("G2").build());
         when(lessonScopeRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
         when(lessonMapper.toScopeResponse(any())).thenReturn(mock(LessonScopeResponse.class));
 
@@ -101,7 +105,7 @@ class LessonScopeServiceTest {
         when(lessonRepository.findWithDetailsById(lessonId)).thenReturn(Optional.of(lessonWithNoScopes()));
         var groupId = UUID.randomUUID();
         var subgroupId = UUID.randomUUID();
-        when(groupReferenceService.resolveAudience(groupId, subgroupId))
+        when(subgroupRefRepository.resolveAllowedSubgroup(subgroupId, groupId))
                 .thenThrow(new IllegalArgumentException("Subgroup does not belong to the specified group"));
 
         var request = new BulkAddLessonScopesRequest(List.of(new BulkAddLessonScopesRequest.Item(

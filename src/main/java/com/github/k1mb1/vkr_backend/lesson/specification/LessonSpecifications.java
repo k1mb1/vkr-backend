@@ -7,6 +7,7 @@ import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntit
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.jpa.domain.Specification;
 
 public final class LessonSpecifications {
@@ -217,5 +219,39 @@ public final class LessonSpecifications {
             }
         }
         return result;
+    }
+
+    /** Проверяет, что занятие принадлежит предмету разрешения. */
+    public static void assertSameSubject(LessonEntity lesson, TeacherSubjectPermissionEntity permission) {
+        if (!lesson.getSubject().getId().equals(permission.getSubject().getId())) {
+            throw new IllegalArgumentException(
+                    "Lesson " + lesson.getId() + " does not belong to subject of permission " + permission.getId());
+        }
+    }
+
+    /** Проверяет, что scope относится к запрошенному занятию (если оно задано). */
+    public static void assertLessonMatch(LessonEntity scopeLesson, @Nullable UUID requestedLessonId) {
+        if (requestedLessonId != null && !scopeLesson.getId().equals(requestedLessonId)) {
+            throw new IllegalArgumentException(
+                    "lessonScopeId belongs to lesson " + scopeLesson.getId() + " but lessonId=" + requestedLessonId);
+        }
+    }
+
+    /**
+     * Аудитория разрешения — отсортированные scope'ы (группа, опц. подгруппа).
+     * Пустой список означает «все группы предмета» (allPermissions или scope с group=null).
+     * Сортировка единая для всех таблиц; маппинг в DTO модуля — на стороне вызывающего.
+     */
+    public static List<PermissionScopeEntity> audienceScopes(TeacherSubjectPermissionEntity permission) {
+        if (permissionAllowsAllGroups(permission)) {
+            return List.of();
+        }
+        return permission.getScopes().stream()
+                .sorted(Comparator.comparing((PermissionScopeEntity s) ->
+                                Objects.requireNonNull(s.getGroup()).getName())
+                        .thenComparing(s -> s.getAllowedSubgroup() == null
+                                ? -1
+                                : s.getAllowedSubgroup().getIndex()))
+                .toList();
     }
 }

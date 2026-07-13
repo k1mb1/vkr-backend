@@ -1,20 +1,13 @@
 package com.github.k1mb1.vkr_backend.auth.aot;
 
-import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.filter.CheckInSessionFilter;
-import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.request.StartCheckInRequest;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.filter.AttendanceFilter;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.request.BulkUpsertAttendanceRequest;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.request.UpsertAttendanceRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.filter.GradingFilter;
-import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpsertGradesRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.request.CreateAssignmentsRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.request.UpsertGradeRequest;
-import com.github.k1mb1.vkr_backend.lesson.service.dto.filter.LessonFilter;
-import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkCreateLessonsRequest;
-import com.github.k1mb1.vkr_backend.lesson.service.dto.request.BulkScheduleLessonsRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateTeacherSubjectPermissionRequest;
-import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
+import java.util.List;
+import org.jspecify.annotations.Nullable;
+import org.springframework.aot.hint.MemberCategory;
+import org.springframework.aot.hint.RuntimeHints;
+import org.springframework.aot.hint.RuntimeHintsRegistrar;
+import org.springframework.aot.hint.TypeReference;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
 /**
  * SpEL внутри {@code @PreAuthorize} обращается к акцессорам DTO по рефлексии
@@ -23,24 +16,46 @@ import org.springframework.context.annotation.Configuration;
  * падает с «Failed to evaluate expression» (см. Spring Security ref, «Method
  * Security in GraalVM Native Image»).
  *
- * <p>Здесь регистрируются все типы, чьи методы используются в security-выражениях.
- * При добавлении нового {@code @PreAuthorize}, который вызывает метод DTO — не
- * забыть дописать сюда его тип.
+ * <p>Типы перечислены строковыми {@link TypeReference}, а не class-литералами:
+ * auth — лист модульного графа и не может зависеть от DTO бизнес-модулей.
+ * При добавлении нового {@code @PreAuthorize}, который вызывает метод DTO, — не
+ * забыть дописать сюда его полное имя (и имя вложенного типа элементов, если
+ * выражение ходит по элементам списка).
  */
 @Configuration
-@RegisterReflectionForBinding({
-    LessonFilter.class,
-    BulkCreateLessonsRequest.class,
-    BulkScheduleLessonsRequest.class,
-    GradingFilter.class,
-    BulkUpsertGradesRequest.class,
-    UpsertGradeRequest.class,
-    CreateAssignmentsRequest.class,
-    AttendanceFilter.class,
-    BulkUpsertAttendanceRequest.class,
-    UpsertAttendanceRequest.class,
-    StartCheckInRequest.class,
-    CheckInSessionFilter.class,
-    CreateTeacherSubjectPermissionRequest.class,
-})
-public class AuthzReflectionHints {}
+@ImportRuntimeHints(AuthzReflectionHints.SecurityExpressionDtoHints.class)
+public class AuthzReflectionHints {
+
+    static class SecurityExpressionDtoHints implements RuntimeHintsRegistrar {
+
+        private static final String BASE = "com.github.k1mb1.vkr_backend.";
+
+        private static final List<String> SECURITY_EXPRESSION_TYPES = List.of(
+                BASE + "lesson.service.dto.filter.LessonFilter",
+                BASE + "lesson.service.dto.request.BulkCreateLessonsRequest",
+                BASE + "lesson.service.dto.request.BulkScheduleLessonsRequest",
+                BASE + "lesson.service.dto.request.BulkScheduleLessonsRequest$Item",
+                BASE + "grading.service.dto.filter.GradingFilter",
+                BASE + "grading.service.dto.request.BulkUpsertGradesRequest",
+                BASE + "grading.service.dto.request.UpsertGradeRequest",
+                BASE + "grading.service.dto.request.CreateAssignmentsRequest",
+                BASE + "grading.service.dto.request.CreateAssignmentsRequest$Item",
+                BASE + "attendance.service.dto.filter.AttendanceFilter",
+                BASE + "attendance.service.dto.request.BulkUpsertAttendanceRequest",
+                BASE + "attendance.service.dto.request.UpsertAttendanceRequest",
+                BASE + "attendance.checkin.service.dto.request.StartCheckInRequest",
+                BASE + "attendance.checkin.service.dto.filter.CheckInSessionFilter",
+                BASE + "subject.service.dto.request.CreateTeacherSubjectPermissionRequest");
+
+        @Override
+        public void registerHints(RuntimeHints hints, @Nullable ClassLoader classLoader) {
+            for (String type : SECURITY_EXPRESSION_TYPES) {
+                hints.reflection()
+                        .registerType(
+                                TypeReference.of(type),
+                                MemberCategory.INVOKE_PUBLIC_METHODS,
+                                MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS);
+            }
+        }
+    }
+}

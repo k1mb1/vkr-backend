@@ -1,12 +1,10 @@
 package com.github.k1mb1.vkr_backend.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository.OwnedPermissionView;
+import com.github.k1mb1.vkr_backend.auth.api.PermissionAuthPort;
+import com.github.k1mb1.vkr_backend.auth.api.PermissionGrantResponse;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -19,20 +17,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PermissionResolverTest {
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    PermissionAuthPort permissionAuthPort;
 
     @InjectMocks
     PermissionResolver resolver;
 
-    private OwnedPermissionView view(UUID permissionId, UUID subjectId) {
+    private PermissionGrantResponse view(UUID permissionId, UUID subjectId) {
         return view(permissionId, subjectId, false);
     }
 
-    private OwnedPermissionView view(UUID permissionId, UUID subjectId, boolean allPermissions) {
-        var v = mock(OwnedPermissionView.class);
-        when(v.getPermissionId()).thenReturn(permissionId);
-        when(v.getSubjectId()).thenReturn(subjectId);
-        lenient().when(v.getAllPermissions()).thenReturn(allPermissions);
+    private PermissionGrantResponse view(UUID permissionId, UUID subjectId, boolean allPermissions) {
+        var v = new PermissionGrantResponse(permissionId, subjectId, allPermissions);
         return v;
     }
 
@@ -43,7 +38,7 @@ class PermissionResolverTest {
         var p2 = UUID.randomUUID();
         var subject = UUID.randomUUID();
         var views = List.of(view(p1, subject), view(p2, subject));
-        when(permissionRepository.findOwnedByTeacherId(teacherId)).thenReturn(views);
+        when(permissionAuthPort.grantsOfTeacher(teacherId)).thenReturn(views);
 
         var result = resolver.forUser(teacherId);
 
@@ -57,7 +52,7 @@ class PermissionResolverTest {
         var fullSubject = UUID.randomUUID();
         var scopedSubject = UUID.randomUUID();
         var views = List.of(view(UUID.randomUUID(), fullSubject, true), view(UUID.randomUUID(), scopedSubject, false));
-        when(permissionRepository.findOwnedByTeacherId(teacherId)).thenReturn(views);
+        when(permissionAuthPort.grantsOfTeacher(teacherId)).thenReturn(views);
 
         var result = resolver.forUser(teacherId);
 
@@ -70,7 +65,7 @@ class PermissionResolverTest {
     @Test
     void emptyWhenNoPermissions() {
         var teacherId = UUID.randomUUID();
-        when(permissionRepository.findOwnedByTeacherId(teacherId)).thenReturn(List.of());
+        when(permissionAuthPort.grantsOfTeacher(teacherId)).thenReturn(List.of());
 
         var result = resolver.forUser(teacherId);
 

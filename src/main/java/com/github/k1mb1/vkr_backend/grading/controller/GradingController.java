@@ -1,10 +1,10 @@
 package com.github.k1mb1.vkr_backend.grading.controller;
 
+import com.github.k1mb1.vkr_backend.grading.api.GradeCellResponse;
+import com.github.k1mb1.vkr_backend.grading.api.GradingTableResponse;
 import com.github.k1mb1.vkr_backend.grading.service.GradingService;
 import com.github.k1mb1.vkr_backend.grading.service.dto.filter.GradingFilter;
 import com.github.k1mb1.vkr_backend.grading.service.dto.request.BulkUpsertGradesRequest;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.grading.service.dto.response.GradingTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

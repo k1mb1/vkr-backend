@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.grading.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import com.github.k1mb1.vkr_backend.grading.AssignmentAdmissionMode;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.CollectionTable;

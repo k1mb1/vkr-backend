@@ -1,11 +1,11 @@
 package com.github.k1mb1.vkr_backend.subject.service;
 
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
+import com.github.k1mb1.vkr_backend.subject.api.GradingHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.GradingHighlightPolicyEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.GradingHighlightPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.GradingHighlightPolicyResponse;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

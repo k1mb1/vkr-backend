@@ -1,8 +1,8 @@
 package com.github.k1mb1.vkr_backend.subject.controller;
 
+import com.github.k1mb1.vkr_backend.subject.api.CheckInPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.service.SubjectCheckInPolicyService;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CheckInPolicyRequest;
-import com.github.k1mb1.vkr_backend.subject.service.dto.response.CheckInPolicyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

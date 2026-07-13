@@ -1,10 +1,10 @@
 package com.github.k1mb1.vkr_backend.attendance.controller;
 
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceCellResponse;
+import com.github.k1mb1.vkr_backend.attendance.api.AttendanceTableResponse;
 import com.github.k1mb1.vkr_backend.attendance.service.AttendanceService;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.filter.AttendanceFilter;
 import com.github.k1mb1.vkr_backend.attendance.service.dto.request.BulkUpsertAttendanceRequest;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceCellResponse;
-import com.github.k1mb1.vkr_backend.attendance.service.dto.response.AttendanceTableResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

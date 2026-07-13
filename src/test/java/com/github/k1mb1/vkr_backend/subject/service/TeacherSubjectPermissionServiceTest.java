@@ -10,20 +10,21 @@ import static org.mockito.Mockito.when;
 
 import com.github.k1mb1.vkr_backend.common.exception.ConflictException;
 import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
-import com.github.k1mb1.vkr_backend.group.GroupReferenceService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.subject.LessonType;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.TeacherSubjectPermissionMapper;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectSubgroupRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PermissionScopeRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PermissionScopeRequest.PermissionScopeGroupRef;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.TeacherSubjectPermissionResponse;
-import com.github.k1mb1.vkr_backend.teacher.TeacherReferenceService;
 import com.github.k1mb1.vkr_backend.teacher.domain.TeacherEntity;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.HashSet;
@@ -44,10 +45,13 @@ class TeacherSubjectPermissionServiceTest {
     TeacherSubjectPermissionRepository permissionRepository;
 
     @Mock
-    TeacherReferenceService teacherReferenceService;
+    SubjectTeacherRefRepository teacherRefRepository;
 
     @Mock
-    GroupReferenceService groupReferenceService;
+    SubjectGroupRefRepository groupRefRepository;
+
+    @Mock
+    SubjectSubgroupRefRepository subgroupRefRepository;
 
     @Mock
     SubjectRepository subjectRepository;
@@ -93,7 +97,7 @@ class TeacherSubjectPermissionServiceTest {
                 .thenReturn(false);
         when(subjectRepository.getReferenceById(subjectId))
                 .thenReturn(SubjectEntity.builder().id(subjectId).name("S").build());
-        when(teacherReferenceService.getTeacherReferenceById(teacherId))
+        when(teacherRefRepository.getReferenceById(teacherId))
                 .thenReturn(TeacherEntity.builder().id(teacherId).build());
         when(permissionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(permissionMapper.toFullResponse(any())).thenReturn(mock(TeacherSubjectPermissionResponse.class));
@@ -117,7 +121,7 @@ class TeacherSubjectPermissionServiceTest {
                         .name("S")
                         .groups(new HashSet<>())
                         .build());
-        when(teacherReferenceService.getTeacherReferenceById(teacherId))
+        when(teacherRefRepository.getReferenceById(teacherId))
                 .thenReturn(TeacherEntity.builder().id(teacherId).build());
 
         var scope = new PermissionScopeRequest(new PermissionScopeGroupRef(foreignGroupId, null), LessonType.LECTURE);
@@ -142,11 +146,12 @@ class TeacherSubjectPermissionServiceTest {
                         .name("S")
                         .groups(new HashSet<>(Set.of(group)))
                         .build());
-        when(teacherReferenceService.getTeacherReferenceById(teacherId))
+        when(teacherRefRepository.getReferenceById(teacherId))
                 .thenReturn(TeacherEntity.builder().id(teacherId).build());
+        lenient().when(groupRefRepository.getReferenceById(groupId)).thenReturn(group);
         lenient()
-                .when(groupReferenceService.resolveAudience(groupId, null))
-                .thenReturn(new com.github.k1mb1.vkr_backend.group.AudienceRef(group, null));
+                .when(subgroupRefRepository.resolveAllowedSubgroup(null, groupId))
+                .thenReturn(null);
 
         var scope = new PermissionScopeRequest(new PermissionScopeGroupRef(groupId, null), LessonType.LECTURE);
 

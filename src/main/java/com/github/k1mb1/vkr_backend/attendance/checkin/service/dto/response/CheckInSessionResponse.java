@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response;
 
-import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionState;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;

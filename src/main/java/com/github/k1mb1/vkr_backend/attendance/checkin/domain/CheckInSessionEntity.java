@@ -1,5 +1,7 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.domain;
 
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordStatus;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import io.swagger.v3.oas.annotations.Hidden;

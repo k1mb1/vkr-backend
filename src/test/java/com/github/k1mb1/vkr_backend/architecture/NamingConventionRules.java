@@ -48,6 +48,9 @@ class NamingConventionRules {
     static final ArchRule repositories_are_interfaces_named_consistently = classes()
             .that()
             .resideInAPackage(Packages.REPOSITORY)
+            .and()
+            // nested projection views are namespaced by their owning repository
+            .areTopLevelClasses()
             .should()
             .beInterfaces()
             .andShould()
@@ -89,6 +92,8 @@ class NamingConventionRules {
     static final ArchRule request_dtos_are_named_request = classes()
             .that()
             .resideInAPackage(Packages.DTO_REQUEST)
+            .and()
+            .areTopLevelClasses()
             .should()
             .haveSimpleNameEndingWith("Request")
             .because("an inbound DTO in service.dto.request is a *Request");
@@ -97,6 +102,8 @@ class NamingConventionRules {
     static final ArchRule response_dtos_are_named_response = classes()
             .that()
             .resideInAPackage(Packages.DTO_RESPONSE)
+            .and()
+            .areTopLevelClasses()
             .should()
             .haveSimpleNameEndingWith("Response")
             .because("an outbound DTO in service.dto.response is a *Response");
@@ -105,6 +112,8 @@ class NamingConventionRules {
     static final ArchRule filter_dtos_are_named_filter = classes()
             .that()
             .resideInAPackage(Packages.DTO_FILTER)
+            .and()
+            .areTopLevelClasses()
             .should()
             .haveSimpleNameEndingWith("Filter")
             .allowEmptyShould(true)

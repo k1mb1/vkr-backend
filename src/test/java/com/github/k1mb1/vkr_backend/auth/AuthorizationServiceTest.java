@@ -7,10 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.k1mb1.vkr_backend.attendance.checkin.repository.CheckInSessionRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonRepository;
-import com.github.k1mb1.vkr_backend.lesson.repository.LessonScopeRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
+import com.github.k1mb1.vkr_backend.auth.api.CheckInAuthPort;
+import com.github.k1mb1.vkr_backend.auth.api.LessonAuthPort;
+import com.github.k1mb1.vkr_backend.auth.api.PermissionAuthPort;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,16 +30,13 @@ class AuthorizationServiceTest {
     PermissionResolver permissionResolver;
 
     @Mock
-    LessonScopeRepository lessonScopeRepository;
+    LessonAuthPort lessonAuthPort;
 
     @Mock
-    LessonRepository lessonRepository;
+    CheckInAuthPort checkInAuthPort;
 
     @Mock
-    CheckInSessionRepository checkInSessionRepository;
-
-    @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
+    PermissionAuthPort permissionAuthPort;
 
     @InjectMocks
     AuthorizationService authz;
@@ -65,7 +61,7 @@ class AuthorizationServiceTest {
         assertThat(authz.canAccessCheckInSession(UUID.randomUUID())).isTrue();
 
         verify(permissionResolver, never()).forUser(any());
-        verify(lessonRepository, never()).findSubjectIdsByLessonIds(any());
+        verify(lessonAuthPort, never()).subjectIdsOfLessons(any());
     }
 
     @Test
@@ -100,7 +96,7 @@ class AuthorizationServiceTest {
         var subjectId = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(subjectId)));
         var lessonId = UUID.randomUUID();
-        when(lessonRepository.findSubjectIdsByLessonIds(List.of(lessonId))).thenReturn(Set.of(subjectId));
+        when(lessonAuthPort.subjectIdsOfLessons(List.of(lessonId))).thenReturn(Set.of(subjectId));
 
         assertThat(authz.canAccessLessons(List.of(lessonId))).isTrue();
     }
@@ -111,8 +107,7 @@ class AuthorizationServiceTest {
         asUserWith(new UserPermissions(Set.of(), Set.of(ownedSubject)));
         var l1 = UUID.randomUUID();
         var l2 = UUID.randomUUID();
-        when(lessonRepository.findSubjectIdsByLessonIds(List.of(l1, l2)))
-                .thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
+        when(lessonAuthPort.subjectIdsOfLessons(List.of(l1, l2))).thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
 
         assertThat(authz.canAccessLessons(List.of(l1, l2))).isFalse();
     }
@@ -122,7 +117,7 @@ class AuthorizationServiceTest {
         when(security.isAdmin()).thenReturn(false);
 
         assertThat(authz.canAccessLessons(List.of())).isTrue();
-        verify(lessonRepository, never()).findSubjectIdsByLessonIds(any());
+        verify(lessonAuthPort, never()).subjectIdsOfLessons(any());
     }
 
     // ---- ownsPermission / canAccessSubject ----
@@ -167,7 +162,7 @@ class AuthorizationServiceTest {
         assertThat(authz.canManagePermission(UUID.randomUUID())).isTrue();
 
         verify(permissionResolver, never()).forUser(any());
-        verify(permissionRepository, never()).findSubjectIdById(any());
+        verify(permissionAuthPort, never()).subjectIdOfPermission(any());
     }
 
     @Test
@@ -175,7 +170,7 @@ class AuthorizationServiceTest {
         var fullSubject = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(fullSubject), Set.of(fullSubject)));
         var permissionId = UUID.randomUUID();
-        when(permissionRepository.findSubjectIdById(permissionId)).thenReturn(Optional.of(fullSubject));
+        when(permissionAuthPort.subjectIdOfPermission(permissionId)).thenReturn(Optional.of(fullSubject));
 
         assertThat(authz.canManagePermission(permissionId)).isTrue();
     }
@@ -185,7 +180,7 @@ class AuthorizationServiceTest {
         var scopedSubject = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(scopedSubject), Set.of()));
         var permissionId = UUID.randomUUID();
-        when(permissionRepository.findSubjectIdById(permissionId)).thenReturn(Optional.of(scopedSubject));
+        when(permissionAuthPort.subjectIdOfPermission(permissionId)).thenReturn(Optional.of(scopedSubject));
 
         assertThat(authz.canManagePermission(permissionId)).isFalse();
     }
@@ -194,7 +189,7 @@ class AuthorizationServiceTest {
     void canManagePermissionDeniedWhenPermissionMissingOrNull() {
         when(security.isAdmin()).thenReturn(false);
         var permissionId = UUID.randomUUID();
-        lenient().when(permissionRepository.findSubjectIdById(permissionId)).thenReturn(Optional.empty());
+        lenient().when(permissionAuthPort.subjectIdOfPermission(permissionId)).thenReturn(Optional.empty());
 
         assertThat(authz.canManagePermission(permissionId)).isFalse();
         assertThat(authz.canManagePermission(null)).isFalse();
@@ -215,7 +210,7 @@ class AuthorizationServiceTest {
         when(security.isAdmin()).thenReturn(false);
 
         assertThat(authz.canAccessLessonScopes(List.of())).isTrue();
-        verify(lessonScopeRepository, never()).findSubjectIdsByScopeIds(any());
+        verify(lessonAuthPort, never()).subjectIdsOfLessonScopes(any());
     }
 
     @Test
@@ -223,7 +218,7 @@ class AuthorizationServiceTest {
         var subjectId = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(subjectId)));
         var scopeId = UUID.randomUUID();
-        when(lessonScopeRepository.findSubjectIdsByScopeIds(List.of(scopeId))).thenReturn(Set.of(subjectId));
+        when(lessonAuthPort.subjectIdsOfLessonScopes(List.of(scopeId))).thenReturn(Set.of(subjectId));
 
         assertThat(authz.canAccessLessonScopes(List.of(scopeId))).isTrue();
     }
@@ -233,7 +228,7 @@ class AuthorizationServiceTest {
         var ownedSubject = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(ownedSubject)));
         var scopeId = UUID.randomUUID();
-        when(lessonScopeRepository.findSubjectIdsByScopeIds(List.of(scopeId)))
+        when(lessonAuthPort.subjectIdsOfLessonScopes(List.of(scopeId)))
                 .thenReturn(Set.of(ownedSubject, UUID.randomUUID()));
 
         assertThat(authz.canAccessLessonScopes(List.of(scopeId))).isFalse();
@@ -245,7 +240,7 @@ class AuthorizationServiceTest {
     void canAccessLessonDeniedWhenSubjectsUnknown() {
         asUserWith(new UserPermissions(Set.of(), Set.of(UUID.randomUUID())));
         var lessonId = UUID.randomUUID();
-        when(lessonRepository.findSubjectIdsByLessonIds(List.of(lessonId))).thenReturn(Set.of());
+        when(lessonAuthPort.subjectIdsOfLessons(List.of(lessonId))).thenReturn(Set.of());
 
         // пустой набор предметов => нет подтверждённого доступа
         assertThat(authz.canAccessLesson(lessonId)).isFalse();
@@ -265,7 +260,7 @@ class AuthorizationServiceTest {
         var subjectId = UUID.randomUUID();
         asUserWith(new UserPermissions(Set.of(), Set.of(subjectId)));
         var sessionId = UUID.randomUUID();
-        when(checkInSessionRepository.findSubjectIdById(sessionId)).thenReturn(Optional.of(subjectId));
+        when(checkInAuthPort.subjectIdOfCheckInSession(sessionId)).thenReturn(Optional.of(subjectId));
 
         assertThat(authz.canAccessCheckInSession(sessionId)).isTrue();
     }
@@ -274,7 +269,7 @@ class AuthorizationServiceTest {
     void checkInSessionDeniedWhenSessionMissing() {
         when(security.isAdmin()).thenReturn(false);
         var sessionId = UUID.randomUUID();
-        when(checkInSessionRepository.findSubjectIdById(sessionId)).thenReturn(Optional.empty());
+        when(checkInAuthPort.subjectIdOfCheckInSession(sessionId)).thenReturn(Optional.empty());
 
         assertThat(authz.canAccessCheckInSession(sessionId)).isFalse();
     }
