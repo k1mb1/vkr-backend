@@ -129,7 +129,7 @@ tasks.withType<Test> {
 spotless {
     java {
         target("src/**/*.java")
-        palantirJavaFormat("2.94.0")
+        palantirJavaFormat("2.96.0")
         importOrder()
         removeUnusedImports()
         forbidWildcardImports()
@@ -147,12 +147,12 @@ spotless {
 }
 
 checkstyle {
-    toolVersion = "13.6.0"
+    toolVersion = "13.8.0"
     maxWarnings = 0
 }
 
 pmd {
-    toolVersion = "7.25.0"
+    toolVersion = "7.26.0"
     ruleSets = emptyList()
     ruleSetFiles = files("config/pmd/ruleset.xml")
     isConsoleOutput = true
