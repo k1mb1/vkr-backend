@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 
 @Builder
 @Schema(description = "Одна аудиторная единица опроса — группа и опционально подгруппа")
-public record CheckInAudienceScope(
+public record CheckInAudienceScopeResponse(
         @Schema(description = "ID группы") UUID groupId,
 
         @Schema(description = "Название группы") String groupName,

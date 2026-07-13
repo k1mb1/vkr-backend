@@ -1,6 +1,8 @@
 package com.github.k1mb1.vkr_backend.attendance.checkin.service;
 
 import com.github.k1mb1.vkr_backend.attendance.AttendanceStatus;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInCodeGenerator;
+import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInCodes;
 import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInRecordStatus;
 import com.github.k1mb1.vkr_backend.attendance.checkin.CheckInSessionState;
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInRecordEntity;

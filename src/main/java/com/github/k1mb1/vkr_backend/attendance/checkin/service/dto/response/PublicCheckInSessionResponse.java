@@ -21,7 +21,7 @@ public record PublicCheckInSessionResponse(
         @Schema(
                 description = "Аудитория опроса — копия lesson scopes (группа + опц. подгруппа). "
                         + "Если allGroups=true, содержит по одной записи на каждую группу предмета.")
-        List<CheckInAudienceScope> audience,
+        List<CheckInAudienceScopeResponse> audience,
 
         @Schema(description = "Текущее состояние сессии") CheckInSessionState state,
 

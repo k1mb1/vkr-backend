@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Lesson scopes", description = "Операции над scope занятия")
+@RequestMapping("/api")
 @RestController
 @RequiredArgsConstructor
 public class LessonScopesController {
@@ -27,7 +29,7 @@ public class LessonScopesController {
     final LessonScopeService lessonScopeService;
 
     @Operation(summary = "Массовое добавление scope'ов к занятию")
-    @PostMapping(value = "/api/lessons/{lessonId}/scopes", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/lessons/{lessonId}/scopes", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<LessonScopeResponse>> addLessonScopes(
             @Parameter(description = "ID занятия") @PathVariable UUID lessonId,
             @Valid @RequestBody
@@ -41,7 +43,7 @@ public class LessonScopesController {
     @Operation(
             summary = "Удалить один scope занятия",
             description = "Помечает scope как архивный (soft-delete). Идентифицируется по глобальному ID scope'а.")
-    @DeleteMapping(value = "/api/lesson-scopes/{scopeId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(value = "/lesson-scopes/{scopeId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> deleteLessonScope(
             @Parameter(description = "ID scope'а занятия") @PathVariable UUID scopeId) {
         lessonScopeService.deleteScope(scopeId);

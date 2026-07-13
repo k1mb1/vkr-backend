@@ -115,7 +115,7 @@ class StudentServiceTest {
 
         service.updateStudent(id, UpdateStudentRequest.builder().username("New").build());
 
-        verify(studentMapper).updateEntity(any(), any(), any());
+        verify(studentMapper).updateEntity(any(), any());
         verify(studentRepository).save(student);
     }
 

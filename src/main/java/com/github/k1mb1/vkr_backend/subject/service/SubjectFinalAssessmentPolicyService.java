@@ -8,8 +8,6 @@ import com.github.k1mb1.vkr_backend.subject.domain.FinalAssessmentPolicyEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.FinalAssessmentPolicyRequest;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,9 +24,6 @@ public class SubjectFinalAssessmentPolicyService {
     final SubjectRepository subjectRepository;
 
     final SubjectMapper subjectMapper;
-
-    @PersistenceContext
-    EntityManager entityManager;
 
     @PreAuthorize("@authz.canAccessSubject(#subjectId)")
     public FinalAssessmentPolicyResponse getFinalAssessmentPolicy(UUID subjectId) {
@@ -84,7 +79,7 @@ public class SubjectFinalAssessmentPolicyService {
         policy.getBands().removeIf(b -> !requestedIds.contains(b.getId()));
 
         // Flush, чтобы DELETE старых банд ушёл в БД до INSERT новых
-        entityManager.flush();
+        subjectRepository.flush();
 
         // Обновляем существующие
         for (var req : requestBands) {

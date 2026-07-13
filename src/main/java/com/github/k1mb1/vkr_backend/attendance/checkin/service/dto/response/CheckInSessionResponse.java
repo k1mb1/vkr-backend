@@ -21,7 +21,7 @@ public record CheckInSessionResponse(
         @Schema(
                 description = "Аудитория опроса — копия аудитории lesson scope. "
                         + "Если allGroups=true, содержит по одной записи на каждую группу предмета.")
-        List<CheckInAudienceScope> audience,
+        List<CheckInAudienceScopeResponse> audience,
 
         @Schema(
                 description = "Код аудитории — преподаватель показывает его студентам; нужен им для отметки. "

@@ -34,7 +34,8 @@ public class CheckInSessionController {
 
     @Operation(summary = "Запустить опрос по посещаемости на занятии")
     @PostMapping
-    public ResponseEntity<CheckInSessionResponse> startCheckInSession(@Valid @RequestBody StartCheckInRequest request) {
+    public ResponseEntity<CheckInSessionResponse> createCheckInSession(
+            @Valid @RequestBody StartCheckInRequest request) {
         return ResponseEntity.ok(checkInSessionService.start(request));
     }
 

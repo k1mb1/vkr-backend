@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.attendance.checkin.mapper;
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
 import com.github.k1mb1.vkr_backend.attendance.checkin.domain.CheckInSessionEntity;
-import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.CheckInAudienceScope;
+import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.CheckInAudienceScopeResponse;
 import com.github.k1mb1.vkr_backend.attendance.checkin.service.dto.response.CheckInSessionResponse;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import java.time.Instant;
@@ -30,11 +30,11 @@ public interface CheckInSessionMapper {
     @Mapping(target = "state", expression = "java(session.stateAt(now))")
     CheckInSessionResponse toResponse(CheckInSessionEntity session, Instant now);
 
-    default List<CheckInAudienceScope> audienceOf(LessonScopeEntity scope) {
+    default List<CheckInAudienceScopeResponse> audienceOf(LessonScopeEntity scope) {
         if (scope.isAllGroups()) {
             return scope.getLesson().getSubject().getGroups().stream()
                     .sorted(Comparator.comparing(g -> g.getName()))
-                    .map(g -> CheckInAudienceScope.builder()
+                    .map(g -> CheckInAudienceScopeResponse.builder()
                             .groupId(g.getId())
                             .groupName(g.getName())
                             .allowedSubgroupId(null)
@@ -45,7 +45,7 @@ public interface CheckInSessionMapper {
         if (scope.getGroup() == null) {
             return List.of();
         }
-        return List.of(CheckInAudienceScope.builder()
+        return List.of(CheckInAudienceScopeResponse.builder()
                 .groupId(scope.getGroup().getId())
                 .groupName(scope.getGroup().getName())
                 .allowedSubgroupId(

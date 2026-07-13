@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.architecture;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 
-import com.github.k1mb1.vkr_backend.common.domain.BaseEntity;
+import com.github.k1mb1.vkr_backend.common.domain.Auditable;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -33,10 +33,12 @@ class PersistenceAndContractRules {
             .that()
             .areAnnotatedWith(Entity.class)
             .should()
-            .beAssignableTo(BaseEntity.class)
+            .beAssignableTo(Auditable.class)
             .andShould()
             .beAnnotatedWith(Table.class)
-            .because("every entity inherits identity + auditing from BaseEntity and names its table explicitly");
+            .because("every entity inherits auditing from the common base (BaseEntity for generated ids, "
+                    + "Auditable directly when the id is externally assigned, e.g. the IdP subject) "
+                    + "and names its table explicitly");
 
     @ArchTest
     static final ArchRule entities_are_not_final = classes()

@@ -52,7 +52,10 @@ public class StudentService {
         var student = studentRepository
                 .findById(studentId)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Student not found: " + studentId));
-        studentMapper.updateEntity(request, student, subgroupRepository);
+        studentMapper.updateEntity(request, student);
+        if (request.subgroupId() != null) {
+            student.setSubgroup(subgroupRepository.getReferenceById(request.subgroupId()));
+        }
         studentRepository.save(student);
     }
 

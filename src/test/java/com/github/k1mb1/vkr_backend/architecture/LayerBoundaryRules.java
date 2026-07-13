@@ -73,6 +73,9 @@ class LayerBoundaryRules {
             .resideInAPackage(Packages.DOMAIN)
             .and()
             .resideOutsideOfPackage(Packages.COMMON)
+            .and()
+            // package-info carries the Modulith @NamedInterface metadata, not domain logic
+            .doNotHaveSimpleName("package-info")
             .should()
             .dependOnClassesThat()
             .resideInAPackage(Packages.SPRING)

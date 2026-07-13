@@ -40,14 +40,17 @@ public class SecurityConfig {
 
     private final JwtAuthConverter jwtAuthConverter;
 
-    @Value("${app.cors.allowed-origins}")
-    private String[] allowedOrigins;
+    private final String[] allowedOrigins;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
-    private String issuerUri;
+    private final String issuerUri;
 
-    public SecurityConfig(JwtAuthConverter jwtAuthConverter) {
+    public SecurityConfig(
+            JwtAuthConverter jwtAuthConverter,
+            @Value("${app.cors.allowed-origins}") String[] allowedOrigins,
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String issuerUri) {
         this.jwtAuthConverter = jwtAuthConverter;
+        this.allowedOrigins = allowedOrigins;
+        this.issuerUri = issuerUri;
     }
 
     /**

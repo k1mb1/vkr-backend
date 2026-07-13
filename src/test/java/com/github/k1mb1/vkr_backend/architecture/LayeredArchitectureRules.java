@@ -46,6 +46,10 @@ class LayeredArchitectureRules {
             .definedBy(Packages.REPOSITORY)
             .layer("Config")
             .definedBy(Packages.CONFIG)
+            // Module-root vocabulary: shared enums/beans published at a module's root
+            // (the unnamed Modulith interface). Everyone, including the domain, may use it.
+            .layer("Shared")
+            .definedBy(Packages.ROOT + ".*", Packages.ROOT + ".attendance.checkin")
 
             // Controller is the entry point: nothing may depend on it.
             .whereLayer("Controller")
@@ -70,11 +74,12 @@ class LayeredArchitectureRules {
             .whereLayer("Repository")
             .mayOnlyBeAccessedByLayers("Service")
 
-            // Domain is the core: everyone may use it, it depends on no layer.
+            // Domain is the core: everyone may use it; it depends only on the
+            // module-root vocabulary (shared enums), never on another layer.
             .whereLayer("Domain")
             .mayOnlyBeAccessedByLayers("Controller", "Service", "Mapper", "Specification", "Repository")
             .whereLayer("Domain")
-            .mayNotAccessAnyLayer()
+            .mayOnlyAccessLayers("Shared")
 
             // Config wires things up; it must not be depended on as a layer.
             .whereLayer("Config")

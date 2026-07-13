@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.attendance.checkin.service;
+package com.github.k1mb1.vkr_backend.attendance.checkin;
 
 import java.security.SecureRandom;
 
@@ -9,7 +9,7 @@ import java.security.SecureRandom;
  * легко продиктовать и набрать. Длина 6 — компромисс между удобством и стойкостью
  * к подбору на коротком окне действия сессии.
  */
-final class CheckInCodeGenerator {
+public final class CheckInCodeGenerator {
 
     private static final char[] ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
 
@@ -19,7 +19,7 @@ final class CheckInCodeGenerator {
 
     private CheckInCodeGenerator() {}
 
-    static String generate() {
+    public static String generate() {
         var sb = new StringBuilder(CODE_LENGTH);
         for (var i = 0; i < CODE_LENGTH; i++) {
             sb.append(ALPHABET[RANDOM.nextInt(ALPHABET.length)]);

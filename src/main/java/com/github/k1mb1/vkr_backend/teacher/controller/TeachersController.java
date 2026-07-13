@@ -46,7 +46,7 @@ public class TeachersController {
                 content = @Content(schema = @Schema(implementation = ErrorDto.class))),
     })
     @PutMapping("/{id}")
-    public ResponseEntity<TeacherResponse> createOrUpdateTeacher(
+    public ResponseEntity<TeacherResponse> updateTeacher(
             @Parameter(description = "ID преподавателя") @PathVariable UUID id,
             @Valid @RequestBody
                     @io.swagger.v3.oas.annotations.parameters.RequestBody(

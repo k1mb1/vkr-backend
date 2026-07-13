@@ -1,4 +1,4 @@
-package com.github.k1mb1.vkr_backend.attendance.checkin.service;
+package com.github.k1mb1.vkr_backend.attendance.checkin;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

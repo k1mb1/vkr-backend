@@ -46,7 +46,7 @@ public class GradingController {
 
     @Operation(summary = "Массовое создание/обновление ячеек оценок")
     @PutMapping
-    public ResponseEntity<List<GradeCellResponse>> upsertGrades(
+    public ResponseEntity<List<GradeCellResponse>> updateGrades(
             @Valid @RequestBody
                     @io.swagger.v3.oas.annotations.parameters.RequestBody(
                             description = "Список ячеек оценок",

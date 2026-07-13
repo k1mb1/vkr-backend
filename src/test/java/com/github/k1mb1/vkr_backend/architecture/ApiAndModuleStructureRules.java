@@ -36,6 +36,9 @@ class ApiAndModuleStructureRules {
             .resideInAPackage(Packages.API)
             .and()
             .doNotHaveSimpleName("package-info")
+            .and()
+            // nested helper types (an enum inside a DTO record) are namespaced by their parent
+            .areTopLevelClasses()
             .should()
             .beInterfaces()
             .orShould()
