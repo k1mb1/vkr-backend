@@ -1,16 +1,37 @@
 # syntax=docker/dockerfile:1
+
+# ---- Build stage -------------------------------------------------------------
 FROM ghcr.io/graalvm/graalvm-community:25 AS builder
 WORKDIR /workspace
 
-COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties lombok.config ./
+# Resolve dependencies first for layer caching; gradle.lockfile keeps the native
+# build reproducible under strict dependency locking.
+COPY gradlew ./
 COPY gradle ./gradle
-RUN ./gradlew --no-daemon dependencies || true
+COPY settings.gradle.kts build.gradle.kts gradle.properties gradle.lockfile lombok.config ./
+RUN chmod +x gradlew \
+    && ./gradlew --no-daemon dependencies || true
 
-COPY src ./src
+# Only main sources are needed for the native image; tests never run here.
+COPY src/main ./src/main
 RUN ./gradlew --no-daemon -x test nativeCompile
 
+# ---- Runtime stage -----------------------------------------------------------
 FROM debian:bookworm-slim
 WORKDIR /app
-COPY --from=builder /workspace/build/native/nativeCompile/vkr-backend /app/app
+
+# The GraalVM native image dynamically links libz and needs the system CA bundle
+# for outbound TLS (JDBC over SSL, HTTP clients). Create an unprivileged user too.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates zlib1g \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system spring \
+    && useradd --system --gid spring spring
+
+COPY --from=builder --chown=spring:spring /workspace/build/native/nativeCompile/vkr-backend /app/app
+
+USER spring:spring
 EXPOSE 8080
+
+# The `prod` profile is the application default (spring.profiles.default=prod).
 ENTRYPOINT ["/app/app"]
