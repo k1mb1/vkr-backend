@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend;
 
-import com.github.k1mb1.vkr_backend.config.NativeImageHints;
+import com.github.k1mb1.vkr_backend.common.aot.NativeImageHints;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ImportRuntimeHints;

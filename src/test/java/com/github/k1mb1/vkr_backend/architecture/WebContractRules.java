@@ -3,7 +3,7 @@ package com.github.k1mb1.vkr_backend.architecture;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 
-import com.github.k1mb1.vkr_backend.common.error.ErrorDto;
+import com.github.k1mb1.vkr_backend.common.web.ErrorDto;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import org.springframework.http.ResponseEntity;

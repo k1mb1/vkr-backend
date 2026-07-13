@@ -1,15 +1,15 @@
 package com.github.k1mb1.vkr_backend.group;
 
-import com.github.k1mb1.vkr_backend.group.domain.Group;
-import com.github.k1mb1.vkr_backend.group.domain.Subgroup;
+import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
+import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
 public interface GroupReferenceService {
 
-    Group getGroupReferenceById(UUID id);
+    GroupEntity getGroupReferenceById(UUID id);
 
-    Subgroup getSubgroupReferenceById(UUID id);
+    SubgroupEntity getSubgroupReferenceById(UUID id);
 
     /**
      * Разрешает аудиторию (группа + опц. подгруппа) в ссылки на сущности с проверкой

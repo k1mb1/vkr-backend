@@ -17,7 +17,7 @@ import lombok.Setter;
  * ({@code score >= minScore}) — это его «потолок» по данному заданию;
  * все более старшие tiers считаются непройденными.
  * <p>
- * Вместо текстового label используется ссылка {@code bandId} на {@link com.github.k1mb1.vkr_backend.subject.domain.AssessmentBand},
+ * Вместо текстового label используется ссылка {@code bandId} на {@link com.github.k1mb1.vkr_backend.subject.domain.AssessmentBandEntity},
  * что исключает дублирование строк и гарантирует консистентность с бандами политики итогов.
  */
 @Embeddable
@@ -28,7 +28,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AssignmentAdmissionTier {
 
-    /** Ссылка на банду итоговой аттестации ({@code AssessmentBand.id}). */
+    /** Ссылка на банду итоговой аттестации ({@code AssessmentBandEntity.id}). */
     @Column(name = "band_id", nullable = false)
     UUID bandId;
 
