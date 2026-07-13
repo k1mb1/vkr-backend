@@ -64,6 +64,8 @@ dependencies {
     implementation(libs.springdoc.openapi)
     implementation(libs.mapstruct)
 
+    implementation(libs.spring.modulith.starter.core)
+
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
 
@@ -81,6 +83,8 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.assertj:assertj-core")
     testImplementation("org.mockito:mockito-core")
+    testImplementation(libs.spring.modulith.starter.test)
+    testImplementation(libs.archunit.junit5)
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -91,6 +95,12 @@ dependencies {
     compileOnly(libs.spotbugs.annotations)
 
     spotbugsPlugins(libs.findsecbugs.plugin)
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.modulith:spring-modulith-bom:${libs.versions.springModulith.get()}")
+    }
 }
 
 // Static Hibernate bytecode enhancement at build time.
