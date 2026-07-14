@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.architecture;
 
+import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaCodeUnit;
 import com.tngtech.archunit.core.domain.JavaMethod;
@@ -10,12 +11,16 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import jakarta.validation.Valid;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.mapstruct.Mapper;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +40,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 final class ArchConditions {
 
     private ArchConditions() {}
+
+    /** A service must depend only on repositories that live in its own feature package. */
+    static ArchCondition<JavaClass> dependOnRepositoriesOfOwnPackageOnly() {
+        return new ArchCondition<>("depend only on repositories within the same feature package") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                String owner = topPackageOf(clazz.getPackageName());
+                for (Dependency dependency : clazz.getDirectDependenciesFromSelf()) {
+                    JavaClass target = dependency.getTargetClass();
+                    boolean isRepository = target.getPackageName().contains(".repository");
+                    if (isRepository && !topPackageOf(target.getPackageName()).equals(owner)) {
+                        events.add(SimpleConditionEvent.violated(
+                                clazz,
+                                clazz.getFullName() + " depends on a repository of another package: "
+                                        + target.getName() + " (reach foreign data through your own read-only "
+                                        + "ref repository or a published port, never its repository)"));
+                    }
+                }
+            }
+        };
+    }
 
     /** Every {@code @RequestBody} controller parameter must also be {@code @Valid}. */
     static ArchCondition<JavaMethod> validateEveryRequestBody() {
@@ -372,5 +398,61 @@ final class ArchConditions {
         if (type instanceof JavaParameterizedType parameterized) {
             parameterized.getActualTypeArguments().forEach(arg -> checkParameterType(arg, method, events));
         }
+    }
+
+    /**
+     * A {@code *Repository} declared over another feature package's entity is a read-only
+     * view: it may expose finders and {@code getReferenceById}, but never writes. Concretely
+     * it must extend the Spring Data {@code Repository} marker (plus optionally
+     * {@code JpaSpecificationExecutor}) and must not be assignable to {@code CrudRepository},
+     * which would drag in {@code save}/{@code delete} and let a consumer mutate an aggregate
+     * it does not own. A repository over its own package's entity is unrestricted.
+     */
+    static ArchCondition<JavaClass> keepForeignEntityRepositoriesReadOnly() {
+        return new ArchCondition<>(
+                "be read-only (extend Repository, not CrudRepository) over another package's entity") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                Class<?> repo = clazz.reflect();
+                Class<?> entity = managedEntityOf(repo);
+                if (entity == null) {
+                    return; // not a Spring Data repository, or a non-class type argument
+                }
+                String repoPackage = topPackageOf(clazz.getPackageName());
+                String entityPackage = topPackageOf(entity.getPackageName());
+                boolean foreign = !entityPackage.isEmpty() && !entityPackage.equals(repoPackage);
+                if (foreign && CrudRepository.class.isAssignableFrom(repo)) {
+                    events.add(SimpleConditionEvent.violated(
+                            clazz,
+                            clazz.getName() + " is a CrudRepository over " + entity.getName()
+                                    + " owned by package '" + entityPackage + "'; a cross-package repository must be a "
+                                    + "read-only view (extend Repository, never CrudRepository/JpaRepository)"));
+                }
+            }
+        };
+    }
+
+    /** The entity type a Spring Data repository interface manages (first arg of its {@code Repository<T, ID>} super). */
+    private static @Nullable Class<?> managedEntityOf(Class<?> repo) {
+        for (Type generic : repo.getGenericInterfaces()) {
+            if (generic instanceof ParameterizedType parameterized
+                    && parameterized.getRawType() instanceof Class<?> raw
+                    && Repository.class.isAssignableFrom(raw)
+                    && parameterized.getActualTypeArguments()[0] instanceof Class<?> entity) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    /** Top-level feature-package segment of a package name, e.g. {@code journal} or {@code teacher}. */
+    private static String topPackageOf(String packageName) {
+        String base = Packages.ROOT + ".";
+        if (!packageName.startsWith(base)) {
+            return "";
+        }
+        String rest = packageName.substring(base.length());
+        int dot = rest.indexOf('.');
+        return dot < 0 ? rest : rest.substring(0, dot);
     }
 }

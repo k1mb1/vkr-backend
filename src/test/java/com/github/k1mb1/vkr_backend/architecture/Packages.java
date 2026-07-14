@@ -32,6 +32,22 @@ final class Packages {
     /** Published api packages (ports and DTO records shared between feature packages). */
     static final String API = "..api..";
 
+    // Feature (aggregate) packages in dependency order: each may depend only on the
+    // ones before it. The graph rules reference these constants so a package rename
+    // cannot silently detach a rule. See ARCHITECTURE.md.
+    static final String PKG_GROUP = ROOT + ".group..";
+    static final String PKG_SUBJECT = ROOT + ".subject..";
+    static final String PKG_TEACHER = ROOT + ".teacher..";
+    static final String PKG_LESSON = ROOT + ".lesson..";
+    static final String PKG_JOURNAL = ROOT + ".journal..";
+    static final String PKG_AUTH = ROOT + ".auth..";
+
+    /** All business feature packages (everything except the auth/common leaves). */
+    static final String[] BUSINESS = {PKG_GROUP, PKG_SUBJECT, PKG_TEACHER, PKG_LESSON, PKG_JOURNAL};
+
+    /** Business packages plus auth — nothing here may be depended on by the common leaf. */
+    static final String[] BUSINESS_AND_AUTH = {PKG_GROUP, PKG_SUBJECT, PKG_TEACHER, PKG_LESSON, PKG_JOURNAL, PKG_AUTH};
+
     /** Shared technical package. */
     static final String COMMON = "..common..";
 

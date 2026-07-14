@@ -1,5 +1,6 @@
 package com.github.k1mb1.vkr_backend.architecture;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.junit.ArchTest;
@@ -104,4 +105,94 @@ class LayerBoundaryRules {
             .beAnnotatedWith(jakarta.persistence.Entity.class)
             .because("common is the shared technical package: technical base types only, "
                     + "no web/business/persisted-entity leaks");
+
+    // --- Cross-package encapsulation ----------------------------------------
+
+    @ArchTest
+    static final ArchRule services_use_only_their_own_packages_repositories = classes()
+            .that()
+            .resideInAPackage(Packages.SERVICE)
+            .should(ArchConditions.dependOnRepositoriesOfOwnPackageOnly())
+            .because("another package's data is reached through its published port or your own read-only "
+                    + "ref repository, never its repository directly");
+
+    @ArchTest
+    static final ArchRule foreign_entity_repositories_are_read_only = classes()
+            .that()
+            .resideInAPackage(Packages.REPOSITORY)
+            .and()
+            .areInterfaces()
+            .should(ArchConditions.keepForeignEntityRepositoriesReadOnly())
+            .because("another package's aggregate is mutated only by its owner: a consumer's repository over a "
+                    + "foreign entity is a read-only view (finders + getReferenceById), so it must "
+                    + "extend Repository, never CrudRepository/JpaRepository");
+
+    // --- Feature-package dependency graph is one-directional ----------------
+    // Pins the documented order (see ARCHITECTURE.md) as an explicit contract; each
+    // rule forbids the reverse edges outright, so a cycle can never be introduced:
+    //
+    //   journal -> lesson -> teacher -> subject -> group
+    //   journal, lesson -> teacher (visibility under a permission)
+    //   auth   -> (nothing but common); every business package may use auth
+    //   common -> (leaf)
+
+    @ArchTest
+    static final ArchRule group_is_a_leaf_reference_package = noClasses()
+            .that()
+            .resideInAPackage(Packages.PKG_GROUP)
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(Packages.PKG_SUBJECT, Packages.PKG_TEACHER, Packages.PKG_LESSON, Packages.PKG_JOURNAL)
+            .because("group (контингент) is reference data at the bottom of the graph; "
+                    + "everything else depends on it, never the reverse");
+
+    @ArchTest
+    static final ArchRule subject_depends_only_downward = noClasses()
+            .that()
+            .resideInAPackage(Packages.PKG_SUBJECT)
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(Packages.PKG_TEACHER, Packages.PKG_LESSON, Packages.PKG_JOURNAL)
+            .because("subject (предметы, политики) sits below teacher/lesson/journal: they depend on subject, "
+                    + "never the reverse — the owner auto-grant and visibility filter are inverted through "
+                    + "subject's own ports (subject.api)");
+
+    @ArchTest
+    static final ArchRule teacher_depends_only_downward = noClasses()
+            .that()
+            .resideInAPackage(Packages.PKG_TEACHER)
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(Packages.PKG_LESSON, Packages.PKG_JOURNAL)
+            .because("teacher (права) is consumed by lesson/journal for table visibility; "
+                    + "it depends on subject/group below it, never on lesson/journal above");
+
+    @ArchTest
+    static final ArchRule lesson_does_not_depend_on_journal = noClasses()
+            .that()
+            .resideInAPackage(Packages.PKG_LESSON)
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage(Packages.PKG_JOURNAL)
+            .because("lesson is the schedule core; the journal (marks) builds on it — "
+                    + "the reverse direction is inverted through lesson's own ports (lesson.api)");
+
+    @ArchTest
+    static final ArchRule auth_depends_on_no_business_package = noClasses()
+            .that()
+            .resideInAPackage(Packages.PKG_AUTH)
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(Packages.BUSINESS)
+            .because("auth is infrastructure: business packages implement its ports (auth.api), "
+                    + "so auth itself stays a leaf and can never join a cycle");
+
+    @ArchTest
+    static final ArchRule common_depends_on_no_business_or_auth_package = noClasses()
+            .that()
+            .resideInAPackage(Packages.COMMON)
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(Packages.BUSINESS_AND_AUTH)
+            .because("common is the leaf technical package; everything depends on it, never the reverse");
 }
