@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
         description =
                 "Аудитория таблицы — одна запись на (группа, опц. подгруппа). "
                         + "Один scope разрешения = одна запись; при allPermissions=true — по одной записи на каждую группу предмета.")
-public record AttendanceAudienceScopeResponse(
+public record JournalAudienceScopeResponse(
         @Schema(description = "ID группы") UUID groupId,
 
         @Schema(description = "Название группы") String groupName,

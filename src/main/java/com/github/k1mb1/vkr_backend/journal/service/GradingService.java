@@ -21,9 +21,9 @@ import com.github.k1mb1.vkr_backend.journal.service.dto.request.UpsertGradeReque
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.AssignmentResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.AttendanceSummaryResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.GradeCellResponse;
-import com.github.k1mb1.vkr_backend.journal.service.dto.response.GradingAudienceScopeResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.GradingTableLessonResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.GradingTableResponse;
+import com.github.k1mb1.vkr_backend.journal.service.dto.response.JournalAudienceScopeResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.StudentAttendanceResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
@@ -34,7 +34,6 @@ import com.github.k1mb1.vkr_backend.subject.api.AttendancePolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.api.FinalAssessmentPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.api.GradingHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.api.PenaltyPolicyResponse;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,6 +80,8 @@ public class GradingService {
     final LessonStudentsApi lessonStudentsApi;
 
     final AuthorizationService authz;
+
+    final JournalAudienceService audienceService;
 
     static @Nullable LocalDate earliestStartedAt(LessonEntity lesson) {
         return lesson.getScopes().stream()
@@ -139,7 +140,7 @@ public class GradingService {
                 .flatMap(List::stream)
                 .map(LessonScopeEntity::getId)
                 .toList());
-        var audience = audienceOf(permission);
+        var audience = audienceService.audienceOf(permission);
         var penaltyPolicy =
                 gradingMapper.toPenaltyPolicyResponse(permission.getSubject().getPenaltyPolicy());
         var attendancePolicy =
@@ -164,7 +165,7 @@ public class GradingService {
             AttendancePolicyResponse attendancePolicy,
             GradingHighlightPolicyResponse highlightPolicy,
             FinalAssessmentPolicyResponse finalAssessmentPolicy,
-            List<GradingAudienceScopeResponse> audience,
+            List<JournalAudienceScopeResponse> audience,
             List<LessonStudentResponse> students,
             java.util.Map<LessonEntity, List<LessonScopeEntity>> visibleScopesByLesson) {
         var studentIds = students.stream().map(LessonStudentResponse::id).toList();
@@ -516,27 +517,6 @@ public class GradingService {
     @PreAuthorize("@authz.canAccessLesson(#lessonId)")
     public void deleteAssignmentsOfLesson(UUID lessonId) {
         assignmentRepository.deleteByLessonId(lessonId);
-    }
-
-    private List<GradingAudienceScopeResponse> audienceOf(TeacherSubjectPermissionEntity permission) {
-        return LessonSpecifications.audienceScopes(permission).stream()
-                .map(s -> {
-                    // audienceScopes() excludes all-groups scopes, so the group is always present.
-                    var group = Objects.requireNonNull(s.getGroup());
-                    return GradingAudienceScopeResponse.builder()
-                            .groupId(group.getId())
-                            .groupName(group.getName())
-                            .allowedSubgroupId(
-                                    s.getAllowedSubgroup() != null
-                                            ? s.getAllowedSubgroup().getId()
-                                            : null)
-                            .allowedSubgroupIndex(
-                                    s.getAllowedSubgroup() != null
-                                            ? s.getAllowedSubgroup().getIndex()
-                                            : null)
-                            .build();
-                })
-                .toList();
     }
 
     private void validateAdmission(AssignmentAdmissionMode mode, Integer admissionMinScore) {

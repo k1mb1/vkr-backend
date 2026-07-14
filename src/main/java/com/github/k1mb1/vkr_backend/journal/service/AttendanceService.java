@@ -12,25 +12,23 @@ import com.github.k1mb1.vkr_backend.journal.repository.JournalStudentRefReposito
 import com.github.k1mb1.vkr_backend.journal.service.dto.filter.AttendanceFilter;
 import com.github.k1mb1.vkr_backend.journal.service.dto.request.BulkUpsertAttendanceRequest;
 import com.github.k1mb1.vkr_backend.journal.service.dto.request.UpsertAttendanceRequest;
-import com.github.k1mb1.vkr_backend.journal.service.dto.response.AttendanceAudienceScopeResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.AttendanceCellResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.AttendanceSummaryResponse;
 import com.github.k1mb1.vkr_backend.journal.service.dto.response.AttendanceTableResponse;
+import com.github.k1mb1.vkr_backend.journal.service.dto.response.JournalAudienceScopeResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
 import com.github.k1mb1.vkr_backend.subject.api.AttendanceHighlightPolicyResponse;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -57,6 +55,8 @@ public class AttendanceService {
 
     final LessonStudentsApi lessonStudentsApi;
 
+    final JournalAudienceService audienceService;
+
     @PreAuthorize("@authz.ownsPermission(#permissionId)")
     public AttendanceTableResponse getAttendanceTable(
             UUID permissionId, @Nullable UUID lessonScopeId, @Nullable UUID lessonId) {
@@ -79,7 +79,7 @@ public class AttendanceService {
 
         var students = lessonStudentsApi.studentsOfScopes(
                 scopes.stream().map(LessonScopeEntity::getId).toList());
-        var audience = audienceOf(permission);
+        var audience = audienceService.audienceOf(permission);
         var highlightPolicy = attendanceMapper.toHighlightPolicyResponse(
                 permission.getSubject().getAttendanceHighlightPolicy());
 
@@ -88,7 +88,7 @@ public class AttendanceService {
 
     private List<LessonScopeEntity> resolveScopes(
             List<LessonEntity> lessons, TeacherSubjectPermissionEntity permission, AttendanceFilter filter) {
-        var visible = visibleScopesIn(lessons, permission);
+        var visible = audienceService.visibleScopesIn(lessons, permission);
         if (filter.lessonScopeId() == null) {
             return visible;
         }
@@ -104,7 +104,7 @@ public class AttendanceService {
 
     private AttendanceTableResponse buildTable(
             AttendanceHighlightPolicyResponse highlightPolicy,
-            List<AttendanceAudienceScopeResponse> audience,
+            List<JournalAudienceScopeResponse> audience,
             List<LessonStudentResponse> students,
             List<LessonScopeEntity> scopes) {
         var studentIds = students.stream().map(LessonStudentResponse::id).toList();
@@ -177,54 +177,21 @@ public class AttendanceService {
             return Map.of();
         }
         var rows = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(lessonScopeIds, studentIds);
-        // Счётчик по каждому статусу посещаемости на студента (индексируется ordinal статуса).
-        var counts = new HashMap<UUID, int[]>();
+        // Счётчик по каждому статусу посещаемости на студента.
+        var counts = new HashMap<UUID, EnumMap<AttendanceStatus, Integer>>();
         for (var a : rows) {
-            var c = counts.computeIfAbsent(a.getStudent().getId(), k -> new int[AttendanceStatus.values().length]);
-            c[a.getStatus().ordinal()]++;
+            counts.computeIfAbsent(a.getStudent().getId(), k -> new EnumMap<>(AttendanceStatus.class))
+                    .merge(a.getStatus(), 1, Integer::sum);
         }
         var result = new HashMap<UUID, AttendanceSummaryResponse>();
         counts.forEach((id, c) -> result.put(
                 id,
                 AttendanceSummaryResponse.builder()
-                        .present(c[AttendanceStatus.PRESENT.ordinal()])
-                        .late(c[AttendanceStatus.LATE.ordinal()])
-                        .absent(c[AttendanceStatus.ABSENT.ordinal()])
-                        .excused(c[AttendanceStatus.EXCUSED.ordinal()])
+                        .present(c.getOrDefault(AttendanceStatus.PRESENT, 0))
+                        .late(c.getOrDefault(AttendanceStatus.LATE, 0))
+                        .absent(c.getOrDefault(AttendanceStatus.ABSENT, 0))
+                        .excused(c.getOrDefault(AttendanceStatus.EXCUSED, 0))
                         .build()));
         return result;
-    }
-
-    private List<LessonScopeEntity> visibleScopesIn(
-            List<LessonEntity> lessons, TeacherSubjectPermissionEntity permission) {
-        var result = new ArrayList<LessonScopeEntity>();
-        for (var lesson : lessons) {
-            result.addAll(LessonSpecifications.visibleScopes(lesson, permission));
-        }
-        result.sort(Comparator.comparing(
-                        (LessonScopeEntity s) -> s.getStartedAt(), Comparator.nullsLast(Comparator.naturalOrder()))
-                .thenComparing(s -> s.getLesson().getOrderIndex()));
-        return result;
-    }
-
-    private List<AttendanceAudienceScopeResponse> audienceOf(TeacherSubjectPermissionEntity permission) {
-        return LessonSpecifications.audienceScopes(permission).stream()
-                .map(s -> {
-                    // audienceScopes() excludes all-groups scopes, so the group is always present.
-                    var group = Objects.requireNonNull(s.getGroup());
-                    return AttendanceAudienceScopeResponse.builder()
-                            .groupId(group.getId())
-                            .groupName(group.getName())
-                            .allowedSubgroupId(
-                                    s.getAllowedSubgroup() != null
-                                            ? s.getAllowedSubgroup().getId()
-                                            : null)
-                            .allowedSubgroupIndex(
-                                    s.getAllowedSubgroup() != null
-                                            ? s.getAllowedSubgroup().getIndex()
-                                            : null)
-                            .build();
-                })
-                .toList();
     }
 }

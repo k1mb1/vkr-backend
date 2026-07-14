@@ -37,7 +37,7 @@ public record GradingTableResponse(
         @Schema(
                 description = "Аудитория таблицы — группы/подгруппы из scope'ов разрешения. "
                         + "Пустой список при allPermissions=true: клиент должен взять группы из subject.groups.")
-        List<GradingAudienceScopeResponse> audience,
+        List<JournalAudienceScopeResponse> audience,
 
         @Schema(description = "Строки таблицы — студенты") List<GradingTableStudentResponse> students,
 

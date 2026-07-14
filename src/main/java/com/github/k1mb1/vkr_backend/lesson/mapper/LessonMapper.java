@@ -44,6 +44,8 @@ public interface LessonMapper {
     @Mapping(target = "archivedAt", ignore = true)
     @Mapping(target = "subject", ignore = true)
     @Mapping(target = "scopes", ignore = true)
+    // Активность занятия переключается отдельным use case'ом (setActive), не апдейтом шапки.
+    @Mapping(target = "active", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = IGNORE)
     void updateEntity(UpdateLessonHeaderRequest request, @MappingTarget LessonEntity lesson);
 }
