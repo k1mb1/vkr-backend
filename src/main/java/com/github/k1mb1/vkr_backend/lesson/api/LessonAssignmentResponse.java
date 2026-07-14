@@ -7,9 +7,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Задание занятия в составе {@code LessonResponse}. Собственная проекция модуля
- * lesson: заполняется модулем grading через {@link LessonAssignmentsPort}
- * (инверсия зависимости — lesson не знает о grading), форма JSON совпадает с
- * {@code AssignmentResponse} модуля grading.
+ * lesson: заполняется модулем journal через {@link LessonAssignmentsPort}
+ * (инверсия зависимости — lesson не знает о journal), форма JSON совпадает с
+ * {@code AssignmentResponse} модуля journal.
  */
 @Schema(name = "LessonAssignment", description = "Задание занятия")
 public record LessonAssignmentResponse(
@@ -29,7 +29,7 @@ public record LessonAssignmentResponse(
 
         @Schema(description = "TIERED: уровни допуска по убыванию старшинства (ссылки на банды)") @Nullable List<AdmissionTier> admissionTiers) {
 
-    /** Зеркало {@code AssignmentAdmissionMode} модуля grading (JSON-совместимо по именам). */
+    /** Зеркало {@code AssignmentAdmissionMode} модуля journal (JSON-совместимо по именам). */
     public enum AdmissionMode {
         NONE,
         PASS_FAIL,

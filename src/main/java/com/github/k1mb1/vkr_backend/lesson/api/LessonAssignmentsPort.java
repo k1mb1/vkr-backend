@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /**
  * SPI модуля lesson: задания занятий для встраивания в {@code LessonResponse}.
- * Реализуется модулем grading (владельцем заданий) — так grading зависит от
+ * Реализуется модулем journal (владельцем заданий) — так journal зависит от
  * lesson, а не наоборот, и модульный граф остаётся однонаправленным.
  */
 public interface LessonAssignmentsPort {

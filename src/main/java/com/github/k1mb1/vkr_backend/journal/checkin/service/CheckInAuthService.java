@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Реализация {@link CheckInAuthPort}: модуль attendance владеет check-in сессиями
- * и разрешает их в предметы для авторизационных проверок auth.
+ * Реализация {@link CheckInAuthPort}: модуль journal (пакет checkin) владеет check-in
+ * сессиями и разрешает их в предметы для авторизационных проверок auth.
  */
 @Service
 @RequiredArgsConstructor

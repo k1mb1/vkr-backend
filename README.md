@@ -57,13 +57,20 @@ REST API для системы учёта учебного процесса: г�
                                                   └─ PostgreSQL (миграции Liquibase)
 ```
 
-Код организован по доменным модулям (`attendance`, `grading`, `group`, `lesson`,
-`results`, `student`, `subject`, `teacher`). В каждом модуле выделены:
+Код организован по доменным модулям Spring Modulith (`group`, `subject`, `lesson`,
+`journal`, `auth`, `common`). Границы и зависимости модулей закреплены исполняемыми
+тестами (`ARCHITECTURE.md`, см. также описание консолидации: attendance+grading+results
+слиты в `journal`, teacher влит в `subject`). В каждом модуле выделены слои:
 
-- `web/` — контроллеры, запросы/ответы (DTO), фильтры;
-- `domain/` — JPA-сущности и доменные перечисления;
-- `internal/` — сервисы, репозитории, мапперы (детали реализации);
-- публичные `*Api` / `*Service` интерфейсы — точки взаимодействия между модулями.
+- `controller/` — REST-контроллеры (`@RestController`, `ResponseEntity`);
+- `service/` — use case'ы (`@Service`, class-level `@Transactional(readOnly=true)`);
+  `service/dto/{request,response,filter}` — records (транспорт, DTO не знает про JPA);
+- `mapper/` — MapStruct-мапперы (`@Mapper(componentModel="spring")`);
+- `specification/` — JPA Specification-билдеры;
+- `repository/` — Spring Data интерфейсы;
+- `domain/` — JPA-сущности (`*Entity`, наследуют `Auditable`/`BaseEntity`);
+- `api/` — опубликованные порты и DTO-records (`@NamedInterface`) — единственная
+  поверхность взаимодействия между модулями.
 
 ## Требования
 
@@ -159,16 +166,12 @@ docker build -f Dockerfile.native -t vkr-backend:native .   # GraalVM native
 
 ```
 src/main/java/.../vkr_backend/
-  attendance/        Посещаемость и check-in (сессии, записи, QR-коды)
-  grading/           Задания и оценки
-  group/             Группы, подгруппы, студенты в группах
-  lesson/            Занятия (лекции/практики), проведения, области видимости
-  results/           Сводные итоги по студентам
-  student/           Студенты
-  subject/           Предметы, доступы преподавателей, политики оценивания
-  teacher/           Преподаватели
-  common/            Общие утилиты
-  config/, configs/  Security (OAuth2 JWT, CORS), OpenAPI, JPA-аудит, native hints
+  auth/              SpEL-бин @authz + снапшот прав из JWT (identity из токена)
+  common/            OPEN-модуль: базовые сущности, контракт ошибок, утилиты, конфиги
+  group/             Контингент: группы, подгруппы, студенты (один агрегат ростера)
+  subject/           Предметы, политики, справочник преподавателей и их права, LessonType
+  lesson/            Занятия и проведения (scope), видимость под правом
+  journal/           Журнал: посещаемость, check-in (вложенный пакет checkin), оценки/задания, итоги
 src/main/resources/
   application*.yaml   Конфигурация по профилям
   db/changelog/       Миграции Liquibase
