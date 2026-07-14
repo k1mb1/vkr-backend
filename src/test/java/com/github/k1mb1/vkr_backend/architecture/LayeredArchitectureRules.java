@@ -49,7 +49,7 @@ class LayeredArchitectureRules {
             // Module-root vocabulary: shared enums/beans published at a module's root
             // (the unnamed Modulith interface). Everyone, including the domain, may use it.
             .layer("Shared")
-            .definedBy(Packages.ROOT + ".*", Packages.ROOT + ".attendance.checkin")
+            .definedBy(Packages.ROOT + ".*", Packages.ROOT + ".journal.checkin")
 
             // Controller is the entry point: nothing may depend on it.
             .whereLayer("Controller")
@@ -65,9 +65,10 @@ class LayeredArchitectureRules {
             .whereLayer("Mapper")
             .mayOnlyBeAccessedByLayers("Service")
 
-            // Specification builds JPA queries from a *Filter; only the service drives it.
+            // Specification builds JPA queries from a *Filter; services compose them and
+            // repositories execute/share them (e.g. a default resolve method on a repository).
             .whereLayer("Specification")
-            .mayOnlyBeAccessedByLayers("Service")
+            .mayOnlyBeAccessedByLayers("Service", "Repository")
 
             // Repository is an outbound adapter, driven only by the Service layer
             // (controllers must go through services, never hit repositories directly).

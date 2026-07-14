@@ -1,7 +1,6 @@
 package com.github.k1mb1.vkr_backend.subject.domain;
 
 import com.github.k1mb1.vkr_backend.common.domain.ArchivableEntity;
-import com.github.k1mb1.vkr_backend.teacher.domain.TeacherEntity;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

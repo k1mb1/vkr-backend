@@ -11,7 +11,7 @@ import com.github.k1mb1.vkr_backend.subject.mapper.TeacherSubjectPermissionMappe
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectSubgroupRefRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.TeacherRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PermissionScopeRequest;
@@ -35,7 +35,7 @@ public class TeacherSubjectPermissionService {
 
     final TeacherSubjectPermissionRepository permissionRepository;
 
-    final SubjectTeacherRefRepository teacherRefRepository;
+    final TeacherRepository teacherRefRepository;
 
     final SubjectGroupRefRepository groupRefRepository;
 

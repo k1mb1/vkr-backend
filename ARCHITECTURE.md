@@ -12,31 +12,25 @@ ArchUnit + `ModularityTest` на Spring Modulith) и падают в CI при �
 named interfaces (`@NamedInterface`).
 
 ```
-                        ┌─────────┐
-                        │ results │  итоги семестра (read-only агрегатор)
-                        └────┬────┘
-              grading::api ──┤── attendance::api
-                        ┌────▼────┐
-                        │ grading │  задания и оценки
-                        └────┬────┘
-            attendance::api ─┤
-                        ┌────▼──────┐
-                        │attendance │  посещаемость (+ вложенный check-in)
-                        └────┬──────┘
-   lesson::{api,domain,spec}─┤
-                        ┌────▼────┐
-                        │ lesson  │  занятия и проведения (scope)
-                        └────┬────┘
-      subject::{domain,api} ─┤
-                        ┌────▼────┐
-                        │ subject │  предметы, политики, права (владеет LessonType)
-                        └──┬───┬──┘
-        group::{domain,api}│   │teacher::domain
-                    ┌──────▼┐ ┌▼────────┐
-                    │ group │ │ teacher │   справочники (низ графа)
-                    └───────┘ └─────────┘
+                  ┌──────────────────────────────────┐
+                  │             journal              │  журнал: посещаемость,
+                  │  (attendance • check-in •        │  check-in, оценки, итоги
+                  │   grading • results)             │
+                  └──────┬───────────────────────────┘
+   lesson::{api,domain,specification}
+                  ┌──────▼──────┐
+                  │   lesson    │  занятия и проведения (scope)
+                  └──────┬──────┘
+        subject::{domain,api}, subject (LessonType)
+                  ┌──────▼──────┐
+                  │   subject   │  предметы, политики, преподаватели, права
+                  └──────┬──────┘
+             group::{domain,api}
+                  ┌──────▼──────┐
+                  │    group    │  контингент: группы, подгруппы, студенты
+                  └─────────────┘
 
-   auth   — SpEL-бин @authz + снапшот прав; лист: бизнес-модули реализуют его SPI (auth::api)
+   auth   — SpEL-бин @authz + снапшот прав; лист: subject/lesson/journal реализуют его SPI (auth::api)
    common — OPEN-модуль: базовые сущности, контракт ошибок, утилиты; лист
 ```
 
@@ -48,14 +42,11 @@ named interfaces (`@NamedInterface`).
 
 | Модуль | Владеет | Публикует |
 |---|---|---|
-| `teacher` | справочник преподавателей (id = `sub` из Keycloak) | `::domain` (FK для subject) |
 | `group` | группы, подгруппы, **студенты** (один агрегат ростера) | `::domain`; SPI `GroupSubjectsPort` (реализует subject) |
-| `subject` | предметы, политики, права преподавателей, словарь `LessonType` | `::api` (DTO политик), `::domain`, корневые енумы |
-| `lesson` | занятия, проведения (scope), видимость под правом | `::api` (`LessonStudentsApi` — ростер DTO; SPI `LessonAssignmentsPort` — реализует grading), `::domain`, `::specification` |
-| `attendance` | отметки посещаемости; подмодуль `checkin` (QR-самоотметка) | `::api` (таблица, сводка) |
-| `grading` | задания и оценки, таблица с политиками и вкладом посещаемости | `::api` (таблица) |
-| `results` | композиция «оценки + посещаемость» одним запросом | — (вершина графа) |
-| `auth` | identity из JWT, кэш прав, бин `@authz` для `@PreAuthorize` | `::api` (SPI-порты, реализуются subject/lesson/attendance) |
+| `subject` | предметы, политики, **справочник преподавателей** и их права, словарь `LessonType` | `::api` (DTO политик), `::domain`, корневые енумы |
+| `lesson` | занятия, проведения (scope), видимость под правом | `::api` (`LessonStudentsApi` — ростер DTO; SPI `LessonAssignmentsPort` — реализует journal), `::domain`, `::specification` |
+| `journal` | посещаемость, check-in (вложенный пакет `checkin`), задания/оценки, итоги | — (вершина графа; всё потребление — внутри) |
+| `auth` | identity из JWT, кэш прав, бин `@authz` для `@PreAuthorize` | `::api` (SPI-порты, реализуются subject/lesson/journal) |
 | `common` | `BaseEntity`/`Auditable`, контракт ошибок (`ErrorDto`, handler), утилиты | всё (OPEN) |
 
 ### Как разорваны исторические циклы
@@ -69,6 +60,12 @@ named interfaces (`@NamedInterface`).
   `GroupSubjectsPort`, не зная о subject.
 - **common → бизнес-модули** — авторизация вынесена в `auth`; данные для проверок
   приходят через SPI `auth::api`, реализуемые владельцами данных.
+
+Позже для снижения веера зависимостей и дублирования модули **attendance, grading
+и results слиты в `journal`** (один домен — сетка «студенты × занятия» с общей
+моделью видимости: единый резолвер занятий и общие read-only репозитории вместо
+двух копий), а **teacher влит в subject** (право — связь «преподаватель × предмет»,
+справочник потреблялся только subject'ом).
 
 ## Слои внутри модуля
 
@@ -96,7 +93,7 @@ repository} → domain; domain не зависит ни от какого сло
   `allowedDependencies` модуля-потребителя.
 - **Чужими репозиториями пользоваться нельзя** (`services_use_only_their_own_modules_repositories`):
   модуль объявляет собственные (обычно read-only) репозитории над чужими
-  сущностями (`Attendance*/Grading*/Lesson*Ref*Repository`) для ссылок и запросов;
+  сущностями (`Journal*/Lesson*Ref*Repository`) для ссылок и запросов;
   мутации остаются у владельца.
 - **Композиция наружу — только DTO** через `::api` (таблицы, ростер, политики) или
   скалярные параметры (id).

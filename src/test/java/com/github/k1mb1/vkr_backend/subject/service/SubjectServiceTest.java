@@ -11,16 +11,16 @@ import static org.mockito.Mockito.when;
 import com.github.k1mb1.vkr_backend.auth.SecurityService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
+import com.github.k1mb1.vkr_backend.subject.domain.TeacherEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.TeacherRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectResponse;
-import com.github.k1mb1.vkr_backend.teacher.domain.TeacherEntity;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +47,7 @@ class SubjectServiceTest {
     SubjectMapper subjectMapper;
 
     @Mock
-    SubjectTeacherRefRepository teacherRefRepository;
+    TeacherRepository teacherRefRepository;
 
     @Mock
     SubjectGroupRefRepository groupRefRepository;

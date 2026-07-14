@@ -1,6 +1,6 @@
 /**
  * Доменные сущности предметов/политик/прав, опубликованные для FK-ссылок и
- * read-only запросов модулей lesson/attendance/grading (права управляют
+ * read-only запросов модулей lesson/journal (права управляют
  * видимостью их таблиц).
  */
 @org.springframework.modulith.NamedInterface("domain")

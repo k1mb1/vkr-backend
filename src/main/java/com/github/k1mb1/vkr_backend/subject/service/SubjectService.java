@@ -6,7 +6,7 @@ import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntit
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.TeacherRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.filter.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
@@ -35,7 +35,7 @@ public class SubjectService {
 
     final SubjectMapper subjectMapper;
 
-    final SubjectTeacherRefRepository teacherRefRepository;
+    final TeacherRepository teacherRefRepository;
 
     final SubjectGroupRefRepository groupRefRepository;
 

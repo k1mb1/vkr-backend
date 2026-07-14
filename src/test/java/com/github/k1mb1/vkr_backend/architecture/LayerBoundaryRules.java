@@ -118,34 +118,26 @@ class LayerBoundaryRules {
     // declared dependencies; these rules forbid the reverse edges outright, so a
     // cycle can never be introduced by widening a declaration):
     //
-    //   results -> grading -> attendance -> lesson -> subject -> {group, teacher}
+    //   journal -> lesson -> subject -> group
     //   auth    -> (nothing but common); every business module may use auth
     //   common  -> (leaf, OPEN)
 
     private static final String[] BUSINESS_MODULES = {
-        Packages.ROOT + ".teacher..",
         Packages.ROOT + ".group..",
         Packages.ROOT + ".subject..",
         Packages.ROOT + ".lesson..",
-        Packages.ROOT + ".attendance..",
-        Packages.ROOT + ".grading..",
-        Packages.ROOT + ".results..",
+        Packages.ROOT + ".journal..",
     };
 
     @ArchTest
-    static final ArchRule reference_modules_are_leaves = noClasses()
+    static final ArchRule group_is_a_leaf_reference_module = noClasses()
             .that()
-            .resideInAnyPackage(Packages.ROOT + ".teacher..", Packages.ROOT + ".group..")
+            .resideInAPackage(Packages.ROOT + ".group..")
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(
-                    Packages.ROOT + ".subject..",
-                    Packages.ROOT + ".lesson..",
-                    Packages.ROOT + ".attendance..",
-                    Packages.ROOT + ".grading..",
-                    Packages.ROOT + ".results..")
-            .because("teacher and group are reference data at the bottom of the graph; "
-                    + "the teaching-process modules depend on them, never the reverse");
+            .resideInAnyPackage(Packages.ROOT + ".subject..", Packages.ROOT + ".lesson..", Packages.ROOT + ".journal..")
+            .because("group (контингент) is reference data at the bottom of the graph; "
+                    + "the teaching-process modules depend on it, never the reverse");
 
     @ArchTest
     static final ArchRule subject_depends_only_downward = noClasses()
@@ -153,34 +145,19 @@ class LayerBoundaryRules {
             .resideInAPackage(Packages.ROOT + ".subject..")
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(
-                    Packages.ROOT + ".lesson..",
-                    Packages.ROOT + ".attendance..",
-                    Packages.ROOT + ".grading..",
-                    Packages.ROOT + ".results..")
-            .because("subject (policies, permissions) sits below the lesson/marks modules: "
+            .resideInAnyPackage(Packages.ROOT + ".lesson..", Packages.ROOT + ".journal..")
+            .because("subject (policies, teachers, permissions) sits below the lesson/journal modules: "
                     + "lesson -> subject, never the reverse");
 
     @ArchTest
-    static final ArchRule lesson_depends_only_downward = noClasses()
+    static final ArchRule lesson_does_not_depend_on_journal = noClasses()
             .that()
             .resideInAPackage(Packages.ROOT + ".lesson..")
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(
-                    Packages.ROOT + ".attendance..", Packages.ROOT + ".grading..", Packages.ROOT + ".results..")
-            .because("lesson is the schedule core; the marks modules (attendance, grading) build on it — "
+            .resideInAPackage(Packages.ROOT + ".journal..")
+            .because("lesson is the schedule core; the journal (marks) builds on it — "
                     + "the reverse direction is inverted through lesson's own ports (lesson.api)");
-
-    @ArchTest
-    static final ArchRule attendance_does_not_depend_on_grading_or_results = noClasses()
-            .that()
-            .resideInAPackage(Packages.ROOT + ".attendance..")
-            .should()
-            .dependOnClassesThat()
-            .resideInAnyPackage(Packages.ROOT + ".grading..", Packages.ROOT + ".results..")
-            .because("grading composes attendance summaries, never the reverse; "
-                    + "results is the top-level read-only aggregator");
 
     @ArchTest
     static final ArchRule auth_depends_on_no_business_module = noClasses()

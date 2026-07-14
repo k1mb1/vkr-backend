@@ -13,19 +13,19 @@ import com.github.k1mb1.vkr_backend.common.exception.ResourceNotFoundException;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
 import com.github.k1mb1.vkr_backend.subject.LessonType;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
+import com.github.k1mb1.vkr_backend.subject.domain.TeacherEntity;
 import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.TeacherSubjectPermissionMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectSubgroupRefRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.SubjectTeacherRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.TeacherRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PermissionScopeRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.PermissionScopeRequest.PermissionScopeGroupRef;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateTeacherSubjectPermissionRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.TeacherSubjectPermissionResponse;
-import com.github.k1mb1.vkr_backend.teacher.domain.TeacherEntity;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.HashSet;
 import java.util.List;
@@ -45,7 +45,7 @@ class TeacherSubjectPermissionServiceTest {
     TeacherSubjectPermissionRepository permissionRepository;
 
     @Mock
-    SubjectTeacherRefRepository teacherRefRepository;
+    TeacherRepository teacherRefRepository;
 
     @Mock
     SubjectGroupRefRepository groupRefRepository;

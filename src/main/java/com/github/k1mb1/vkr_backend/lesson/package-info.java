@@ -1,8 +1,8 @@
 /**
  * Занятия и их проведения (scope: аудитория «группа/подгруппа/все группы» + дата).
- * Ядро учебного процесса: attendance/grading строятся над ним. Публикует DTO-порт
+ * Ядро учебного процесса: journal строится над ним. Публикует DTO-порт
  * ростера аудитории ({@code LessonStudentsApi}) и SPI заданий
- * ({@code LessonAssignmentsPort}, реализует grading); реализует SPI auth.
+ * ({@code LessonAssignmentsPort}, реализует journal); реализует SPI auth.
  */
 @org.springframework.modulith.ApplicationModule(
         allowedDependencies = {"common", "auth :: api", "subject", "subject :: domain", "group :: domain"})
