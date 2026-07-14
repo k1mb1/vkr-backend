@@ -178,7 +178,7 @@ public class AttendanceService {
         }
         var rows = attendanceRepository.findByLessonScopeIdInAndStudentIdIn(lessonScopeIds, studentIds);
         // Счётчик по каждому статусу посещаемости на студента.
-        var counts = new HashMap<UUID, EnumMap<AttendanceStatus, Integer>>();
+        Map<UUID, Map<AttendanceStatus, Integer>> counts = new HashMap<>();
         for (var a : rows) {
             counts.computeIfAbsent(a.getStudent().getId(), k -> new EnumMap<>(AttendanceStatus.class))
                     .merge(a.getStatus(), 1, Integer::sum);

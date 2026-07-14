@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>Spring AOT bean definitions, e.g. {@code Foo__BeanDefinitions}.</li>
  *   <li>Spring CGLIB proxies, e.g. {@code FooService$$SpringCGLIB$$0}.</li>
- *   <li>MapStruct mapper implementations, e.g. {@code BookMapperImpl}.</li>
+ *   <li>MapStruct mapper implementations, e.g. {@code LessonMapperImpl}.</li>
  *   <li>Lombok {@code @Builder} companions, e.g. {@code FooResponse$FooResponseBuilder}
  *       (Lombok-generated mutable classes that would otherwise trip the DTO rules).</li>
  *   <li>Anonymous classes, e.g. {@code FooService$1} — they have no meaningful name

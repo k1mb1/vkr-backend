@@ -17,13 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @AnalyzeProductionClasses
 class LayerBoundaryRules {
 
-    static final String[] BUSINESS_MODULES = {
-        Packages.ROOT + ".group..",
-        Packages.ROOT + ".subject..",
-        Packages.ROOT + ".lesson..",
-        Packages.ROOT + ".journal..",
-    };
-
     // --- Persistence must not leak across transport boundaries --------------
 
     @ArchTest
@@ -108,6 +101,17 @@ class LayerBoundaryRules {
             .because("another module's data is reachable only through its published api, never its repository");
 
     @ArchTest
+    static final ArchRule foreign_entity_repositories_are_read_only = classes()
+            .that()
+            .resideInAPackage(Packages.REPOSITORY)
+            .and()
+            .areInterfaces()
+            .should(ArchConditions.keepForeignEntityRepositoriesReadOnly())
+            .because("another module's data is mutated only by its owner: a consumer's repository over a "
+                    + "foreign ::domain entity is a read-only view (finders + getReferenceById), so it must "
+                    + "extend Repository, never CrudRepository/JpaRepository");
+
+    @ArchTest
     static final ArchRule common_stays_technical = noClasses()
             .that()
             .resideInAPackage(Packages.COMMON)
@@ -132,40 +136,40 @@ class LayerBoundaryRules {
     @ArchTest
     static final ArchRule group_is_a_leaf_reference_module = noClasses()
             .that()
-            .resideInAPackage(Packages.ROOT + ".group..")
+            .resideInAPackage(Packages.MODULE_GROUP)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(Packages.ROOT + ".subject..", Packages.ROOT + ".lesson..", Packages.ROOT + ".journal..")
+            .resideInAnyPackage(Packages.MODULE_SUBJECT, Packages.MODULE_LESSON, Packages.MODULE_JOURNAL)
             .because("group (контингент) is reference data at the bottom of the graph; "
                     + "the teaching-process modules depend on it, never the reverse");
 
     @ArchTest
     static final ArchRule subject_depends_only_downward = noClasses()
             .that()
-            .resideInAPackage(Packages.ROOT + ".subject..")
+            .resideInAPackage(Packages.MODULE_SUBJECT)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(Packages.ROOT + ".lesson..", Packages.ROOT + ".journal..")
+            .resideInAnyPackage(Packages.MODULE_LESSON, Packages.MODULE_JOURNAL)
             .because("subject (policies, teachers, permissions) sits below the lesson/journal modules: "
                     + "lesson -> subject, never the reverse");
 
     @ArchTest
     static final ArchRule lesson_does_not_depend_on_journal = noClasses()
             .that()
-            .resideInAPackage(Packages.ROOT + ".lesson..")
+            .resideInAPackage(Packages.MODULE_LESSON)
             .should()
             .dependOnClassesThat()
-            .resideInAPackage(Packages.ROOT + ".journal..")
+            .resideInAPackage(Packages.MODULE_JOURNAL)
             .because("lesson is the schedule core; the journal (marks) builds on it — "
                     + "the reverse direction is inverted through lesson's own ports (lesson.api)");
 
     @ArchTest
     static final ArchRule auth_depends_on_no_business_module = noClasses()
             .that()
-            .resideInAPackage(Packages.ROOT + ".auth..")
+            .resideInAPackage(Packages.MODULE_AUTH)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(BUSINESS_MODULES)
+            .resideInAnyPackage(Packages.BUSINESS_MODULES)
             .because("auth is infrastructure: business modules implement its SPI ports (auth.api), "
                     + "so auth itself stays a leaf and can never join a module cycle");
 
@@ -175,6 +179,6 @@ class LayerBoundaryRules {
             .resideInAPackage(Packages.COMMON)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage(BUSINESS_MODULES)
+            .resideInAnyPackage(Packages.BUSINESS_MODULES)
             .because("common is a leaf module; business modules depend on it, never the reverse");
 }

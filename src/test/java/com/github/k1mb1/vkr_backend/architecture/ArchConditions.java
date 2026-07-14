@@ -11,12 +11,16 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import jakarta.validation.Valid;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.mapstruct.Mapper;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.Repository;
 import org.springframework.modulith.ApplicationModule;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -125,17 +129,17 @@ final class ArchConditions {
     /**
      * A controller handler method's name becomes the OpenAPI {@code operationId}, so it must
      * pair the verb of its HTTP method with the resource — the verb is derived from the mapping,
-     * not matched against a maintained denylist. GET maps to {@code get*} ({@code getBook} for one
-     * item, {@code getBooks} for a collection/page), POST to {@code create*} ({@code createBook}), PUT and
-     * PATCH to {@code update*} ({@code updateBook}), DELETE to {@code delete*} ({@code deleteBook}).
+     * not matched against a maintained denylist. GET maps to {@code get*} ({@code getLesson} for one
+     * item, {@code getLessons} for a collection/page), POST to {@code create*} ({@code createSubject}), PUT and
+     * PATCH to {@code update*} ({@code updateLesson}), DELETE to {@code delete*} ({@code deleteLesson}).
      * A bare verb ({@code get}, {@code list}) fails because it carries no resource. Sub-resource
      * action endpoints — whose method path has a literal segment such as {@code /{id}/return} —
      * are state transitions rather than CRUD, so they only need to be a compound action+resource
-     * name ({@code returnLoan}) without matching the HTTP verb.
+     * name ({@code cancelCheckInSession}) without matching the HTTP verb.
      */
     static ArchCondition<JavaMethod> nameEndpointByHttpMethodAndResource() {
-        return new ArchCondition<>("be named <verb-of-its-http-method><Resource> (getBook, createBook), "
-                + "or <action><Resource> for a sub-resource action (returnLoan)") {
+        return new ArchCondition<>("be named <verb-of-its-http-method><Resource> (getLesson, createSubject), "
+                + "or <action><Resource> for a sub-resource action (cancelCheckInSession)") {
             @Override
             public void check(JavaMethod method, ConditionEvents events) {
                 EndpointMapping mapping = mappingOf(method);
@@ -149,7 +153,7 @@ final class ArchConditions {
                         events.add(SimpleConditionEvent.violated(
                                 method,
                                 method.getFullName() + " is an action endpoint named '" + name
-                                        + "'; name it <action><Resource> (e.g. returnLoan)"));
+                                        + "'; name it <action><Resource> (e.g. cancelCheckInSession)"));
                     }
                 } else if (mapping.verbs().stream().noneMatch(verb -> startsWithVerbThenResource(name, verb))) {
                     events.add(SimpleConditionEvent.violated(
@@ -157,7 +161,7 @@ final class ArchConditions {
                             method.getFullName() + " is named '" + name + "'; a " + mapping.verbs()
                                     + "<Resource> name is expected for its HTTP method (e.g. "
                                     + mapping.verbs().iterator().next()
-                                    + "Book)"));
+                                    + "Lesson)"));
                 }
             }
         };
@@ -408,7 +412,7 @@ final class ArchConditions {
         if ("void".equals(name)) {
             return;
         }
-        // Inside a generic (e.g. the UUID key of Map<UUID, BookResponse>) plain JDK value
+        // Inside a generic (e.g. the UUID key of Map<UUID, GradeCellResponse>) plain JDK value
         // types are fine; only the payload type must be a *Response. At the top level we
         // still require a *Response DTO.
         if (!topLevel && (name.startsWith("java.") || erasure.isPrimitive())) {
@@ -433,10 +437,60 @@ final class ArchConditions {
         }
     }
 
-    /** Top-level module segment of a class, e.g. {@code catalog} or {@code loans}. */
+    /**
+     * A {@code *Repository} declared over another module's {@code ::domain} entity is a
+     * read-only view: it may expose finders and {@code getReferenceById}, but never
+     * writes. Concretely it must extend the Spring Data {@code Repository} marker (plus
+     * optionally {@code JpaSpecificationExecutor}) and must not be assignable to
+     * {@code CrudRepository}, which would drag in {@code save}/{@code delete} and let a
+     * consumer mutate data it does not own. A repository over its own module's entity is
+     * unrestricted.
+     */
+    static ArchCondition<JavaClass> keepForeignEntityRepositoriesReadOnly() {
+        return new ArchCondition<>(
+                "be read-only (extend Repository, not CrudRepository) over another module's entity") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                Class<?> repo = clazz.reflect();
+                Class<?> entity = managedEntityOf(repo);
+                if (entity == null) {
+                    return; // not a Spring Data repository, or a non-class type argument
+                }
+                String repoModule = moduleOf(clazz.getPackageName());
+                String entityModule = moduleOf(entity.getPackageName());
+                boolean foreign = !entityModule.isEmpty() && !entityModule.equals(repoModule);
+                if (foreign && CrudRepository.class.isAssignableFrom(repo)) {
+                    events.add(SimpleConditionEvent.violated(
+                            clazz,
+                            clazz.getName() + " is a CrudRepository over " + entity.getName()
+                                    + " owned by module '" + entityModule + "'; a cross-module repository must be a "
+                                    + "read-only view (extend Repository, never CrudRepository/JpaRepository)"));
+                }
+            }
+        };
+    }
+
+    /** The entity type a Spring Data repository interface manages (first arg of its {@code Repository<T, ID>} super). */
+    private static @Nullable Class<?> managedEntityOf(Class<?> repo) {
+        for (Type generic : repo.getGenericInterfaces()) {
+            if (generic instanceof ParameterizedType parameterized
+                    && parameterized.getRawType() instanceof Class<?> raw
+                    && Repository.class.isAssignableFrom(raw)
+                    && parameterized.getActualTypeArguments()[0] instanceof Class<?> entity) {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+    /** Top-level module segment of a class, e.g. {@code journal} or {@code lesson}. */
     private static String moduleOf(JavaClass clazz) {
+        return moduleOf(clazz.getPackageName());
+    }
+
+    /** Top-level module segment of a package name, e.g. {@code journal} or {@code lesson}. */
+    private static String moduleOf(String packageName) {
         String base = Packages.ROOT + ".";
-        String packageName = clazz.getPackageName();
         if (!packageName.startsWith(base)) {
             return "";
         }

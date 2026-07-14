@@ -69,8 +69,8 @@ class WebContractRules {
             .areMetaAnnotatedWith(RequestMapping.class)
             .should(ArchConditions.nameEndpointByHttpMethodAndResource())
             .because("a handler method name becomes the OpenAPI operationId; derive the verb from the HTTP "
-                    + "method and add the resource (getBook, createBook), or <action><Resource> for sub-resource "
-                    + "actions (returnLoan) — never a bare verb that springdoc must disambiguate");
+                    + "method and add the resource (getLesson, createSubject), or <action><Resource> for sub-resource "
+                    + "actions (cancelCheckInSession) — never a bare verb that springdoc must disambiguate");
 
     @ArchTest
     static final ArchRule bound_filter_and_pageable_are_documented = methods()
