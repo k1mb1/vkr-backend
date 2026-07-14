@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.journal.service.dto.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 @Schema(description = """
@@ -11,4 +12,5 @@ import java.util.List;
         Пара (studentId, lessonScopeId) должна быть уникальна в пределах запроса.
         """)
 public record BulkUpsertAttendanceRequest(
-        @Schema(description = "Список ячеек", requiredMode = Schema.RequiredMode.REQUIRED) @NotEmpty @Valid List<UpsertAttendanceRequest> items) {}
+        @Schema(description = "Список ячеек", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotEmpty @Valid @Size(max = 5_000) List<UpsertAttendanceRequest> items) {}

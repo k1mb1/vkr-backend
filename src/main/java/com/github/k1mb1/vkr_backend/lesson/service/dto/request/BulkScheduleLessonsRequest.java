@@ -4,9 +4,11 @@ import com.github.k1mb1.vkr_backend.subject.LessonType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -36,13 +38,13 @@ public record BulkScheduleLessonsRequest(
         @Schema(
                 description = "Сколько проведений (дат) создать для каждого элемента items",
                 requiredMode = Schema.RequiredMode.REQUIRED)
-        @Positive int count,
+        @Positive @Max(500) int count,
 
         @Schema(
                 description =
                         "Элементы расписания: каждая аудитория со своим собственным " + "стартом и недельным шаблоном.",
                 requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotEmpty @Valid List<@NotNull Item> items) {
+        @NotEmpty @Valid @Size(max = 100) List<@NotNull Item> items) {
     @Schema(
             name = "ScheduleLessonItem",
             description = "Один элемент расписания: аудитория + её собственный старт и недельный шаблон.")

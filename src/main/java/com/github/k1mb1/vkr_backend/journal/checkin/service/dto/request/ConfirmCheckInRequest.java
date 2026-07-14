@@ -4,6 +4,7 @@ import com.github.k1mb1.vkr_backend.journal.AttendanceStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -12,7 +13,7 @@ import org.jspecify.annotations.Nullable;
         description = "Подтверждение результатов check-in. Записи без отметки трактуются как ABSENT. "
                 + "В overrides можно изменить статус или добавить комментарий перед переносом в основную посещаемость.")
 public record ConfirmCheckInRequest(
-        @Valid @Schema(description = "Ручные изменения статуса / комментариев для отдельных студентов")
+        @Valid @Size(max = 1_000) @Schema(description = "Ручные изменения статуса / комментариев для отдельных студентов")
         List<StudentOverride> overrides) {
     @Schema(name = "ConfirmCheckInOverride", description = "Ручное переопределение статуса студента")
     public record StudentOverride(
@@ -22,5 +23,5 @@ public record ConfirmCheckInRequest(
             @NotNull @Schema(description = "Финальный статус посещаемости", requiredMode = Schema.RequiredMode.REQUIRED)
             AttendanceStatus status,
 
-            @Schema(description = "Комментарий") @Nullable String comment) {}
+            @Size(max = 1_000) @Schema(description = "Комментарий") @Nullable String comment) {}
 }

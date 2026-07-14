@@ -146,7 +146,11 @@ class GroupServiceTest {
 
         // подгруппа с индексом 1 создаётся один раз, несмотря на двух студентов в ней
         verify(subgroupRepository, times(1)).save(any());
-        // создаются все три студента
-        verify(studentService, times(3)).createStudent(any());
+        // все три студента сохраняются одним батчем (а не тремя точечными save в цикле —
+        // это и устраняет прежний N+1 на создании группы).
+        @SuppressWarnings("unchecked")
+        var captor = org.mockito.ArgumentCaptor.forClass(java.util.List.class);
+        verify(studentService).createEntities(captor.capture());
+        org.assertj.core.api.Assertions.assertThat(captor.getValue()).hasSize(3);
     }
 }

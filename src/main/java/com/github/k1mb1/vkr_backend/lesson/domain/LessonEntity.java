@@ -42,8 +42,18 @@ import org.hibernate.type.SqlTypes;
             name = "Lesson.withDetails",
             attributeNodes = {
                 @NamedAttributeNode("subject"),
-                @NamedAttributeNode("scopes"),
-            }),
+                // scopes.group / scopes.allowedSubgroup тянутся здесь же: list-read-пути
+                // (getLessons, getAttendanceTable, getGradingTable) проходят по видимым scope'ам
+                // и читают их группу/подгруппу — без подграфа это N лениких SELECT'ов на запрос.
+                @NamedAttributeNode(value = "scopes", subgraph = "Lesson.withDetails.scopes"),
+            },
+            subgraphs =
+                    @NamedSubgraph(
+                            name = "Lesson.withDetails.scopes",
+                            attributeNodes = {
+                                @NamedAttributeNode("group"),
+                                @NamedAttributeNode("allowedSubgroup"),
+                            })),
     @NamedEntityGraph(
             name = "Lesson.withFullDetails",
             attributeNodes = {

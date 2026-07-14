@@ -59,7 +59,7 @@ public class TeachersController {
     @Operation(summary = "Получить страницу преподавателей с фильтрацией по имени")
     @GetMapping
     public ResponseEntity<Page<TeacherResponse>> getTeachersPage(
-            @ParameterObject @ModelAttribute TeacherFilter filter, @ParameterObject Pageable pageable) {
+            @Valid @ParameterObject @ModelAttribute TeacherFilter filter, @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(teacherService.getPage(filter, pageable));
     }
 }

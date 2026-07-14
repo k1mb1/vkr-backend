@@ -2,13 +2,14 @@ package com.github.k1mb1.vkr_backend.subject.service.dto.filter;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.UUID;
 import lombok.Builder;
 
 @Builder
 @Schema(description = "Фильтр для поиска предметов")
 public record SubjectFilter(
-        @Schema(description = "Название предмета (частичное совпадение)")
+        @Size(max = 200) @Schema(description = "Название предмета (частичное совпадение)")
         String name,
 
         @Schema(description = "ID учителя", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID teacherId) {}

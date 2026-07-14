@@ -2,6 +2,8 @@ package com.github.k1mb1.vkr_backend.subject.service.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,4 +22,10 @@ public record UpdateTeacherSubjectPermissionRequest(
         @Schema(
                 description = "Новый список scopes (null — не менять). Если задан — должен быть непустым.",
                 types = {"array", "null"})
-        @Valid List<PermissionScopeRequest> scopes) {}
+        @Valid @Size(max = 200) List<PermissionScopeRequest> scopes) {
+
+    @Schema(hidden = true)
+    @AssertTrue(message = "Если scopes указан, он должен быть непустым") public boolean isScopesNonEmptyWhenProvided() {
+        return scopes == null || !scopes.isEmpty();
+    }
+}

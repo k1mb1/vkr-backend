@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.lesson.service.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.UUID;
@@ -12,9 +13,11 @@ import java.util.UUID;
 public record BulkCreateLessonsRequest(
         @Schema(description = "ID предмета", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID subjectId,
 
-        @Schema(description = "Количество лекций", requiredMode = Schema.RequiredMode.REQUIRED) @PositiveOrZero int lectureCount,
+        @Schema(description = "Количество лекций", requiredMode = Schema.RequiredMode.REQUIRED)
+        @PositiveOrZero @Max(500) int lectureCount,
 
-        @Schema(description = "Количество практик", requiredMode = Schema.RequiredMode.REQUIRED) @PositiveOrZero int practiceCount) {
+        @Schema(description = "Количество практик", requiredMode = Schema.RequiredMode.REQUIRED)
+        @PositiveOrZero @Max(500) int practiceCount) {
     @Schema(hidden = true)
     @AssertTrue(message = "At least one lesson must be requested") public boolean hasAnyLessonCount() {
         return lectureCount > 0 || practiceCount > 0;

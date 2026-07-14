@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +16,8 @@ import java.util.UUID;
         В одном запросе можно править scope'ы разных уроков.
         """)
 public record BulkReplaceLessonScopesRequest(
-        @Schema(description = "Список целевых состояний", requiredMode = Schema.RequiredMode.REQUIRED) @NotEmpty @Valid List<Item> items) {
+        @Schema(description = "Список целевых состояний", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotEmpty @Valid @Size(max = 1_000) List<Item> items) {
     @Schema(name = "ReplaceLessonScopeItem", description = "Целевое состояние одного scope")
     public record Item(
             @Schema(description = "ID scope", requiredMode = Schema.RequiredMode.REQUIRED) @NotNull UUID id,

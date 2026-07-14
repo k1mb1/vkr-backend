@@ -3,6 +3,7 @@ package com.github.k1mb1.vkr_backend.journal.service.dto.request;
 import com.github.k1mb1.vkr_backend.journal.AttendanceStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.UUID;
 import lombok.Builder;
 import org.jspecify.annotations.Nullable;
@@ -19,4 +20,4 @@ public record UpsertAttendanceRequest(
         @NotNull @Schema(description = "Статус", requiredMode = Schema.RequiredMode.REQUIRED)
         AttendanceStatus status,
 
-        @Schema(description = "Комментарий") @Nullable String comment) {}
+        @Size(max = 1_000) @Schema(description = "Комментарий") @Nullable String comment) {}

@@ -1,6 +1,7 @@
 package com.github.k1mb1.vkr_backend.journal.checkin.service.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -17,14 +18,14 @@ public record StartCheckInRequest(
                 requiredMode = Schema.RequiredMode.REQUIRED)
         UUID lessonScopeId,
 
-        @Min(1) @Schema(
+        @Min(1) @Max(86_400) @Schema(
                 description =
                         "Длительность основного окна (секунды). Студенты, отметившиеся здесь, получат статус PRESENT. "
                                 + "Обязательно, если у предмета НЕ задана политика check-in; при заданной политике игнорируется.",
                 example = "600")
         Integer onTimeSeconds,
 
-        @PositiveOrZero @Schema(
+        @PositiveOrZero @Max(86_400) @Schema(
                 description =
                         "Дополнительное окно для опоздавших (секунды). Отметившиеся здесь получат статус LATE. "
                                 + "Обязательно, если у предмета НЕ задана политика check-in; при заданной политике игнорируется.",

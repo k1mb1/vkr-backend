@@ -2,7 +2,9 @@ package com.github.k1mb1.vkr_backend.subject.service.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,4 +23,13 @@ public record CreateTeacherSubjectPermissionRequest(
                 description = "Список scopes (group + опц. подгруппа + опц. тип занятия). "
                         + "Обязателен и должен быть непустым при allPermissions=false. "
                         + "При allPermissions=true игнорируется.")
-        @Valid List<PermissionScopeRequest> scopes) {}
+        @Valid @Size(max = 200) List<PermissionScopeRequest> scopes) {
+
+    @Schema(hidden = true)
+    @AssertTrue(message = "Список scopes должен быть непустым, когда allPermissions = false") public boolean isScopesPresentWhenNotAllPermissions() {
+        if (Boolean.TRUE.equals(allPermissions)) {
+            return true;
+        }
+        return scopes != null && !scopes.isEmpty();
+    }
+}

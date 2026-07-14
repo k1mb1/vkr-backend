@@ -61,7 +61,7 @@ public class SubjectsController {
     @Operation(summary = "Получить страницу предметов с фильтрацией по названию")
     @GetMapping
     public ResponseEntity<Page<SubjectPageResponse>> getSubjectsPage(
-            @ParameterObject @ModelAttribute SubjectFilter filter, @ParameterObject Pageable pageable) {
+            @Valid @ParameterObject @ModelAttribute SubjectFilter filter, @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(subjectService.getPage(filter, pageable));
     }
 }

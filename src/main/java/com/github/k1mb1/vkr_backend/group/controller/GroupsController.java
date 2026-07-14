@@ -42,7 +42,7 @@ public class GroupsController {
     @Operation(summary = "Получить страницу групп с фильтрацией по названию")
     @GetMapping
     public ResponseEntity<Page<GroupPageResponse>> getGroupsPage(
-            @ParameterObject @ModelAttribute GroupFilter filter, @ParameterObject Pageable pageable) {
+            @Valid @ParameterObject @ModelAttribute GroupFilter filter, @ParameterObject Pageable pageable) {
         return ResponseEntity.ok(groupService.getGroupPage(filter, pageable));
     }
 

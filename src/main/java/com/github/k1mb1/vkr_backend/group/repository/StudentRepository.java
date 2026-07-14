@@ -28,4 +28,13 @@ public interface StudentRepository extends JpaRepository<StudentEntity, UUID> {
     @Modifying
     @Query("DELETE FROM StudentEntity s WHERE s.group.id = :groupId")
     void deleteByGroupId(@Param("groupId") UUID groupId);
+
+    /**
+     * Архивация набора студентов одним UPDATE (вместо N загрузок + N save в цикле).
+     * Не трогает уже архивированных — это idempотентная замена {@code archiveStudent} в цикле.
+     */
+    @Modifying
+    @Query("UPDATE StudentEntity s SET s.archivedAt = current_timestamp "
+            + "WHERE s.id IN :ids AND s.archivedAt IS NULL")
+    int archiveByIdIn(@Param("ids") Collection<UUID> ids);
 }

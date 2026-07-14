@@ -2,6 +2,7 @@ package com.github.k1mb1.vkr_backend.group.service;
 
 import com.github.k1mb1.vkr_backend.group.api.GroupSubjectsPort;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
+import com.github.k1mb1.vkr_backend.group.domain.StudentEntity;
 import com.github.k1mb1.vkr_backend.group.domain.SubgroupEntity;
 import com.github.k1mb1.vkr_backend.group.mapper.GroupMapper;
 import com.github.k1mb1.vkr_backend.group.mapper.StudentMapper;
@@ -10,15 +11,13 @@ import com.github.k1mb1.vkr_backend.group.repository.GroupRepository;
 import com.github.k1mb1.vkr_backend.group.repository.SubgroupRepository;
 import com.github.k1mb1.vkr_backend.group.service.dto.filter.GroupFilter;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.CreateGroupRequest;
-import com.github.k1mb1.vkr_backend.group.service.dto.request.CreateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.StudentGroupMemberRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.request.UpdateGroupRequest;
-import com.github.k1mb1.vkr_backend.group.service.dto.request.UpdateStudentRequest;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.GroupPageResponse;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.GroupResponse;
 import com.github.k1mb1.vkr_backend.group.service.dto.response.GroupWithSubgroupsResponse;
-import com.github.k1mb1.vkr_backend.group.service.dto.response.StudentResponse;
 import com.github.k1mb1.vkr_backend.group.specification.GroupSpecifications;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -68,17 +67,21 @@ public class GroupService {
             indexToSubgroup.put(index, subgroup);
         }
 
+        // Студентов собираем в коллекцию и сохраняем одним батчем, а не по одному
+        // createStudent -> save в цикле (бывший N+1 из N INSERT-раундов).
+        var studentsToCreate = new ArrayList<StudentEntity>(request.students().size());
         for (var req : request.students()) {
-            studentService.createStudent(CreateStudentRequest.builder()
+            var subgroup = req.subgroupIndex() != null
+                    ? Objects.requireNonNull(indexToSubgroup.get(req.subgroupIndex()))
+                    : null;
+            studentsToCreate.add(StudentEntity.builder()
                     .username(req.username())
-                    .groupId(group.getId())
-                    .subgroupId(
-                            req.subgroupIndex() != null
-                                    ? Objects.requireNonNull(indexToSubgroup.get(req.subgroupIndex()))
-                                            .getId()
-                                    : null)
+                    .group(group)
+                    .subgroup(subgroup)
                     .build());
         }
+        var savedStudents = studentService.createEntities(studentsToCreate);
+        savedStudents.forEach(student -> group.getStudents().add(student));
 
         return toResponse(group);
     }
@@ -101,40 +104,43 @@ public class GroupService {
     }
 
     private void replaceRoster(GroupEntity group, List<UpdateGroupRequest.StudentPatchRequest> roster) {
-        var existingStudents = studentService.findStudentsByGroup(group.getId());
-        var existingById = existingStudents.stream().collect(Collectors.toMap(StudentResponse::id, s -> s));
+        // Грузим сущности студентов группы один раз и работаем с ними напрямую, а не
+        // перечитываем каждый по findById через archiveStudent/updateStudent в цикле
+        // (бывший N+1: M+J лишних SELECT + M+K точечных save на PUT /groups/{id}).
+        var existing = studentService.findEntitiesByGroup(group.getId());
+        var existingById = existing.stream().collect(Collectors.toMap(StudentEntity::getId, s -> s));
 
         var requestIds = roster.stream()
                 .map(UpdateGroupRequest.StudentPatchRequest::id)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        for (var student : existingStudents) {
-            if (!requestIds.contains(student.id())) {
-                studentService.archiveStudent(student.id());
-            }
-        }
+        // Архивация отсутствующих — одним bulk-UPDATE вместо N загрузок + save.
+        var toArchive =
+                existing.stream().filter(s -> !requestIds.contains(s.getId())).toList();
+        studentService.archiveEntities(toArchive);
 
+        var toSave = new ArrayList<StudentEntity>(roster.size());
         for (var req : roster) {
             if (req.id() != null) {
                 var student = existingById.get(req.id());
-                if (student == null || !student.groupId().equals(group.getId())) {
+                if (student == null || !student.getGroup().getId().equals(group.getId())) {
                     throw new jakarta.persistence.EntityNotFoundException("Student not found in group: " + req.id());
                 }
-                studentService.updateStudent(
-                        student.id(),
-                        UpdateStudentRequest.builder()
-                                .username(req.username())
-                                .subgroupId(req.subgroupId())
-                                .build());
+                student.setUsername(req.username());
+                student.setSubgroup(
+                        req.subgroupId() != null ? subgroupRepository.getReferenceById(req.subgroupId()) : null);
+                toSave.add(student);
             } else {
-                studentService.createStudent(CreateStudentRequest.builder()
+                toSave.add(StudentEntity.builder()
                         .username(req.username())
-                        .groupId(group.getId())
-                        .subgroupId(req.subgroupId())
+                        .group(group)
+                        .subgroup(
+                                req.subgroupId() != null ? subgroupRepository.getReferenceById(req.subgroupId()) : null)
                         .build());
             }
         }
+        studentService.saveEntities(toSave);
     }
 
     public GroupResponse getGroupById(UUID id) {
