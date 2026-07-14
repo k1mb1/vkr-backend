@@ -4,7 +4,7 @@ import com.github.k1mb1.vkr_backend.journal.service.dto.response.JournalAudience
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
+import com.github.k1mb1.vkr_backend.teacher.domain.TeacherSubjectPermissionEntity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

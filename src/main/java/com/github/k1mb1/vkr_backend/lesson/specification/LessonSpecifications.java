@@ -2,8 +2,8 @@ package com.github.k1mb1.vkr_backend.lesson.specification;
 
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
-import com.github.k1mb1.vkr_backend.subject.domain.PermissionScopeEntity;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
+import com.github.k1mb1.vkr_backend.teacher.domain.PermissionScopeEntity;
+import com.github.k1mb1.vkr_backend.teacher.domain.TeacherSubjectPermissionEntity;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
 import java.util.ArrayList;

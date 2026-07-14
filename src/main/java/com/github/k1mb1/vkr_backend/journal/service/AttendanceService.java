@@ -21,7 +21,7 @@ import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonEntity;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.subject.api.AttendanceHighlightPolicyResponse;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
+import com.github.k1mb1.vkr_backend.teacher.domain.TeacherSubjectPermissionEntity;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;

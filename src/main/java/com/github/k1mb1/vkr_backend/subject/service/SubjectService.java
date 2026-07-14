@@ -1,13 +1,12 @@
 package com.github.k1mb1.vkr_backend.subject.service;
 
 import com.github.k1mb1.vkr_backend.auth.SecurityService;
+import com.github.k1mb1.vkr_backend.subject.api.OwnerPermissionGranter;
+import com.github.k1mb1.vkr_backend.subject.api.SubjectVisibilityPort;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
 import com.github.k1mb1.vkr_backend.subject.service.dto.filter.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateSubjectRequest;
@@ -31,13 +30,13 @@ public class SubjectService {
 
     final SubjectRepository subjectRepository;
 
-    final TeacherSubjectPermissionRepository permissionRepository;
-
     final SubjectMapper subjectMapper;
 
-    final TeacherRepository teacherRefRepository;
-
     final SubjectGroupRefRepository groupRefRepository;
+
+    final OwnerPermissionGranter ownerPermissionGranter;
+
+    final SubjectVisibilityPort subjectVisibility;
 
     final SecurityService securityService;
 
@@ -66,14 +65,7 @@ public class SubjectService {
 
         subject = subjectRepository.save(subject);
 
-        var teacher = teacherRefRepository.getReferenceById(request.teacherId());
-        var permission = TeacherSubjectPermissionEntity.builder()
-                .teacher(teacher)
-                .subject(subject)
-                .allPermissions(true)
-                .build();
-
-        permissionRepository.save(permission);
+        ownerPermissionGranter.grantAllPermissions(request.teacherId(), subject.getId());
 
         return subjectMapper.toFullResponse(subject);
     }
@@ -81,12 +73,13 @@ public class SubjectService {
     public Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable) {
         // Не-админ всегда видит только свои предметы: teacherId жёстко берётся из токена,
         // что бы клиент ни прислал в фильтре. Админ может смотреть по любому teacherId.
-        var effectiveFilter = securityService.isAdmin()
-                ? filter
-                : new SubjectFilter(
-                        filter.name(), securityService.currentSubjectId().orElseThrow());
+        var teacherId = securityService.isAdmin()
+                ? filter.teacherId()
+                : securityService.currentSubjectId().orElseThrow();
+        // Видимые предметы приходят из teacher через порт: subject не заглядывает в таблицу прав.
+        var visibleSubjectIds = teacherId == null ? null : subjectVisibility.visibleSubjectIds(teacherId);
         return subjectRepository
-                .findAll(new SubjectSpecifications(effectiveFilter).toSpecification(), pageable)
+                .findAll(new SubjectSpecifications(filter.name(), visibleSubjectIds).toSpecification(), pageable)
                 .map(subjectMapper::toResponse);
     }
 }

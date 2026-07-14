@@ -30,7 +30,7 @@ import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentResponse;
 import com.github.k1mb1.vkr_backend.lesson.api.LessonStudentsApi;
 import com.github.k1mb1.vkr_backend.lesson.domain.LessonScopeEntity;
 import com.github.k1mb1.vkr_backend.lesson.specification.LessonSpecifications;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
+import com.github.k1mb1.vkr_backend.teacher.domain.TeacherSubjectPermissionEntity;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;

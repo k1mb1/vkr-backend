@@ -10,29 +10,29 @@ import static org.mockito.Mockito.when;
 
 import com.github.k1mb1.vkr_backend.auth.SecurityService;
 import com.github.k1mb1.vkr_backend.group.domain.GroupEntity;
+import com.github.k1mb1.vkr_backend.subject.api.OwnerPermissionGranter;
+import com.github.k1mb1.vkr_backend.subject.api.SubjectVisibilityPort;
 import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherEntity;
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
 import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
 import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherRepository;
-import com.github.k1mb1.vkr_backend.subject.repository.TeacherSubjectPermissionRepository;
+import com.github.k1mb1.vkr_backend.subject.service.dto.filter.SubjectFilter;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateSubjectRequest;
 import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectResponse;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class SubjectServiceTest {
@@ -41,16 +41,16 @@ class SubjectServiceTest {
     SubjectRepository subjectRepository;
 
     @Mock
-    TeacherSubjectPermissionRepository permissionRepository;
-
-    @Mock
     SubjectMapper subjectMapper;
 
     @Mock
-    TeacherRepository teacherRefRepository;
+    SubjectGroupRefRepository groupRefRepository;
 
     @Mock
-    SubjectGroupRefRepository groupRefRepository;
+    OwnerPermissionGranter ownerPermissionGranter;
+
+    @Mock
+    SubjectVisibilityPort subjectVisibility;
 
     @Mock
     SecurityService securityService;
@@ -70,16 +70,12 @@ class SubjectServiceTest {
             s.setId(subjectId);
             return s;
         });
-        when(teacherRefRepository.getReferenceById(teacherId))
-                .thenReturn(TeacherEntity.builder().id(teacherId).build());
         lenient().when(subjectMapper.toFullResponse(any())).thenReturn(mock(SubjectResponse.class));
 
         service.createSubject(new CreateSubjectRequest("Math", "desc", List.of(groupId), teacherId));
 
-        var captor = ArgumentCaptor.forClass(TeacherSubjectPermissionEntity.class);
-        verify(permissionRepository).save(captor.capture());
-        assertThat(captor.getValue().isAllPermissions()).isTrue();
-        assertThat(captor.getValue().getSubject().getId()).isEqualTo(subjectId);
+        // авто-грант владельцу делегируется порту teacher, а не пишется здесь
+        verify(ownerPermissionGranter).grantAllPermissions(teacherId, subjectId);
     }
 
     @Test
@@ -109,16 +105,15 @@ class SubjectServiceTest {
         var tokenTeacherId = UUID.randomUUID();
         when(securityService.isAdmin()).thenReturn(false);
         when(securityService.currentSubjectId()).thenReturn(Optional.of(tokenTeacherId));
-        when(subjectRepository.findAll(
-                        any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class)))
+        when(subjectVisibility.visibleSubjectIds(tokenTeacherId)).thenReturn(Set.of());
+        when(subjectRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
-        var result = service.getPage(
-                new com.github.k1mb1.vkr_backend.subject.service.dto.filter.SubjectFilter("q", UUID.randomUUID()),
-                Pageable.unpaged());
+        var result = service.getPage(new SubjectFilter("q", UUID.randomUUID()), Pageable.unpaged());
 
         assertThat(result).isEmpty();
-        // не-админ не может подменить teacherId — берётся из токена
+        // не-админ не может подменить teacherId — берётся из токена, видимость приходит из порта
+        verify(subjectVisibility).visibleSubjectIds(tokenTeacherId);
         verify(securityService).currentSubjectId();
     }
 }

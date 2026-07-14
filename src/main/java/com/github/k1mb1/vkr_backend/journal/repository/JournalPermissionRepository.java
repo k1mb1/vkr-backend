@@ -1,6 +1,6 @@
 package com.github.k1mb1.vkr_backend.journal.repository;
 
-import com.github.k1mb1.vkr_backend.subject.domain.TeacherSubjectPermissionEntity;
+import com.github.k1mb1.vkr_backend.teacher.domain.TeacherSubjectPermissionEntity;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
