@@ -20,8 +20,8 @@ import com.tngtech.archunit.lang.ArchRule;
  * </pre>
  *
  * Allowed access flows top-down toward the domain; the domain depends on nothing.
- * Module-to-module boundaries are enforced separately by {@link ModularityTest}
- * and {@link LayerBoundaryRules}.
+ * No-leak boundaries (transport vs persistence) are enforced separately by
+ * {@link LayerBoundaryRules}.
  */
 @AnalyzeProductionClasses
 class LayeredArchitectureRules {
@@ -46,8 +46,8 @@ class LayeredArchitectureRules {
             .definedBy(Packages.REPOSITORY)
             .layer("Config")
             .definedBy(Packages.CONFIG)
-            // Module-root vocabulary: shared enums/beans published at a module's root
-            // (the unnamed Modulith interface). Everyone, including the domain, may use it.
+            // Package-root vocabulary: shared enums/beans published at a feature
+            // package's root. Everyone, including the domain, may use it.
             .layer("Shared")
             .definedBy(Packages.ROOT + ".*", Packages.ROOT + ".journal.checkin")
 

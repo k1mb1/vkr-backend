@@ -10,7 +10,6 @@ spotless = "8.8.0"
 errorpronePlugin = "5.1.0"
 spotbugsPlugin = "6.5.9"
 
-springModulith = "2.1.0"
 archunit = "1.4.2"
 
 springdoc = "3.0.3"
@@ -23,10 +22,6 @@ spotbugsAnnotations = "4.10.3"
 findsecbugs = "1.14.0"
 
 [libraries]
-# Spring Modulith starters are versioned by the spring-modulith BOM (imported in
-# build.gradle.kts), so they carry no explicit version here.
-spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core" }
-spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }

@@ -57,10 +57,10 @@ REST API для системы учёта учебного процесса: г�
                                                   └─ PostgreSQL (миграции Liquibase)
 ```
 
-Код организован по доменным модулям Spring Modulith (`group`, `subject`, `lesson`,
-`journal`, `auth`, `common`). Границы и зависимости модулей закреплены исполняемыми
-тестами (`ARCHITECTURE.md`, см. также описание консолидации: attendance+grading+results
-слиты в `journal`, teacher влит в `subject`). В каждом модуле выделены слои:
+Код — единый Spring Boot сервис, организованный по доменным пакетам (`group`,
+`subject`, `lesson`, `journal`, `auth`, `common`). Слоевые конвенции внутри
+пакетов закреплены исполняемыми ArchUnit-тестами (`ARCHITECTURE.md`). В каждом
+пакете выделены слои:
 
 - `controller/` — REST-контроллеры (`@RestController`, `ResponseEntity`);
 - `service/` — use case'ы (`@Service`, class-level `@Transactional(readOnly=true)`);
@@ -69,8 +69,7 @@ REST API для системы учёта учебного процесса: г�
 - `specification/` — JPA Specification-билдеры;
 - `repository/` — Spring Data интерфейсы;
 - `domain/` — JPA-сущности (`*Entity`, наследуют `Auditable`/`BaseEntity`);
-- `api/` — опубликованные порты и DTO-records (`@NamedInterface`) — единственная
-  поверхность взаимодействия между модулями.
+- `api/` — порты и DTO-records, через которые доменные пакеты обмениваются данными.
 
 ## Требования
 
@@ -167,7 +166,7 @@ docker build -f Dockerfile.native -t vkr-backend:native .   # GraalVM native
 ```
 src/main/java/.../vkr_backend/
   auth/              SpEL-бин @authz + снапшот прав из JWT (identity из токена)
-  common/            OPEN-модуль: базовые сущности, контракт ошибок, утилиты, конфиги
+  common/            Базовые сущности, контракт ошибок, утилиты, конфиги
   group/             Контингент: группы, подгруппы, студенты (один агрегат ростера)
   subject/           Предметы, политики, справочник преподавателей и их права, LessonType
   lesson/            Занятия и проведения (scope), видимость под правом

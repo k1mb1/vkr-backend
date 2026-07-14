@@ -29,22 +29,10 @@ final class Packages {
     static final String CONFIG = "..config..";
     static final String EXCEPTION = "..exception..";
 
-    /** Published cross-module API (the only surface other modules may use). */
+    /** Published api packages (ports and DTO records shared between feature packages). */
     static final String API = "..api..";
 
-    // Module base packages — the vertices of the documented module graph
-    // (see ARCHITECTURE.md). Graph rules reference these instead of inline
-    // strings so a module rename cannot silently detach a rule.
-    static final String MODULE_GROUP = ROOT + ".group..";
-    static final String MODULE_SUBJECT = ROOT + ".subject..";
-    static final String MODULE_LESSON = ROOT + ".lesson..";
-    static final String MODULE_JOURNAL = ROOT + ".journal..";
-    static final String MODULE_AUTH = ROOT + ".auth..";
-
-    /** All business modules (everything except the auth/common leaves). */
-    static final String[] BUSINESS_MODULES = {MODULE_GROUP, MODULE_SUBJECT, MODULE_LESSON, MODULE_JOURNAL};
-
-    /** Shared technical OPEN module. */
+    /** Shared technical package. */
     static final String COMMON = "..common..";
 
     // External framework packages we reason about by name.

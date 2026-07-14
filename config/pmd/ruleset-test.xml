@@ -6,8 +6,8 @@
 
     <description>
         PMD rules for test sources. Same intent as the main rule set, but the
-        unit-test "style" rules are relaxed: ArchUnit/Modulith tests assert via
-        .check()/.verify(), Spring test helpers are named like tests without
+        unit-test "style" rules are relaxed: ArchUnit tests assert via
+        .check(), Spring test helpers are named like tests without
         containing cases, and multiple asserts per test are fine here.
     </description>
 

@@ -1,10 +1,8 @@
 /**
- * Модуль аутентификации/авторизации: identity из JWT ({@code SecurityService}),
+ * Аутентификация/авторизация: identity из JWT ({@code SecurityService}),
  * кэшируемый снапшот тонких прав ({@code PermissionResolver}) и точка решений
  * {@code @authz} для SpEL в {@code @PreAuthorize}. Данные о правах и принадлежности
- * ресурсов поступают через SPI-порты {@code auth.api}, реализуемые модулями
- * subject/lesson/journal, — поэтому auth остаётся листом графа и не может
- * образовать цикл с бизнес-модулями.
+ * ресурсов поступают через порты {@code auth.api}, реализуемые сервисами
+ * subject/lesson/journal.
  */
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"common"})
 package com.github.k1mb1.vkr_backend.auth;

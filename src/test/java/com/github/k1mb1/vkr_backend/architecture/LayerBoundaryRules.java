@@ -1,6 +1,5 @@
 package com.github.k1mb1.vkr_backend.architecture;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.junit.ArchTest;
@@ -11,8 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * "No-leak" boundary rules: dependencies that the layering allows by direction
  * but that we still forbid because they would couple a transport type to
- * persistence, leak a module's internals, or wire the module graph the wrong
- * way. Each rule pins one boundary that no compiler or formatter can see.
+ * persistence or leak an entity across a transport boundary. Each rule pins one
+ * boundary that no compiler or formatter can see.
  */
 @AnalyzeProductionClasses
 class LayerBoundaryRules {
@@ -74,7 +73,7 @@ class LayerBoundaryRules {
             .and()
             .resideOutsideOfPackage(Packages.COMMON)
             .and()
-            // package-info carries the Modulith @NamedInterface metadata, not domain logic
+            // package-info carries package documentation, not domain logic
             .doNotHaveSimpleName("package-info")
             .should()
             .dependOnClassesThat()
@@ -91,25 +90,7 @@ class LayerBoundaryRules {
             .resideInAnyPackage(Packages.DTO, Packages.API)
             .because("the domain is the core: DTOs/api depend on it, never the other way round");
 
-    // --- Cross-module encapsulation -----------------------------------------
-
-    @ArchTest
-    static final ArchRule services_use_only_their_own_modules_repositories = classes()
-            .that()
-            .resideInAPackage(Packages.SERVICE)
-            .should(ArchConditions.dependOnRepositoriesOfOwnModuleOnly())
-            .because("another module's data is reachable only through its published api, never its repository");
-
-    @ArchTest
-    static final ArchRule foreign_entity_repositories_are_read_only = classes()
-            .that()
-            .resideInAPackage(Packages.REPOSITORY)
-            .and()
-            .areInterfaces()
-            .should(ArchConditions.keepForeignEntityRepositoriesReadOnly())
-            .because("another module's data is mutated only by its owner: a consumer's repository over a "
-                    + "foreign ::domain entity is a read-only view (finders + getReferenceById), so it must "
-                    + "extend Repository, never CrudRepository/JpaRepository");
+    // --- common stays technical ---------------------------------------------
 
     @ArchTest
     static final ArchRule common_stays_technical = noClasses()
@@ -121,64 +102,6 @@ class LayerBoundaryRules {
             .beAnnotatedWith(Service.class)
             .orShould()
             .beAnnotatedWith(jakarta.persistence.Entity.class)
-            .because("common is the shared OPEN module: technical base types only, "
+            .because("common is the shared technical package: technical base types only, "
                     + "no web/business/persisted-entity leaks");
-
-    // --- Module graph is one-directional ------------------------------------
-    // Pins the documented graph as an explicit contract (Modulith verifies the
-    // declared dependencies; these rules forbid the reverse edges outright, so a
-    // cycle can never be introduced by widening a declaration):
-    //
-    //   journal -> lesson -> subject -> group
-    //   auth    -> (nothing but common); every business module may use auth
-    //   common  -> (leaf, OPEN)
-
-    @ArchTest
-    static final ArchRule group_is_a_leaf_reference_module = noClasses()
-            .that()
-            .resideInAPackage(Packages.MODULE_GROUP)
-            .should()
-            .dependOnClassesThat()
-            .resideInAnyPackage(Packages.MODULE_SUBJECT, Packages.MODULE_LESSON, Packages.MODULE_JOURNAL)
-            .because("group (контингент) is reference data at the bottom of the graph; "
-                    + "the teaching-process modules depend on it, never the reverse");
-
-    @ArchTest
-    static final ArchRule subject_depends_only_downward = noClasses()
-            .that()
-            .resideInAPackage(Packages.MODULE_SUBJECT)
-            .should()
-            .dependOnClassesThat()
-            .resideInAnyPackage(Packages.MODULE_LESSON, Packages.MODULE_JOURNAL)
-            .because("subject (policies, teachers, permissions) sits below the lesson/journal modules: "
-                    + "lesson -> subject, never the reverse");
-
-    @ArchTest
-    static final ArchRule lesson_does_not_depend_on_journal = noClasses()
-            .that()
-            .resideInAPackage(Packages.MODULE_LESSON)
-            .should()
-            .dependOnClassesThat()
-            .resideInAPackage(Packages.MODULE_JOURNAL)
-            .because("lesson is the schedule core; the journal (marks) builds on it — "
-                    + "the reverse direction is inverted through lesson's own ports (lesson.api)");
-
-    @ArchTest
-    static final ArchRule auth_depends_on_no_business_module = noClasses()
-            .that()
-            .resideInAPackage(Packages.MODULE_AUTH)
-            .should()
-            .dependOnClassesThat()
-            .resideInAnyPackage(Packages.BUSINESS_MODULES)
-            .because("auth is infrastructure: business modules implement its SPI ports (auth.api), "
-                    + "so auth itself stays a leaf and can never join a module cycle");
-
-    @ArchTest
-    static final ArchRule common_depends_on_no_business_module = noClasses()
-            .that()
-            .resideInAPackage(Packages.COMMON)
-            .should()
-            .dependOnClassesThat()
-            .resideInAnyPackage(Packages.BUSINESS_MODULES)
-            .because("common is a leaf module; business modules depend on it, never the reverse");
 }

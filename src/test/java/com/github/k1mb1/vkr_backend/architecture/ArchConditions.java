@@ -1,6 +1,5 @@
 package com.github.k1mb1.vkr_backend.architecture;
 
-import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaCodeUnit;
 import com.tngtech.archunit.core.domain.JavaMethod;
@@ -11,17 +10,12 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import jakarta.validation.Valid;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.mapstruct.Mapper;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.Repository;
-import org.springframework.modulith.ApplicationModule;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,32 +29,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Reusable {@link ArchCondition}s for rules that ArchUnit's fluent DSL cannot
- * express directly (inspecting generics, annotation attributes or cross-module
- * placement). Kept in one place so the rule classes stay declarative.
+ * express directly (inspecting generics or annotation attributes). Kept in one
+ * place so the rule classes stay declarative.
  */
 final class ArchConditions {
 
     private ArchConditions() {}
-
-    /** A service must depend only on repositories that live in its own module. */
-    static ArchCondition<JavaClass> dependOnRepositoriesOfOwnModuleOnly() {
-        return new ArchCondition<>("depend only on repositories within the same module") {
-            @Override
-            public void check(JavaClass clazz, ConditionEvents events) {
-                String module = moduleOf(clazz);
-                for (Dependency dependency : clazz.getDirectDependenciesFromSelf()) {
-                    JavaClass target = dependency.getTargetClass();
-                    boolean isRepository = target.getPackageName().contains(".repository");
-                    if (isRepository && !moduleOf(target).equals(module)) {
-                        events.add(SimpleConditionEvent.violated(
-                                clazz,
-                                clazz.getFullName() + " depends on a repository of another module: "
-                                        + target.getName()));
-                    }
-                }
-            }
-        };
-    }
 
     /** Every {@code @RequestBody} controller parameter must also be {@code @Valid}. */
     static ArchCondition<JavaMethod> validateEveryRequestBody() {
@@ -248,43 +222,6 @@ final class ArchConditions {
         };
     }
 
-    /** Only the {@code common} module may declare {@code type = OPEN}. */
-    static ArchCondition<JavaClass> beOpenOnlyInCommon() {
-        return new ArchCondition<>("be an OPEN module only in " + Packages.ROOT + ".common") {
-            @Override
-            public void check(JavaClass clazz, ConditionEvents events) {
-                boolean open =
-                        clazz.getAnnotationOfType(ApplicationModule.class).type() == ApplicationModule.Type.OPEN;
-                boolean inCommon = (Packages.ROOT + ".common").equals(clazz.getPackageName());
-                if (open && !inCommon) {
-                    events.add(SimpleConditionEvent.violated(
-                            clazz, clazz.getName() + " declares an OPEN module outside common"));
-                }
-            }
-        };
-    }
-
-    /**
-     * A business module (anything but the OPEN {@code common}) must list its
-     * {@code allowedDependencies} explicitly instead of leaving the door open —
-     * the module graph stays a readable, reviewed contract.
-     */
-    static ArchCondition<JavaClass> declareExplicitAllowedDependencies() {
-        return new ArchCondition<>("declare explicit allowedDependencies (unless it is an OPEN module)") {
-            @Override
-            public void check(JavaClass clazz, ConditionEvents events) {
-                ApplicationModule module = clazz.getAnnotationOfType(ApplicationModule.class);
-                boolean open = module.type() == ApplicationModule.Type.OPEN;
-                if (!open && module.allowedDependencies().length == 0) {
-                    events.add(SimpleConditionEvent.violated(
-                            clazz,
-                            clazz.getName() + " must declare explicit allowedDependencies "
-                                    + "(or be an OPEN module like common)"));
-                }
-            }
-        };
-    }
-
     /** A {@code @Service} must carry a class-level {@code @Transactional(readOnly = true)}. */
     static ArchCondition<JavaClass> beAnnotatedWithReadOnlyTransactional() {
         return new ArchCondition<>("be annotated @Transactional(readOnly = true) at class level") {
@@ -435,67 +372,5 @@ final class ArchConditions {
         if (type instanceof JavaParameterizedType parameterized) {
             parameterized.getActualTypeArguments().forEach(arg -> checkParameterType(arg, method, events));
         }
-    }
-
-    /**
-     * A {@code *Repository} declared over another module's {@code ::domain} entity is a
-     * read-only view: it may expose finders and {@code getReferenceById}, but never
-     * writes. Concretely it must extend the Spring Data {@code Repository} marker (plus
-     * optionally {@code JpaSpecificationExecutor}) and must not be assignable to
-     * {@code CrudRepository}, which would drag in {@code save}/{@code delete} and let a
-     * consumer mutate data it does not own. A repository over its own module's entity is
-     * unrestricted.
-     */
-    static ArchCondition<JavaClass> keepForeignEntityRepositoriesReadOnly() {
-        return new ArchCondition<>(
-                "be read-only (extend Repository, not CrudRepository) over another module's entity") {
-            @Override
-            public void check(JavaClass clazz, ConditionEvents events) {
-                Class<?> repo = clazz.reflect();
-                Class<?> entity = managedEntityOf(repo);
-                if (entity == null) {
-                    return; // not a Spring Data repository, or a non-class type argument
-                }
-                String repoModule = moduleOf(clazz.getPackageName());
-                String entityModule = moduleOf(entity.getPackageName());
-                boolean foreign = !entityModule.isEmpty() && !entityModule.equals(repoModule);
-                if (foreign && CrudRepository.class.isAssignableFrom(repo)) {
-                    events.add(SimpleConditionEvent.violated(
-                            clazz,
-                            clazz.getName() + " is a CrudRepository over " + entity.getName()
-                                    + " owned by module '" + entityModule + "'; a cross-module repository must be a "
-                                    + "read-only view (extend Repository, never CrudRepository/JpaRepository)"));
-                }
-            }
-        };
-    }
-
-    /** The entity type a Spring Data repository interface manages (first arg of its {@code Repository<T, ID>} super). */
-    private static @Nullable Class<?> managedEntityOf(Class<?> repo) {
-        for (Type generic : repo.getGenericInterfaces()) {
-            if (generic instanceof ParameterizedType parameterized
-                    && parameterized.getRawType() instanceof Class<?> raw
-                    && Repository.class.isAssignableFrom(raw)
-                    && parameterized.getActualTypeArguments()[0] instanceof Class<?> entity) {
-                return entity;
-            }
-        }
-        return null;
-    }
-
-    /** Top-level module segment of a class, e.g. {@code journal} or {@code lesson}. */
-    private static String moduleOf(JavaClass clazz) {
-        return moduleOf(clazz.getPackageName());
-    }
-
-    /** Top-level module segment of a package name, e.g. {@code journal} or {@code lesson}. */
-    private static String moduleOf(String packageName) {
-        String base = Packages.ROOT + ".";
-        if (!packageName.startsWith(base)) {
-            return "";
-        }
-        String rest = packageName.substring(base.length());
-        int dot = rest.indexOf('.');
-        return dot < 0 ? rest : rest.substring(0, dot);
     }
 }
