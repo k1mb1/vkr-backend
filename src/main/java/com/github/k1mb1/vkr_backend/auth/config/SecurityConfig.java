@@ -3,11 +3,13 @@ package com.github.k1mb1.vkr_backend.auth.config;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 import com.github.k1mb1.vkr_backend.auth.JwtAuthConverter;
+import com.github.k1mb1.vkr_backend.auth.aot.AuthzReflectionHints;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,6 +24,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
+@ImportRuntimeHints(AuthzReflectionHints.class)
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -49,7 +52,7 @@ public class SecurityConfig {
             @Value("${app.cors.allowed-origins}") String[] allowedOrigins,
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String issuerUri) {
         this.jwtAuthConverter = jwtAuthConverter;
-        this.allowedOrigins = allowedOrigins;
+        this.allowedOrigins = allowedOrigins.clone();
         this.issuerUri = issuerUri;
     }
 

@@ -17,6 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @AnalyzeProductionClasses
 class LayerBoundaryRules {
 
+    static final String[] BUSINESS_MODULES = {
+        Packages.ROOT + ".group..",
+        Packages.ROOT + ".subject..",
+        Packages.ROOT + ".lesson..",
+        Packages.ROOT + ".journal..",
+    };
+
     // --- Persistence must not leak across transport boundaries --------------
 
     @ArchTest
@@ -121,13 +128,6 @@ class LayerBoundaryRules {
     //   journal -> lesson -> subject -> group
     //   auth    -> (nothing but common); every business module may use auth
     //   common  -> (leaf, OPEN)
-
-    private static final String[] BUSINESS_MODULES = {
-        Packages.ROOT + ".group..",
-        Packages.ROOT + ".subject..",
-        Packages.ROOT + ".lesson..",
-        Packages.ROOT + ".journal..",
-    };
 
     @ArchTest
     static final ArchRule group_is_a_leaf_reference_module = noClasses()
