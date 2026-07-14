@@ -51,7 +51,7 @@ public class JournalAudienceService {
         }
         result.sort(Comparator.comparing(
                         (LessonScopeEntity s) -> s.getStartedAt(), Comparator.nullsLast(Comparator.naturalOrder()))
-                .thenComparing(s -> s.getLesson().getOrderIndex()));
+                .thenComparingInt(s -> s.getLesson().getOrderIndex()));
         return result;
     }
 }

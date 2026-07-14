@@ -249,7 +249,7 @@ public final class LessonSpecifications {
         return permission.getScopes().stream()
                 .sorted(Comparator.comparing((PermissionScopeEntity s) ->
                                 Objects.requireNonNull(s.getGroup()).getName())
-                        .thenComparing(s -> s.getAllowedSubgroup() == null
+                        .thenComparingInt(s -> s.getAllowedSubgroup() == null
                                 ? -1
                                 : s.getAllowedSubgroup().getIndex()))
                 .toList();

@@ -5,6 +5,7 @@ plugins {
     java
     checkstyle
     pmd
+    jacoco
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.dependency.management)
     alias(libs.plugins.hibernate)
@@ -115,6 +116,21 @@ graalvmNative {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    // The architecture/config/AOT-hint classes carry no runtime behaviour worth covering.
+    classDirectories.setFrom(classDirectories.files.map {
+        fileTree(it) {
+            exclude("**/config/**", "**/aot/**", "**/*Application*")
+        }
+    })
 }
 
 spotless {
