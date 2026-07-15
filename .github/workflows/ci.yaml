@@ -2,7 +2,7 @@ name: Java CI (Fast + Native)
 
 on:
   push:
-    branches: ["main", "master", "claude/**"]
+    branches: ["main", "master"]
   pull_request:
     branches: ["main", "master"]
 
@@ -59,9 +59,9 @@ jobs:
   docker:
     name: Docker build (JVM)
     needs: build
-    # Image builds are expensive: run them for PRs and the main branches only,
-    # not on every feature-branch push (which still gets the build+test gate).
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # Image builds are expensive: run them only on push to the main branches,
+    # not on pull requests (PRs still get the full build + static-analysis + test).
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -86,7 +86,7 @@ jobs:
   docker-native:
     name: Native Docker build (single compile)
     needs: build
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
