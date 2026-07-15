@@ -1,3 +1,4 @@
+import de.thetaphi.forbiddenapis.gradle.CheckForbiddenApis
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
 
@@ -12,6 +13,8 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.errorprone)
     alias(libs.plugins.spotbugs)
+    alias(libs.plugins.forbidden.apis)
+    alias(libs.plugins.modernizer)
 }
 
 group = "com.github.k1mb1"
@@ -92,6 +95,7 @@ dependencies {
     compileOnly(libs.spotbugs.annotations)
 
     spotbugsPlugins(libs.findsecbugs.plugin)
+    spotbugsPlugins(libs.sbcontrib.plugin)
 }
 
 // Static Hibernate bytecode enhancement at build time.
@@ -162,6 +166,30 @@ spotbugs {
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
     reports.create("html") { required = true }
     reports.create("xml") { required = true }
+}
+
+// Bans error-prone JDK calls the other tools don't see: charset/locale-implicit
+// methods (getBytes(), toLowerCase(), ...), stray System.out/err, non-portable APIs.
+forbiddenApis {
+    bundledSignatures = setOf("jdk-unsafe", "jdk-non-portable", "jdk-system-out")
+    failOnUnresolvableSignatures = false
+}
+
+tasks.withType<CheckForbiddenApis>().configureEach {
+    enabled = !name.contains("aot", ignoreCase = true)
+}
+
+// Tests may use LocalDate.now()/default-charset fixtures; keep the strict
+// timezone/locale/charset ban (jdk-unsafe) on production code only.
+tasks.named<CheckForbiddenApis>("forbiddenApisTest") {
+    bundledSignatures = setOf("jdk-system-out", "jdk-non-portable")
+}
+
+// Flags legacy APIs that have a modern JDK equivalent (new Integer(), StringBuffer,
+// Guava helpers superseded by java.util, ...).
+modernizer {
+    failOnViolations = true
+    includeTestClasses = true
 }
 
 tasks.withType<Checkstyle>().configureEach {

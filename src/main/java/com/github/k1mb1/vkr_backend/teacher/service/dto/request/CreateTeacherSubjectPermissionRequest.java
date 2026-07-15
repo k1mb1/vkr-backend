@@ -27,9 +27,6 @@ public record CreateTeacherSubjectPermissionRequest(
 
     @Schema(hidden = true)
     @AssertTrue(message = "Список scopes должен быть непустым, когда allPermissions = false") public boolean isScopesPresentWhenNotAllPermissions() {
-        if (Boolean.TRUE.equals(allPermissions)) {
-            return true;
-        }
-        return scopes != null && !scopes.isEmpty();
+        return Boolean.TRUE.equals(allPermissions) || scopes != null && !scopes.isEmpty();
     }
 }

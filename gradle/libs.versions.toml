@@ -9,6 +9,8 @@ graalvm = "1.1.4"
 spotless = "8.8.0"
 errorpronePlugin = "5.1.0"
 spotbugsPlugin = "6.5.9"
+forbiddenApis = "3.9"
+modernizer = "1.11.0"
 
 archunit = "1.4.2"
 
@@ -20,6 +22,7 @@ nullaway = "0.13.7"
 jspecify = "1.0.0"
 spotbugsAnnotations = "4.10.3"
 findsecbugs = "1.14.0"
+sbContrib = "7.6.9"
 
 [libraries]
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
@@ -32,6 +35,7 @@ nullaway = { module = "com.uber.nullaway:nullaway", version.ref = "nullaway" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugsAnnotations" }
 findsecbugs-plugin = { module = "com.h3xstream.findsecbugs:findsecbugs-plugin", version.ref = "findsecbugs" }
+sbcontrib-plugin = { module = "com.mebigfatguy.sb-contrib:sb-contrib", version.ref = "sbContrib" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
@@ -41,3 +45,5 @@ graalvm-native = { id = "org.graalvm.buildtools.native", version.ref = "graalvm"
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 errorprone = { id = "net.ltgt.errorprone", version.ref = "errorpronePlugin" }
 spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugsPlugin" }
+forbidden-apis = { id = "de.thetaphi.forbiddenapis", version.ref = "forbiddenApis" }
+modernizer = { id = "com.github.andygoossens.modernizer", version.ref = "modernizer" }

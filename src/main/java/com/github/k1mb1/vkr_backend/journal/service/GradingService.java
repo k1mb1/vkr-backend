@@ -323,7 +323,7 @@ public class GradingService {
                         k -> lessonRepository.findBySubjectIdAndTypeAndActiveTrue(
                                 dueLesson.getSubject().getId(), dueLesson.getType()));
                 if (active.isPresent()) {
-                    awarded = active.get();
+                    awarded = active.orElseThrow();
                     var lessonsWithAssignments = lessonsWithAssignmentsCache.computeIfAbsent(
                             cacheKey,
                             k -> lessonRepository.findWithAssignmentsBySubjectIdAndType(

@@ -31,7 +31,7 @@ class SubjectsControllerTest extends AbstractControllerTest {
     void createSubjectRequiresAuthentication() throws Exception {
         mvc.perform(post("/api/subjects")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(validCreate())))
+                        .content(JSON.writeValueAsString(validCreate())))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -40,7 +40,7 @@ class SubjectsControllerTest extends AbstractControllerTest {
         mvc.perform(post("/api/subjects")
                         .with(teacher())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(validCreate())))
+                        .content(JSON.writeValueAsString(validCreate())))
                 .andExpect(status().isCreated());
         verify(subjectService).createSubject(any());
     }
@@ -51,7 +51,7 @@ class SubjectsControllerTest extends AbstractControllerTest {
         mvc.perform(post("/api/subjects")
                         .with(teacher())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(invalid)))
+                        .content(JSON.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.status").value(400))
@@ -71,7 +71,7 @@ class SubjectsControllerTest extends AbstractControllerTest {
     @Test
     void updateSubjectMapsEntityNotFoundTo404() throws Exception {
         when(subjectService.updateSubject(any(), any())).thenThrow(new EntityNotFoundException("Subject not found"));
-        var body = json.writeValueAsString(
+        var body = JSON.writeValueAsString(
                 UpdateSubjectRequest.builder().name("Math").build());
         mvc.perform(patch("/api/subjects/{id}", UUID.randomUUID())
                         .with(teacher())

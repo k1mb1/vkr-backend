@@ -36,7 +36,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * a new endpoint that forgets to sit behind the authenticated filter is caught here.
  */
 @org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest
+// All controllers load in one slice, so each needs a mocked service — the field
+// count is inherent to a whole-API security check, not a design smell.
+@SuppressWarnings("PMD.TooManyFields")
 class AllEndpointsSecurityTest extends AbstractControllerTest {
+
+    private static final String SUBJECT = "/subjects/11111111-1111-1111-1111-111111111111";
 
     @MockitoBean
     GroupService groupService;
@@ -88,8 +93,6 @@ class AllEndpointsSecurityTest extends AbstractControllerTest {
 
     @MockitoBean
     TeacherSubjectPermissionService teacherSubjectPermissionService;
-
-    private static final String SUBJECT = "/subjects/11111111-1111-1111-1111-111111111111";
 
     static Stream<Arguments> protectedEndpoints() {
         return Stream.of(

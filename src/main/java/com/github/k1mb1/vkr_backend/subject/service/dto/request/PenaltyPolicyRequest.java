@@ -50,25 +50,21 @@ public record PenaltyPolicyRequest(
 
     @Schema(hidden = true)
     @AssertTrue(message = "Поля понижения обязательны, когда enabled = true") public boolean isPenaltyFieldsPresentWhenEnabled() {
-        if (!Boolean.TRUE.equals(enabled)) {
-            return true;
-        }
-        return operation != null
-                && step != null
-                && gracePeriodLessons != null
-                && intervalLessons != null
-                && maxReductions != null;
+        return !Boolean.TRUE.equals(enabled)
+                || operation != null
+                        && step != null
+                        && gracePeriodLessons != null
+                        && intervalLessons != null
+                        && maxReductions != null;
     }
 
     @Schema(hidden = true)
     @AssertTrue(message = "Поля бонуса обязательны, когда bonusEnabled = true") public boolean isBonusFieldsPresentWhenEnabled() {
-        if (!Boolean.TRUE.equals(bonusEnabled)) {
-            return true;
-        }
-        return bonusOperation != null
-                && bonusStep != null
-                && bonusGracePeriodLessons != null
-                && bonusIntervalLessons != null
-                && bonusMaxIncreases != null;
+        return !Boolean.TRUE.equals(bonusEnabled)
+                || bonusOperation != null
+                        && bonusStep != null
+                        && bonusGracePeriodLessons != null
+                        && bonusIntervalLessons != null
+                        && bonusMaxIncreases != null;
     }
 }

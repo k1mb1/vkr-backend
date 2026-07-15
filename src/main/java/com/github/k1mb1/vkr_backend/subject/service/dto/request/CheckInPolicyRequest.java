@@ -32,9 +32,6 @@ public record CheckInPolicyRequest(
 
     @Schema(hidden = true)
     @AssertTrue(message = "onTimeSeconds и lateSeconds обязательны, когда enabled = true") public boolean isWindowsPresentWhenEnabled() {
-        if (!Boolean.TRUE.equals(enabled)) {
-            return true;
-        }
-        return onTimeSeconds != null && lateSeconds != null;
+        return !Boolean.TRUE.equals(enabled) || onTimeSeconds != null && lateSeconds != null;
     }
 }

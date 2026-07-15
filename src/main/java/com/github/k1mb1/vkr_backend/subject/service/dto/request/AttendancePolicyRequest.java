@@ -32,9 +32,7 @@ public record AttendancePolicyRequest(
 
     @Schema(hidden = true)
     @AssertTrue(message = "Все коэффициенты баллов обязательны, когда enabled = true") public boolean isPointsPresentWhenEnabled() {
-        if (!Boolean.TRUE.equals(enabled)) {
-            return true;
-        }
-        return pointsPresent != null && pointsLate != null && pointsAbsent != null && pointsExcused != null;
+        return !Boolean.TRUE.equals(enabled)
+                || pointsPresent != null && pointsLate != null && pointsAbsent != null && pointsExcused != null;
     }
 }

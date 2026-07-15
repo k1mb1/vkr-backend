@@ -34,11 +34,11 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
         })
 abstract class AbstractControllerTest {
 
+    /** For serialising request bodies only — the slice's own converters handle responses. */
+    protected static final ObjectMapper JSON = new ObjectMapper();
+
     @Autowired
     protected MockMvc mvc;
-
-    /** For serialising request bodies only — the slice's own converters handle responses. */
-    protected static final ObjectMapper json = new ObjectMapper();
 
     /** An authenticated non-admin teacher (JWT with {@code sub}); no admin role. */
     protected static RequestPostProcessor teacher() {

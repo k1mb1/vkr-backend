@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -94,7 +95,10 @@ public class GlobalExceptionHandler {
                 : "invalid type";
         var fieldError = new FieldError(ex.getName(), "TypeMismatch", expected);
         return ErrorDto.of(
-                ErrorCode.INVALID_PARAM, INVALID_PARAM.formatted(ex.getName()), BAD_REQUEST, List.of(fieldError));
+                ErrorCode.INVALID_PARAM,
+                String.format(Locale.ROOT, INVALID_PARAM, ex.getName()),
+                BAD_REQUEST,
+                List.of(fieldError));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

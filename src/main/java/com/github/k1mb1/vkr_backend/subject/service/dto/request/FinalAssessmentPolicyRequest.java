@@ -53,10 +53,7 @@ public record FinalAssessmentPolicyRequest(
 
     @Schema(hidden = true)
     @AssertTrue(message = "Список bands должен быть непустым, когда enabled = true") public boolean isBandsPresentWhenEnabled() {
-        if (!Boolean.TRUE.equals(enabled)) {
-            return true;
-        }
-        return bands != null && !bands.isEmpty();
+        return !Boolean.TRUE.equals(enabled) || bands != null && !bands.isEmpty();
     }
 
     @Schema(

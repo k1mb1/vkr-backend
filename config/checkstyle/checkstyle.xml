@@ -27,11 +27,12 @@
     <!-- Cap line length; palantir wraps well below this, so this is a safety net. -->
     <module name="LineLength">
         <!-- Palantir (Spotless) already wraps breakable code at 100 columns; this is
-             only a backstop for lines it cannot break. Raised to 160 to allow the
-             verbose bilingual @Schema descriptions stacked with bean-validation
-             annotations on record components. -->
+             only a backstop for lines it cannot break. Raised to 160 for general code.
+             Annotation lines are exempt entirely: Spotless formatAnnotations() keeps
+             bean-validation + @Schema annotations inline on record components, which
+             can exceed 160 with verbose bilingual descriptions and is unbreakable. -->
         <property name="max" value="160"/>
-        <property name="ignorePattern" value="^package.*|^import.*|^\s*//.*https?://"/>
+        <property name="ignorePattern" value="^package.*|^import.*|^\s*//.*https?://|^\s*@"/>
     </module>
 
     <module name="TreeWalker">

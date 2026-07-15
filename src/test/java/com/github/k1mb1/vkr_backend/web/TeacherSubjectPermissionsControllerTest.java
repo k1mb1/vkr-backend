@@ -30,7 +30,7 @@ class TeacherSubjectPermissionsControllerTest extends AbstractControllerTest {
         mvc.perform(post("/api/teacher-subject-permissions")
                         .with(teacher())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(request)))
+                        .content(JSON.writeValueAsString(request)))
                 .andExpect(status().isCreated());
         verify(service).create(any());
     }
@@ -41,7 +41,7 @@ class TeacherSubjectPermissionsControllerTest extends AbstractControllerTest {
         mvc.perform(post("/api/teacher-subject-permissions")
                         .with(teacher())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(invalid)))
+                        .content(JSON.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.fieldErrors").isNotEmpty());
@@ -54,7 +54,7 @@ class TeacherSubjectPermissionsControllerTest extends AbstractControllerTest {
         mvc.perform(post("/api/teacher-subject-permissions")
                         .with(teacher())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(invalid)))
+                        .content(JSON.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
     }
@@ -66,7 +66,7 @@ class TeacherSubjectPermissionsControllerTest extends AbstractControllerTest {
         mvc.perform(post("/api/teacher-subject-permissions")
                         .with(teacher())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(request)))
+                        .content(JSON.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("CONFLICT"));
     }
