@@ -218,6 +218,28 @@ tasks.withType<JavaCompile>().configureEach {
         // Container-injected fields are guaranteed initialized outside the constructor.
         option("NullAway:ExcludedFieldAnnotations", "jakarta.persistence.PersistenceContext")
         check("NullAway", CheckSeverity.ERROR)
+
+        // Modern-baseline correctness checks promoted from warning to error so a real
+        // bug fails the build instead of scrolling past as a warning. All are clean today.
+        // Note: OperatorPrecedence stays a warning on purpose — it contradicts
+        // Checkstyle's UnnecessaryParentheses (one wants parens where the other forbids them).
+        listOf(
+            "MissingOverride",
+            "ReferenceEquality",
+            "FallThrough",
+            "MissingCasesInEnumSwitch",
+            "FutureReturnValueIgnored",
+            "NarrowingCompoundAssignment",
+            "BadImport",
+            "InconsistentCapitalization",
+            "ObjectToString",
+            "BoxedPrimitiveEquality",
+            "EqualsUnsafeCast",
+            "TypeParameterUnusedInFormals",
+            "UnnecessaryLambda",
+            "NonOverridingEquals",
+        )
+            .forEach { check(it, CheckSeverity.ERROR) }
     }
 }
 
