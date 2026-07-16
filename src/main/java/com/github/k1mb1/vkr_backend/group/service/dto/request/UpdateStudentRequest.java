@@ -1,0 +1,15 @@
+package com.github.k1mb1.vkr_backend.group.service.dto.request;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import java.util.UUID;
+import lombok.Builder;
+
+@Builder
+@Schema(description = "Запрос на обновление студента")
+public record UpdateStudentRequest(
+        @Schema(description = "Имя пользователя студента", requiredMode = Schema.RequiredMode.REQUIRED) @NotBlank String username,
+
+        @Schema(description = "ID подгруппы") UUID subgroupId,
+
+        @Schema(description = "Флаг архивации студента") Boolean archived) {}

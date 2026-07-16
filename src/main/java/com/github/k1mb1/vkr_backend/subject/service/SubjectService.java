@@ -1,0 +1,85 @@
+package com.github.k1mb1.vkr_backend.subject.service;
+
+import com.github.k1mb1.vkr_backend.auth.SecurityService;
+import com.github.k1mb1.vkr_backend.subject.api.OwnerPermissionGranter;
+import com.github.k1mb1.vkr_backend.subject.api.SubjectVisibilityPort;
+import com.github.k1mb1.vkr_backend.subject.domain.SubjectEntity;
+import com.github.k1mb1.vkr_backend.subject.mapper.SubjectMapper;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectGroupRefRepository;
+import com.github.k1mb1.vkr_backend.subject.repository.SubjectRepository;
+import com.github.k1mb1.vkr_backend.subject.service.dto.filter.SubjectFilter;
+import com.github.k1mb1.vkr_backend.subject.service.dto.request.CreateSubjectRequest;
+import com.github.k1mb1.vkr_backend.subject.service.dto.request.UpdateSubjectRequest;
+import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectPageResponse;
+import com.github.k1mb1.vkr_backend.subject.service.dto.response.SubjectResponse;
+import com.github.k1mb1.vkr_backend.subject.specification.SubjectSpecifications;
+import java.util.HashSet;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class SubjectService {
+
+    final SubjectRepository subjectRepository;
+
+    final SubjectMapper subjectMapper;
+
+    final SubjectGroupRefRepository groupRefRepository;
+
+    final OwnerPermissionGranter ownerPermissionGranter;
+
+    final SubjectVisibilityPort subjectVisibility;
+
+    final SecurityService securityService;
+
+    @Transactional
+    @PreAuthorize("@authz.canManageSubject(#id)")
+    public SubjectResponse updateSubject(UUID id, UpdateSubjectRequest request) {
+        var subject = subjectRepository
+                .findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Subject not found: " + id));
+
+        subjectMapper.updateEntity(request, subject);
+        return subjectMapper.toFullResponse(subjectRepository.save(subject));
+    }
+
+    @Transactional
+    @CacheEvict(cacheNames = "userPermissions", allEntries = true)
+    public SubjectResponse createSubject(CreateSubjectRequest request) {
+        var subject = SubjectEntity.builder()
+                .name(request.name())
+                .description(request.description())
+                .build();
+
+        for (var groupId : new HashSet<>(request.groupIds())) {
+            subject.getGroups().add(groupRefRepository.getReferenceById(groupId));
+        }
+
+        subject = subjectRepository.save(subject);
+
+        ownerPermissionGranter.grantAllPermissions(request.teacherId(), subject.getId());
+
+        return subjectMapper.toFullResponse(subject);
+    }
+
+    public Page<SubjectPageResponse> getPage(SubjectFilter filter, Pageable pageable) {
+        // Не-админ всегда видит только свои предметы: teacherId жёстко берётся из токена,
+        // что бы клиент ни прислал в фильтре. Админ может смотреть по любому teacherId.
+        var teacherId = securityService.isAdmin()
+                ? filter.teacherId()
+                : securityService.currentSubjectId().orElseThrow();
+        // Видимые предметы приходят из teacher через порт: subject не заглядывает в таблицу прав.
+        var visibleSubjectIds = teacherId == null ? null : subjectVisibility.visibleSubjectIds(teacherId);
+        return subjectRepository
+                .findAll(new SubjectSpecifications(filter.name(), visibleSubjectIds).toSpecification(), pageable)
+                .map(subjectMapper::toResponse);
+    }
+}

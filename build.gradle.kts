@@ -1,17 +1,10 @@
-import net.ltgt.gradle.errorprone.CheckSeverity
-import net.ltgt.gradle.errorprone.errorprone
-
 plugins {
     java
-    checkstyle
-    pmd
+    id("vkr.lint-conventions")
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.dependency.management)
     alias(libs.plugins.hibernate)
     alias(libs.plugins.graalvm.native)
-    alias(libs.plugins.spotless)
-    alias(libs.plugins.errorprone)
-    alias(libs.plugins.spotbugs)
 }
 
 group = "com.github.k1mb1"
@@ -81,16 +74,14 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.assertj:assertj-core")
     testImplementation("org.mockito:mockito-core")
+    testImplementation(libs.archunit.junit5)
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    errorprone(libs.errorprone.core)
-    errorprone(libs.nullaway)
+    // Nullness annotations (NullAway is wired by the vkr.lint-conventions preset).
     implementation(libs.jspecify)
     compileOnly(libs.spotbugs.annotations)
-
-    spotbugsPlugins(libs.findsecbugs.plugin)
 }
 
 // Static Hibernate bytecode enhancement at build time.
@@ -116,84 +107,10 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-spotless {
-    java {
-        target("src/**/*.java")
-        palantirJavaFormat("2.94.0")
-        importOrder()
-        removeUnusedImports()
-        forbidWildcardImports()
-        forbidModuleImports()
-        formatAnnotations()
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-    format("misc") {
-        target("*.gradle.kts", "*.md", ".gitignore", "**/*.yaml", "**/*.yml", "**/*.sql")
-        targetExclude("**/build/**", "**/.gradle/**")
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-}
-
-checkstyle {
-    toolVersion = "13.6.0"
-    maxWarnings = 0
-}
-
-pmd {
-    toolVersion = "7.25.0"
-    ruleSets = emptyList()
-    ruleSetFiles = files("config/pmd/ruleset.xml")
-    isConsoleOutput = true
-}
-
-tasks.named<Pmd>("pmdTest") {
-    ruleSetFiles = files("config/pmd/ruleset-test.xml")
-}
-
-spotbugs {
-    effort = com.github.spotbugs.snom.Effort.MAX
-    reportLevel = com.github.spotbugs.snom.Confidence.HIGH
-    excludeFilter = file("config/spotbugs/exclude.xml")
-}
-
-tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
-    reports.create("html") { required = true }
-    reports.create("xml") { required = true }
-}
-
-tasks.withType<Checkstyle>().configureEach {
-    enabled = !name.contains("aot", ignoreCase = true)
-}
-tasks.withType<Pmd>().configureEach {
-    enabled = !name.contains("aot", ignoreCase = true)
-}
-
 tasks.withType<JavaCompile>().configureEach {
     // Сохраняем имена параметров в class-файлах — их читает Spring Security при
     // резолве `#filter`/`#request`/... внутри @PreAuthorize. Spring Boot 3.2+
     // включает этот флаг сам, но фиксируем явно: в native-image без него SpEL
     // падает с «Failed to evaluate expression» ещё до входа в метод.
     options.compilerArgs.add("-parameters")
-    options.errorprone {
-        disableWarningsInGeneratedCode = true
-        excludedPaths = ".*/build/generated/.*"
-        disable("EqualsGetClass")
-        option("NullAway:JSpecifyMode", "true")
-        option("NullAway:AnnotatedPackages", "com.github.k1mb1.vkr_backend")
-        option(
-            "NullAway:ExcludedClassAnnotations",
-            "jakarta.persistence.Entity,jakarta.persistence.MappedSuperclass",
-        )
-        // Container-injected fields are guaranteed initialized outside the constructor.
-        option("NullAway:ExcludedFieldAnnotations", "jakarta.persistence.PersistenceContext")
-        check("NullAway", CheckSeverity.ERROR)
-    }
-}
-
-tasks.named<JavaCompile>("compileTestJava") {
-    options.errorprone {
-        check("NullAway", CheckSeverity.OFF)
-    }
 }

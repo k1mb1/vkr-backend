@@ -7,5 +7,6 @@
 !build.gradle.kts
 !settings.gradle.kts
 !gradle.properties
+!gradle.lockfile
 !gradlew
 !lombok.config

@@ -1,0 +1,15 @@
+package com.github.k1mb1.vkr_backend.journal.service.dto.response;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
+
+@Builder
+@Schema(
+        description = "Единый ответ страницы итогов: таблица оценок и таблица посещаемости в одном "
+                + "запросе. Политику итогов (банды) фронт берёт из grading.finalAssessmentPolicy.")
+public record ResultsResponse(
+        @Schema(description = "Таблица оценок (с политиками штрафа/посещаемости/подсветки/итогов)")
+        GradingTableResponse grading,
+
+        @Schema(description = "Таблица посещаемости (поячеечная, с политикой подсветки)")
+        AttendanceTableResponse attendance) {}
